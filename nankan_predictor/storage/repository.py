@@ -34,7 +34,12 @@ class Repository:
             field_size      = excluded.field_size,
             scraped_at      = excluded.scraped_at
         """
-        data = {**race_info, "scraped_at": datetime.now().isoformat()}
+        defaults = {
+            "race_name": None, "distance": None, "track_type": None,
+            "track_condition": None, "weather": None, "field_size": None,
+            "venue_name": None,
+        }
+        data = {**defaults, **race_info, "scraped_at": datetime.now().isoformat()}
         with self._conn() as conn:
             conn.execute(sql, data)
 
@@ -68,8 +73,18 @@ class Repository:
             weight_change     = excluded.weight_change,
             is_winner         = excluded.is_winner
         """
+        entry_defaults = {
+            "horse_id": None, "jockey_id": None, "horse_name": None,
+            "jockey_name": None, "trainer_name": None, "gate_number": None,
+            "horse_number": None, "weight_carried": None, "horse_weight": None,
+            "weight_change": None, "win_odds": None, "popularity_rank": None,
+            "finish_position": None, "finish_time": None, "margin": None,
+            "passing_positions": None, "last_3f_time": None,
+            "horse_age": None, "horse_sex": None, "is_winner": None,
+        }
         with self._conn() as conn:
             for entry in entries:
+                entry = {**entry_defaults, **entry}
                 if "entry_id" not in entry:
                     entry["entry_id"] = (
                         f"{entry['race_id']}_{entry.get('horse_number', 0):02d}"

@@ -70,12 +70,7 @@ def run_scrape(args) -> None:
         try:
             data = result_scraper.scrape(race_id)
             repo.upsert_race(data["race_info"])
-            repo.upsert_entries(data["entries"])
-            for payout in data.get("payouts", []):
-                repo.upsert_payout(
-                    payout["race_id"], payout["bet_type"],
-                    payout["combination"], payout["payout"]
-                )
+            # 外部キー制約のため馬・騎手を先に登録してからエントリを保存
             for entry in data["entries"]:
                 if entry.get("horse_id"):
                     repo.upsert_horse(entry["horse_id"], entry.get("horse_name", ""))
@@ -83,6 +78,12 @@ def run_scrape(args) -> None:
                         new_horse_ids.add(entry["horse_id"])
                 if entry.get("jockey_id"):
                     repo.upsert_jockey(entry["jockey_id"], entry.get("jockey_name", ""))
+            repo.upsert_entries(data["entries"])
+            for payout in data.get("payouts", []):
+                repo.upsert_payout(
+                    payout["race_id"], payout["bet_type"],
+                    payout["combination"], payout["payout"]
+                )
         except Exception as e:
             logging.warning("Failed to scrape race %s: %s", race_id, e)
 
