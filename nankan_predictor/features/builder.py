@@ -100,10 +100,12 @@ class FeatureBuilder:
         df = pd.DataFrame(feature_rows)
         if target == "place":
             y = df.pop("is_second").astype(int)
-            df.pop("is_winner", None)
+            if "is_winner" in df.columns:
+                df.pop("is_winner")
         else:
             y = df.pop("is_winner").astype(int)
-            df.pop("is_second", None)
+            if "is_second" in df.columns:
+                df.pop("is_second")
         X = df[NUMERIC_FEATURES]
         return X, y
 
