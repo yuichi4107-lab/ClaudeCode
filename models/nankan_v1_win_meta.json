@@ -1,8 +1,8 @@
 {
   "from_date": "2023-01-01",
-  "to_date": "2024-12-31",
+  "to_date": "2026-02-12",
   "target": "win",
-  "positive_rate": 0.09915306754802727,
+  "positive_rate": 0.10106100795755968,
   "features": [
     "horse_last1_finish",
     "horse_last3_avg_finish",
@@ -30,5 +30,5 @@
     "track_cond_enc",
     "race_number"
   ],
-  "saved_at": "2026-02-13T11:12:23.488877"
+  "saved_at": "2026-02-13T15:01:42.770730"
 }
