@@ -3,7 +3,6 @@
   "to_date": "2024-12-31",
   "target": "win",
   "positive_rate": 0.09915306754802727,
-  "saved_at": "2026-02-13T05:57:02.159029",
   "features": [
     "horse_last1_finish",
     "horse_last3_avg_finish",
@@ -30,5 +29,6 @@
     "track_type_enc",
     "track_cond_enc",
     "race_number"
-  ]
+  ],
+  "saved_at": "2026-02-13T11:12:23.488877"
 }
