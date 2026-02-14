@@ -54,38 +54,50 @@ class RaceResultScraper(BaseScraper):
         logger.info("Scraping result: %s", race_id)
         html = self.get(url)
         soup = BeautifulSoup(html, "lxml")
+        entries = self._parse_result_table(soup, race_id)
+        race_info = self._parse_race_info(soup, race_id)
+        # ensure field_size is populated (number of starters)
+        race_info["field_size"] = len(entries)
         return {
-            "race_info": self._parse_race_info(soup, race_id),
-            "entries": self._parse_result_table(soup, race_id),
+            "race_info": race_info,
+            "entries": entries,
             "payouts": self._parse_payouts(soup, race_id),
         }
 
     def _parse_payouts(self, soup: BeautifulSoup, race_id: str) -> list[dict]:
         """払戻金テーブルから馬単・単勝の払戻情報を取得する。"""
         payouts = []
-        # db.netkeiba.com の払戻テーブルは .pay_block または table.pay_table
-        for table in soup.select("table.pay_table_01, .payout_table, div.pay_block table"):
+        # db.netkeiba.com の払戻テーブルは class="pay_table_01"
+        for table in soup.select("table.pay_table_01"):
             rows = table.select("tr")
             for tr in rows:
-                th = tr.select_one("th")
-                if not th:
+                # セルを取得
+                cells = tr.select("td, th")
+                if len(cells) < 2:
                     continue
-                bet_type_text = th.get_text(strip=True)
-
+                
+                # 最初のセルが賭式（単勝、馬単など）
+                bet_type_text = cells[0].get_text(strip=True)
+                
                 if "馬単" in bet_type_text:
                     bet_type = "exacta"
                 elif "単勝" in bet_type_text:
                     bet_type = "win"
                 else:
+                    # 対象外の賭式（枠連、複勝など）
                     continue
-
-                tds = tr.select("td")
-                for td in tds:
-                    text = td.get_text(strip=True)
-                    # 組み合わせ: "3→7" や "3 - 7" など
-                    combo_m = re.search(r"(\d+)[→\-\s]+(\d+)", text)
-                    # 払戻金額: "12,340円" など
-                    amount_m = re.search(r"([\d,]+)円", text)
+                
+                # 2番目以降のセルから組み合わせと払戻を取得
+                if len(cells) >= 3:
+                    combo_text = cells[1].get_text(strip=True)
+                    amount_text = cells[2].get_text(strip=True)
+                    
+                    # 組み合わせ: 数字と数字の間の任意の非数字文字に対応
+                    # 例: "7→12", "7-12", "7 → 12", "7 - 12"
+                    combo_m = re.search(r"(\d+)\D+(\d+)", combo_text)
+                    # 払戻金額: "3,430" または "3430"
+                    amount_m = re.search(r"([\d,]+)", amount_text)
+                    
                     if combo_m and amount_m:
                         combination = f"{combo_m.group(1)}-{combo_m.group(2)}"
                         payout = float(amount_m.group(1).replace(",", ""))
@@ -95,12 +107,6 @@ class RaceResultScraper(BaseScraper):
                             "combination": combination,
                             "payout": payout,
                         })
-                    elif bet_type == "win":
-                        # 単勝は馬番と払戻が別セルのことが多い
-                        horse_m = re.search(r"^\s*(\d+)\s*$", text)
-                        if horse_m:
-                            # 次のセルを探す
-                            pass
 
         return payouts
 
@@ -117,7 +123,7 @@ class RaceResultScraper(BaseScraper):
         if race_name_el:
             info["race_name"] = race_name_el.get_text(strip=True)
 
-        data01 = soup.select_one(".RaceData01")
+        data01 = soup.select_one(".RaceData01, .race_data")
         if data01:
             text = data01.get_text()
             m = re.search(r"(ダ|芝)(\d+)m", text)
@@ -130,6 +136,15 @@ class RaceResultScraper(BaseScraper):
                 info["weather"] = weather_m.group(1)
             if cond_m:
                 info["track_condition"] = cond_m.group(1)
+        # fallback: try to parse distance/track from alternative page sections
+        if "distance" not in info or info.get("distance") is None:
+            alt = soup.select_one(".raceData, .data01")
+            if alt:
+                text = alt.get_text()
+                m = re.search(r"(ダ|芝)(\d+)m", text)
+                if m:
+                    info["track_type"] = "ダート" if m.group(1) == "ダ" else "芝"
+                    info["distance"] = int(m.group(2))
 
         return info
 
@@ -139,53 +154,104 @@ class RaceResultScraper(BaseScraper):
         if not table:
             logger.warning("Result table not found for race_id=%s", race_id)
             return entries
+        # detect header columns to handle variable table layouts
+        header = table.select_one("tr")
+        header_texts = [h.get_text(strip=True) for h in header.select("th, td")]
+
+        def find_col(keywords: list[str]) -> int | None:
+            for i, txt in enumerate(header_texts):
+                for k in keywords:
+                    if k in txt:
+                        return i
+            return None
+
+        pop_idx = find_col(["人気", "人", "人気順"])
+        weight_idx = find_col(["馬体重", "馬体", "体重"])
+        finish_idx = 0
+        gate_idx = 1
+        horse_no_idx = 2
+        name_idx = 3
 
         rows = table.select("tr")[1:]
         for tr in rows:
             tds = tr.select("td")
-            if len(tds) < 12:
+            if len(tds) < 3:
                 continue
 
             entry: dict = {"race_id": race_id}
-            entry["finish_position"] = _safe_int(tds[0].get_text(strip=True))
-            entry["gate_number"] = _safe_int(tds[1].get_text(strip=True))
-            entry["horse_number"] = _safe_int(tds[2].get_text(strip=True))
+            # best-effort fixed indices for standard columns
+            entry["finish_position"] = _safe_int(tds[finish_idx].get_text(strip=True))
+            entry["gate_number"] = _safe_int(tds[gate_idx].get_text(strip=True))
+            entry["horse_number"] = _safe_int(tds[horse_no_idx].get_text(strip=True))
 
-            horse_a = tds[3].select_one("a")
-            if horse_a:
-                entry["horse_name"] = horse_a.get_text(strip=True)
-                entry["horse_id"] = _extract_id(horse_a.get("href", ""), "horse")
+            # horse id/name
+            if len(tds) > name_idx:
+                horse_a = tds[name_idx].select_one("a")
+                if horse_a:
+                    entry["horse_name"] = horse_a.get_text(strip=True)
+                    entry["horse_id"] = _extract_id(horse_a.get("href", ""), "horse")
 
-            age_text = tds[4].get_text(strip=True)
-            age_m = re.match(r"(\d+)(牡|牝|セ|騸)?", age_text)
-            if age_m:
-                entry["horse_age"] = int(age_m.group(1))
-                entry["horse_sex"] = age_m.group(2) or ""
+            # age/sex may be in next column
+            if len(tds) > 4:
+                age_text = tds[4].get_text(strip=True)
+                age_m = re.match(r"(\d+)(牡|牝|セ|騸)?", age_text)
+                if age_m:
+                    entry["horse_age"] = int(age_m.group(1))
+                    entry["horse_sex"] = age_m.group(2) or ""
 
-            entry["weight_carried"] = _safe_float(tds[5].get_text(strip=True))
+            # weight carried
+            if len(tds) > 5:
+                entry["weight_carried"] = _safe_float(tds[5].get_text(strip=True))
 
-            jockey_a = tds[6].select_one("a")
-            if jockey_a:
-                entry["jockey_name"] = jockey_a.get_text(strip=True)
-                entry["jockey_id"] = _extract_id(jockey_a.get("href", ""), "jockey")
+            # jockey
+            if len(tds) > 6:
+                jockey_a = tds[6].select_one("a")
+                if jockey_a:
+                    entry["jockey_name"] = jockey_a.get_text(strip=True)
+                    entry["jockey_id"] = _extract_id(jockey_a.get("href", ""), "jockey")
 
-            entry["finish_time"] = _parse_time(tds[7].get_text(strip=True))
-            entry["margin"] = tds[8].get_text(strip=True)
-            entry["passing_positions"] = tds[9].get_text(strip=True) if len(tds) > 9 else None
-            entry["pace"] = tds[10].get_text(strip=True) if len(tds) > 10 else None
-            entry["last_3f_time"] = _safe_float(tds[11].get_text(strip=True)) if len(tds) > 11 else None
-            entry["trainer_name"] = tds[12].get_text(strip=True) if len(tds) > 12 else None
+            # finish_time/margin/passing/pace/last3f (heuristic indices)
+            if len(tds) > 7:
+                entry["finish_time"] = _parse_time(tds[7].get_text(strip=True))
+            if len(tds) > 8:
+                entry["margin"] = tds[8].get_text(strip=True)
+            if len(tds) > 9:
+                entry["passing_positions"] = tds[9].get_text(strip=True)
+            if len(tds) > 10:
+                entry["pace"] = tds[10].get_text(strip=True)
+            if len(tds) > 11:
+                entry["last_3f_time"] = _safe_float(tds[11].get_text(strip=True))
+            if len(tds) > 12:
+                entry["trainer_name"] = tds[12].get_text(strip=True)
 
-            # 馬体重: "456(+2)" のような形式
-            if len(tds) > 13:
-                weight_text = tds[13].get_text(strip=True)
+            # horse weight: try detected index first, then fallback regex search
+            if weight_idx is not None and weight_idx < len(tds):
+                weight_text = tds[weight_idx].get_text(strip=True)
                 wm = re.match(r"(\d+)\(([+-]?\d+)\)", weight_text)
                 if wm:
                     entry["horse_weight"] = int(wm.group(1))
                     entry["weight_change"] = int(wm.group(2))
+            else:
+                # fallback: search cells for horse weight pattern
+                for cell in tds:
+                    wt = cell.get_text(strip=True)
+                    wm = re.match(r"^(\d+)\(([+-]?\d+)\)$", wt)
+                    if wm:
+                        entry["horse_weight"] = int(wm.group(1))
+                        entry["weight_change"] = int(wm.group(2))
+                        break
 
-            entry["win_odds"] = _safe_float(tds[14].get_text(strip=True)) if len(tds) > 14 else None
-            entry["popularity_rank"] = _safe_int(tds[15].get_text(strip=True)) if len(tds) > 15 else None
+            # popularity
+            if pop_idx is not None and pop_idx < len(tds):
+                entry["popularity_rank"] = _safe_int(tds[pop_idx].get_text(strip=True))
+            else:
+                # try to detect popularity by cell text like '3人気' or just a small integer
+                for cell in tds:
+                    txt = cell.get_text(strip=True)
+                    m = re.match(r"^(\d+)\s*人?$", txt)
+                    if m and int(m.group(1)) <= 20:
+                        entry["popularity_rank"] = int(m.group(1))
+                        break
 
             pos = entry.get("finish_position")
             entry["is_winner"] = 1 if pos == 1 else (0 if pos is not None else None)

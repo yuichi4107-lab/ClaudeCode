@@ -107,6 +107,15 @@ class FeatureBuilder:
             if "is_second" in df.columns:
                 df.pop("is_second")
         X = df[NUMERIC_FEATURES]
+
+        # drop features with extremely high missing rate
+        missing_rate = X.isna().mean()
+        threshold = 0.8
+        drop_cols = missing_rate[missing_rate > threshold].index.tolist()
+        if drop_cols:
+            logger.info("Dropping features with missing rate > %.2f: %s", threshold, drop_cols)
+            X = X.drop(columns=drop_cols)
+
         return X, y
 
     def build_prediction_rows(

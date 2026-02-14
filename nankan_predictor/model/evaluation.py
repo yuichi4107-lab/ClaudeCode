@@ -5,7 +5,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def evaluate_exacta_roi(predictions_df: pd.DataFrame, repo) -> dict:
+def evaluate_exacta_roi(predictions_df: pd.DataFrame, repo, top_n: int = 1, threshold: float = 0.0) -> dict:
     """
     予測上位の馬単組み合わせに賭けた場合のROIをシミュレーションする。
 
@@ -13,29 +13,39 @@ def evaluate_exacta_roi(predictions_df: pd.DataFrame, repo) -> dict:
         race_id, first_horse_number, second_horse_number, exacta_prob
 
     repo: Repository（馬単払戻金の取得に使用）
+    top_n: 1レースあたり考慮する上位組合せ数（1推奨）
+    threshold: 確率閾値（この値以上の予測のみ賭ける）
     """
     results = []
     for race_id, group in predictions_df.groupby("race_id"):
-        top = group.nlargest(1, "exacta_prob").iloc[0]
-        first = int(top["first_horse_number"])
-        second = int(top["second_horse_number"])
+        # threshold でフィルタ
+        filtered = group[group["exacta_prob"] >= threshold]
+        if len(filtered) == 0:
+            continue  # この レースには賭けない
+        
+        # 上位 top_n を取得
+        top_combos = filtered.nlargest(top_n, "exacta_prob")
+        
+        for _, row in top_combos.iterrows():
+            first = int(row["first_horse_number"])
+            second = int(row["second_horse_number"])
 
-        payout = repo.get_exacta_payout(race_id, first, second)
-        hit = payout is not None and payout > 0
+            payout = repo.get_exacta_payout(race_id, first, second)
+            hit = payout is not None and payout > 0
 
-        results.append(
-            {
-                "race_id": race_id,
-                "hit": hit,
-                "payout": payout / 100.0 if hit else 0.0,  # 100円単位を1単位に換算
-            }
-        )
+            results.append(
+                {
+                    "race_id": race_id,
+                    "hit": hit,
+                    "payout": payout / 100.0 if hit else 0.0,  # 100円単位を1単位に換算
+                }
+            )
+
+    if not results:
+        return {"error": "No bets placed (threshold too high or no data)"}
 
     df = pd.DataFrame(results)
     invested = len(df)
-    if invested == 0:
-        return {"error": "No races found"}
-
     returned = df["payout"].sum()
     hits = int(df["hit"].sum())
 
@@ -49,8 +59,9 @@ def evaluate_exacta_roi(predictions_df: pd.DataFrame, repo) -> dict:
     }
 
 
-def print_evaluation(result: dict) -> None:
+def print_evaluation(result: dict, top_n: int = 1, threshold: float = 0.0) -> None:
     print("\n=== バックテスト結果（馬単） ===")
+    print(f"戦略: top_n={top_n}, threshold={threshold:.4f}")
     if "error" in result:
         print(f"エラー: {result['error']}")
         return

@@ -80,10 +80,23 @@ class RaceEntryScraper(BaseScraper):
         if not table:
             logger.warning("Shutuba table not found for race_id=%s", race_id)
             return entries
+        # detect header columns to support variations
+        header = table.select_one("tr")
+        header_texts = [h.get_text(strip=True) for h in header.select("th, td")] if header else []
+
+        def find_col(keywords: list[str]) -> int | None:
+            for i, txt in enumerate(header_texts):
+                for k in keywords:
+                    if k in txt:
+                        return i
+            return None
+
+        weight_idx = find_col(["馬体重", "馬体", "体重"])
+        pop_idx = find_col(["人気", "人"])
 
         for tr in table.select("tr.HorseList, tr[class*='HorseList']"):
             tds = tr.select("td")
-            if len(tds) < 6:
+            if len(tds) < 2:
                 continue
 
             entry: dict = {"race_id": race_id}
@@ -104,13 +117,29 @@ class RaceEntryScraper(BaseScraper):
             if weight_el:
                 entry["weight_carried"] = _safe_float(weight_el.get_text(strip=True))
 
-            horse_weight_el = tr.select_one("td.HorseWeight span")
-            if horse_weight_el:
-                wtext = horse_weight_el.get_text(strip=True)
-                wm = re.match(r"(\d+)\(([+-]?\d+)\)", wtext)
+            # horse weight: prefer detected column, fall back to specific selectors
+            if weight_idx is not None and weight_idx < len(tds):
+                wt = tds[weight_idx].get_text(strip=True)
+                wm = re.match(r"(\d+)\(([+-]?\d+)\)", wt)
                 if wm:
                     entry["horse_weight"] = int(wm.group(1))
                     entry["weight_change"] = int(wm.group(2))
+            else:
+                horse_weight_el = tr.select_one("td.HorseWeight span, .horse_weight span, .weight span")
+                if horse_weight_el:
+                    wtext = horse_weight_el.get_text(strip=True)
+                    wm = re.match(r"(\d+)\(([+-]?\d+)\)", wtext)
+                    if wm:
+                        entry["horse_weight"] = int(wm.group(1))
+                        entry["weight_change"] = int(wm.group(2))
+
+            # popularity
+            if pop_idx is not None and pop_idx < len(tds):
+                entry["popularity_rank"] = _safe_int(tds[pop_idx].get_text(strip=True))
+            else:
+                pop_el = tr.select_one(".Popular, .popularity, td.popularity")
+                if pop_el:
+                    entry["popularity_rank"] = _safe_int(pop_el.get_text(strip=True))
 
             entry["is_winner"] = None  # レース前なので未確定
             entries.append(entry)

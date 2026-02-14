@@ -120,6 +120,7 @@ def run_train(args) -> None:
     save_model(win_model, f"{model_name}_win", {
         "from_date": from_date, "to_date": to_date,
         "target": "win", "positive_rate": float(y_win.mean()),
+        "features": list(X_win.columns),
     })
 
     # --- 2着モデル ---
@@ -130,6 +131,7 @@ def run_train(args) -> None:
     save_model(place_model, f"{model_name}_place", {
         "from_date": from_date, "to_date": to_date,
         "target": "place", "positive_rate": float(y_place.mean()),
+        "features": list(X_place.columns),
     })
 
     print("学習完了")
@@ -213,6 +215,8 @@ def run_evaluate(args) -> None:
 
     repo = Repository()
     model_name = getattr(args, "model_name", "nankan_v1")
+    top_n = getattr(args, "top_n", 1)
+    threshold = getattr(args, "threshold", 0.01)
     from_date = _parse_date(args.from_date)
     to_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -228,13 +232,13 @@ def run_evaluate(args) -> None:
     all_combos = []
     for race_id, group in entries_df.groupby("race_id"):
         X_race = builder.build_prediction_rows(race_id, group.to_dict("records"), group.iloc[0].to_dict())
-        combos = predictor.predict_exacta(X_race, top_n=1)
+        combos = predictor.predict_exacta(X_race, top_n=10)  # 内部的には上位10を取得しておく
         combos["race_id"] = race_id
         all_combos.append(combos)
 
     predictions_df = pd.concat(all_combos, ignore_index=True)
-    result = evaluate_exacta_roi(predictions_df, repo)
-    print_evaluation(result)
+    result = evaluate_exacta_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
+    print_evaluation(result, top_n=top_n, threshold=threshold)
 
 
 def main():
@@ -278,6 +282,8 @@ def main():
     p_eval = sub.add_parser("evaluate", help="バックテストでROIを評価する")
     p_eval.add_argument("--from-date", required=True, dest="from_date")
     p_eval.add_argument("--model-name", dest="model_name", default="nankan_v1")
+    p_eval.add_argument("--top-n", dest="top_n", type=int, default=1, help="上位N組合せを考慮（デフォルト: 1）")
+    p_eval.add_argument("--threshold", dest="threshold", type=float, default=0.01, help="確率閾値（デフォルト: 0.01）")
 
     args = parser.parse_args()
 

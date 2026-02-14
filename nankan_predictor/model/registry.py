@@ -22,7 +22,8 @@ def save_model(model, model_name: str, meta: dict = None) -> None:
 
     meta = meta or {}
     meta["saved_at"] = datetime.now().isoformat()
-    meta["features"] = NUMERIC_FEATURES
+    # do not overwrite features if provided by caller (save actual training features)
+    meta["features"] = meta.get("features", NUMERIC_FEATURES)
 
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
