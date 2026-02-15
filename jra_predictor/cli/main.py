@@ -160,13 +160,18 @@ def run_predict(args) -> None:
     from jra_predictor.storage.repository import Repository
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
-    from jra_predictor.config.settings import VENUE_CODES, CACHE_DIR
+    from jra_predictor.model.strategy import (
+        score_exacta_race, score_trio_race, select_races, print_race_selection,
+    )
+    from jra_predictor.config.settings import VENUE_CODES, VENUE_NAMES_JP, CACHE_DIR
 
     init_db()
     repo = Repository()
     model_name = getattr(args, "model_name", "jra_v1")
     top_n = getattr(args, "top_n", 3)
     bet_type = getattr(args, "bet_type", "exacta")
+    max_races = getattr(args, "max_races", 0)  # 0 = 全レース
+    min_confidence = getattr(args, "min_confidence", 0.0)
 
     venue_code = None
     if hasattr(args, "venue") and args.venue != "all":
@@ -186,6 +191,8 @@ def run_predict(args) -> None:
         print("--race-id または --date を指定してください")
         sys.exit(1)
 
+    # まず全レースの予測と自信度を計算
+    race_results = []
     for race_id in race_ids:
         try:
             data = entry_scraper.scrape(race_id)
@@ -195,49 +202,78 @@ def run_predict(args) -> None:
                 continue
 
             df = builder.build_prediction_rows(race_id, entries, race_info)
-
-            venue = race_info.get("venue_name", race_id[4:6])
-            race_num = race_info.get("race_number", "?")
-            dist = race_info.get("distance", "?")
-            track = race_info.get("track_type", "")
-            cond = race_info.get("track_condition", "")
             field_size = len(entries)
 
-            print(f"\nRace {race_id} - {venue}競馬場 第{race_num}R "
-                  f"{track}{dist}m {cond} ({field_size}頭)")
-
             if bet_type == "trio":
-                ranked = predictor.predict_trio(df, top_n=top_n)
-                print(f"三連複予想 上位{top_n}組み合わせ:")
-                for rank, row in ranked.iterrows():
-                    h1 = int(row.get("horse1_number", 0))
-                    h1n = row.get("horse1_name", "不明")
-                    h2 = int(row.get("horse2_number", 0))
-                    h2n = row.get("horse2_name", "不明")
-                    h3 = int(row.get("horse3_number", 0))
-                    h3n = row.get("horse3_name", "不明")
-                    prob = row.get("trio_prob", 0)
-                    print(
-                        f"  {rank}位: {h1}-{h2}-{h3}  "
-                        f"({h1n}, {h2n}, {h3n})  "
-                        f"P={prob:.4f}"
-                    )
+                ranked = predictor.predict_trio(df, top_n=max(top_n, 5))
+                score = score_trio_race(ranked, field_size)
             else:
-                ranked = predictor.predict_exacta(df, top_n=top_n)
-                print(f"馬単予想 上位{top_n}組み合わせ:")
-                for rank, row in ranked.iterrows():
-                    fn = int(row.get("first_horse_number", 0))
-                    fn_name = row.get("first_horse_name", "不明")
-                    sn = int(row.get("second_horse_number", 0))
-                    sn_name = row.get("second_horse_name", "不明")
-                    prob = row.get("exacta_prob", 0)
-                    print(
-                        f"  {rank}位: {fn}→{sn}  "
-                        f"({fn_name} → {sn_name})  "
-                        f"P={prob:.4f}"
-                    )
+                ranked = predictor.predict_exacta(df, top_n=max(top_n, 5))
+                score = score_exacta_race(ranked, field_size)
+
+            score["race_id"] = race_id
+            score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
+            score["race_number"] = race_info.get("race_number", "?")
+            score["race_info"] = race_info
+            score["ranked"] = ranked
+            race_results.append(score)
         except Exception as e:
             logging.warning("Failed to predict race %s: %s", race_id, e)
+
+    # 選択的モード: 自信度上位のレースのみ出力
+    if max_races > 0:
+        selected = select_races(race_results, max_races=max_races, min_confidence=min_confidence)
+        print_race_selection(selected, bet_type=bet_type)
+        output_races = selected
+    else:
+        output_races = race_results
+
+    # 予測結果を出力
+    for score in output_races:
+        race_id = score["race_id"]
+        race_info = score["race_info"]
+        ranked = score["ranked"]
+
+        venue = race_info.get("venue_name", race_id[4:6])
+        race_num = race_info.get("race_number", "?")
+        dist = race_info.get("distance", "?")
+        track = race_info.get("track_type", "")
+        cond = race_info.get("track_condition", "")
+        field_size = score.get("field_size", "?")
+
+        conf_str = f" [自信度: {score['confidence_score']:.2f}, 優位率: {score['edge_ratio']:.1f}x]"
+        print(f"\nRace {race_id} - {venue}競馬場 第{race_num}R "
+              f"{track}{dist}m {cond} ({field_size}頭){conf_str}")
+
+        display_ranked = ranked.head(top_n)
+        if bet_type == "trio":
+            print(f"三連複予想 上位{top_n}組み合わせ:")
+            for rank, row in display_ranked.iterrows():
+                h1 = int(row.get("horse1_number", 0))
+                h1n = row.get("horse1_name", "不明")
+                h2 = int(row.get("horse2_number", 0))
+                h2n = row.get("horse2_name", "不明")
+                h3 = int(row.get("horse3_number", 0))
+                h3n = row.get("horse3_name", "不明")
+                prob = row.get("trio_prob", 0)
+                print(
+                    f"  {rank}位: {h1}-{h2}-{h3}  "
+                    f"({h1n}, {h2n}, {h3n})  "
+                    f"P={prob:.4f}"
+                )
+        else:
+            print(f"馬単予想 上位{top_n}組み合わせ:")
+            for rank, row in display_ranked.iterrows():
+                fn = int(row.get("first_horse_number", 0))
+                fn_name = row.get("first_horse_name", "不明")
+                sn = int(row.get("second_horse_number", 0))
+                sn_name = row.get("second_horse_name", "不明")
+                prob = row.get("exacta_prob", 0)
+                print(
+                    f"  {rank}位: {fn}→{sn}  "
+                    f"({fn_name} → {sn_name})  "
+                    f"P={prob:.4f}"
+                )
 
 
 def run_evaluate(args) -> None:
@@ -245,8 +281,11 @@ def run_evaluate(args) -> None:
     from jra_predictor.storage.repository import Repository
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
+    from jra_predictor.model.strategy import score_exacta_race, score_trio_race
     from jra_predictor.model.evaluation import (
-        evaluate_exacta_roi, evaluate_trio_roi, print_evaluation,
+        evaluate_exacta_roi, evaluate_trio_roi,
+        evaluate_selective_roi,
+        print_evaluation, print_selective_evaluation,
     )
 
     repo = Repository()
@@ -254,6 +293,8 @@ def run_evaluate(args) -> None:
     top_n = getattr(args, "top_n", 1)
     threshold = getattr(args, "threshold", 0.01)
     bet_type = getattr(args, "bet_type", "exacta")
+    max_races = getattr(args, "max_races", 0)
+    min_confidence = getattr(args, "min_confidence", 0.0)
     from_date = _parse_date(args.from_date)
     to_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -261,29 +302,69 @@ def run_evaluate(args) -> None:
     predictor = ModelPredictor(model_name, bet_types=[bet_type])
 
     label = "馬単" if bet_type == "exacta" else "三連複"
-    print(f"評価期間: {from_date} ~ {to_date} ({label})")
+    mode = "選択的" if max_races > 0 else "全レース"
+    print(f"評価期間: {from_date} ~ {to_date} ({label}, {mode})")
     entries_df = repo.get_entries_in_range(from_date, to_date)
     if len(entries_df) == 0:
         print("評価データがありません。先にスクレイピングを実行してください。")
         return
 
-    all_combos = []
-    for race_id, group in entries_df.groupby("race_id"):
-        X_race = builder.build_prediction_rows(race_id, group.to_dict("records"), group.iloc[0].to_dict())
-        if bet_type == "trio":
-            combos = predictor.predict_trio(X_race, top_n=10)
-        else:
-            combos = predictor.predict_exacta(X_race, top_n=10)
-        combos["race_id"] = race_id
-        all_combos.append(combos)
+    if max_races > 0:
+        # 選択的ベッティング
+        race_predictions = []
+        for race_id, group in entries_df.groupby("race_id"):
+            X_race = builder.build_prediction_rows(
+                race_id, group.to_dict("records"), group.iloc[0].to_dict()
+            )
+            field_size = len(group)
 
-    predictions_df = pd.concat(all_combos, ignore_index=True)
+            if bet_type == "trio":
+                preds = predictor.predict_trio(X_race, top_n=10)
+                score = score_trio_race(preds, field_size)
+            else:
+                preds = predictor.predict_exacta(X_race, top_n=10)
+                score = score_exacta_race(preds, field_size)
 
-    if bet_type == "trio":
-        result = evaluate_trio_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
+            race_date = f"{race_id[:4]}-{race_id[6:8]}-{race_id[8:10]}"
+            race_predictions.append({
+                "race_id": race_id,
+                "race_date": race_date,
+                "confidence_score": score["confidence_score"],
+                "predictions": preds,
+            })
+
+        result = evaluate_selective_roi(
+            race_predictions, repo,
+            bet_type=bet_type,
+            max_races_per_day=max_races,
+            min_confidence=min_confidence,
+            top_n_per_race=top_n,
+        )
+        print_selective_evaluation(
+            result, bet_type=bet_type,
+            max_races=max_races, min_confidence=min_confidence, top_n=top_n,
+        )
     else:
-        result = evaluate_exacta_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
-    print_evaluation(result, bet_type=bet_type, top_n=top_n, threshold=threshold)
+        # 従来の全レース評価
+        all_combos = []
+        for race_id, group in entries_df.groupby("race_id"):
+            X_race = builder.build_prediction_rows(
+                race_id, group.to_dict("records"), group.iloc[0].to_dict()
+            )
+            if bet_type == "trio":
+                combos = predictor.predict_trio(X_race, top_n=10)
+            else:
+                combos = predictor.predict_exacta(X_race, top_n=10)
+            combos["race_id"] = race_id
+            all_combos.append(combos)
+
+        predictions_df = pd.concat(all_combos, ignore_index=True)
+
+        if bet_type == "trio":
+            result = evaluate_trio_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
+        else:
+            result = evaluate_exacta_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
+        print_evaluation(result, bet_type=bet_type, top_n=top_n, threshold=threshold)
 
 
 def main():
@@ -318,18 +399,34 @@ def main():
         "--bet-type", dest="bet_type", choices=["exacta", "trio"], default="exacta",
         help="馬券種: exacta=馬単, trio=三連複 (デフォルト: exacta)",
     )
+    p_pred.add_argument(
+        "--max-races", dest="max_races", type=int, default=0,
+        help="1日の最大購入レース数 (0=全レース, 推奨: 4〜6)",
+    )
+    p_pred.add_argument(
+        "--min-confidence", dest="min_confidence", type=float, default=0.0,
+        help="最低自信度スコア (デフォルト: 0.0)",
+    )
 
     # evaluate
     p_eval = sub.add_parser("evaluate", help="バックテストでROIを評価する")
     p_eval.add_argument("--from-date", required=True, dest="from_date")
     p_eval.add_argument("--model-name", dest="model_name", default="jra_v1")
     p_eval.add_argument("--top-n", dest="top_n", type=int, default=1,
-                        help="上位N組合せを考慮（デフォルト: 1）")
+                        help="1Rあたり購入組数（デフォルト: 1）")
     p_eval.add_argument("--threshold", dest="threshold", type=float, default=0.01,
                         help="確率閾値（デフォルト: 0.01）")
     p_eval.add_argument(
         "--bet-type", dest="bet_type", choices=["exacta", "trio"], default="exacta",
         help="馬券種: exacta=馬単, trio=三連複 (デフォルト: exacta)",
+    )
+    p_eval.add_argument(
+        "--max-races", dest="max_races", type=int, default=0,
+        help="1日の最大購入レース数 (0=全レース評価, 推奨: 4〜6)",
+    )
+    p_eval.add_argument(
+        "--min-confidence", dest="min_confidence", type=float, default=0.0,
+        help="最低自信度スコア (デフォルト: 0.0)",
     )
 
     args = parser.parse_args()

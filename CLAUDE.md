@@ -99,9 +99,17 @@ python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3
 # 当日予想（三連複）
 python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3 --bet-type trio
 
-# バックテスト ROI 評価
+# 厳選予想: 1日最大5R、自信度上位のみ（推奨）
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --max-races 5
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type exacta --max-races 4 --min-confidence 2.0
+
+# バックテスト ROI 評価（全レース）
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type exacta
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio
+
+# バックテスト ROI 評価（選択的: 1日最大6R、日別成績付き）
+python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --max-races 6
+python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type exacta --max-races 4 --min-confidence 2.0
 
 # setup.py でインストール後はショートカットが使える
 jra scrape --date 20260215
@@ -125,9 +133,10 @@ jra_predictor/
 ├── model/
 │   ├── trainer.py          TimeSeriesSplit + LightGBM/HGBT + CalibratedClassifierCV
 │   ├── predictor.py        3モデル(win/place/top3)から馬単・三連複確率を計算
-│   ├── evaluation.py       馬単・三連複 ROI バックテスト
+│   ├── evaluation.py       馬単・三連複 ROI バックテスト（全レース・選択的）
+│   ├── strategy.py         選択的ベッティング: 自信度スコア算出・レース選出
 │   └── registry.py         joblib でモデル保存・読み込み (data/models/)
-└── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate --bet-type)
+└── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate --bet-type --max-races)
 ```
 
 ### JRA固有の設計
@@ -141,3 +150,6 @@ jra_predictor/
 - **馬単確率**: `P(i→j) ≈ P_win(i) * P_place(j) / (1 - P_win(i))` で近似
 - **三連複確率**: `P(i,j,k) ≈ P_top3(i) * P_top3(j) * P_top3(k)` で近似（順不同）
 - **モデル3本構成**: `{name}_win.joblib` + `{name}_place.joblib` + `{name}_top3.joblib`
+- **選択的ベッティング**: `--max-races N` で1日あたりN件に絞り込み。自信度スコア = edge_ratio × (1 + separation/top1_prob) で算出
+- **自信度スコア**: モデル予測確率 / ランダム確率（=優位率）× 確信度係数。高いほど買い
+- **推奨戦略**: `--max-races 4〜6 --min-confidence 2.0` で高自信度レースのみ選択し ROI 向上を狙う
