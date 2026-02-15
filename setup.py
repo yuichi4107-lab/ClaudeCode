@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="nankan_predictor",
-    version="0.1.0",
+    name="horse_racing_predictor",
+    version="0.2.0",
     packages=find_packages(),
     install_requires=[
         "requests>=2.31.0",
@@ -19,6 +19,7 @@ setup(
     entry_points={
         "console_scripts": [
             "nankan=nankan_predictor.cli.main:main",
+            "jra=jra_predictor.cli.main:main",
         ],
     },
     python_requires=">=3.10",
