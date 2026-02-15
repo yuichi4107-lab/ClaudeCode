@@ -79,8 +79,8 @@ nankan_predictor/
 ## JRA 中央競馬予想システム (jra_predictor)
 
 ### Overview
-JRA 中央競馬10場（札幌・函館・福島・新潟・東京・中山・中京・京都・阪神・小倉）を対象とした馬単予想システム。
-nankan_predictor と同一アーキテクチャで、netkeiba.com からデータを収集し LightGBM で馬単を予測する。
+JRA 中央競馬10場（札幌・函館・福島・新潟・東京・中山・中京・京都・阪神・小倉）を対象とした馬単・三連複予想システム。
+nankan_predictor と同一アーキテクチャで、netkeiba.com からデータを収集し LightGBM で馬単・三連複を予測する。
 
 ### Usage
 ```bash
@@ -93,15 +93,19 @@ python -m jra_predictor.cli.main scrape --date 20260215 --venue tokyo
 # モデル学習
 python -m jra_predictor.cli.main train --from-date 2024-01-01 --to-date 2025-12-31
 
-# 当日予想
-python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3
+# 当日予想（馬単）
+python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3 --bet-type exacta
+
+# 当日予想（三連複）
+python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3 --bet-type trio
 
 # バックテスト ROI 評価
-python -m jra_predictor.cli.main evaluate --from-date 2026-01-01
+python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type exacta
+python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio
 
 # setup.py でインストール後はショートカットが使える
 jra scrape --date 20260215
-jra predict --date 20260215 --venue hanshin
+jra predict --date 20260215 --venue hanshin --bet-type trio
 ```
 
 ### Architecture
@@ -120,10 +124,10 @@ jra_predictor/
 ├── features/builder.py     特徴量生成 (28特徴量)。芝/ダート適性・コース方向を追加
 ├── model/
 │   ├── trainer.py          TimeSeriesSplit + LightGBM/HGBT + CalibratedClassifierCV
-│   ├── predictor.py        2モデル(win/place)から馬単組み合わせ確率を計算
-│   ├── evaluation.py       馬単ROI バックテスト
+│   ├── predictor.py        3モデル(win/place/top3)から馬単・三連複確率を計算
+│   ├── evaluation.py       馬単・三連複 ROI バックテスト
 │   └── registry.py         joblib でモデル保存・読み込み (data/models/)
-└── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate)
+└── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate --bet-type)
 ```
 
 ### JRA固有の設計
@@ -133,3 +137,7 @@ jra_predictor/
 - **出馬表URL**: race.netkeiba.com（JRA用）。nankan は nar.netkeiba.com
 - **DB**: data/jra.db（nankan とは別ファイル）
 - **特徴量**: horse_same_track_type_win_rate (芝/ダート適性), course_direction_enc を追加 (計28特徴量)
+- **馬券種**: 馬単 (exacta) と三連複 (trio) の2種対応。`--bet-type` オプションで切替
+- **馬単確率**: `P(i→j) ≈ P_win(i) * P_place(j) / (1 - P_win(i))` で近似
+- **三連複確率**: `P(i,j,k) ≈ P_top3(i) * P_top3(j) * P_top3(k)` で近似（順不同）
+- **モデル3本構成**: `{name}_win.joblib` + `{name}_place.joblib` + `{name}_top3.joblib`

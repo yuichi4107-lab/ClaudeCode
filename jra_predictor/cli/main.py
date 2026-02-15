@@ -16,6 +16,13 @@ def _parse_date(s: str) -> str:
     return f"{s[0:4]}-{s[4:6]}-{s[6:8]}"
 
 
+VENUE_CHOICES = [
+    "sapporo", "hakodate", "fukushima", "niigata",
+    "tokyo", "nakayama", "chukyo", "kyoto", "hanshin", "kokura",
+    "all",
+]
+
+
 def run_scrape(args) -> None:
     from tqdm import tqdm
     from jra_predictor.scraper.race_list import RaceListScraper
@@ -110,8 +117,8 @@ def run_train(args) -> None:
     model_name = getattr(args, "model_name", "jra_v1")
     trainer = ModelTrainer()
 
-    # --- 1着モデル ---
-    print(f"[1/2] 1着モデル学習中... ({from_date} ~ {to_date})")
+    # --- 1着モデル (馬単用) ---
+    print(f"[1/3] 1着モデル学習中... ({from_date} ~ {to_date})")
     X_win, y_win = builder.build_training_set(from_date, to_date, target="win")
     print(f"  サンプル: {len(X_win)}, 1着率: {y_win.mean():.1%}")
     win_model = trainer.train(X_win, y_win)
@@ -121,8 +128,8 @@ def run_train(args) -> None:
         "features": list(X_win.columns),
     })
 
-    # --- 2着モデル ---
-    print(f"[2/2] 2着モデル学習中...")
+    # --- 2着モデル (馬単用) ---
+    print(f"[2/3] 2着モデル学習中...")
     X_place, y_place = builder.build_training_set(from_date, to_date, target="place")
     print(f"  サンプル: {len(X_place)}, 2着率: {y_place.mean():.1%}")
     place_model = trainer.train(X_place, y_place)
@@ -132,7 +139,18 @@ def run_train(args) -> None:
         "features": list(X_place.columns),
     })
 
-    print("学習完了")
+    # --- 3着以内モデル (三連複用) ---
+    print(f"[3/3] 3着以内モデル学習中...")
+    X_top3, y_top3 = builder.build_training_set(from_date, to_date, target="top3")
+    print(f"  サンプル: {len(X_top3)}, 3着以内率: {y_top3.mean():.1%}")
+    top3_model = trainer.train(X_top3, y_top3)
+    save_model(top3_model, f"{model_name}_top3", {
+        "from_date": from_date, "to_date": to_date,
+        "target": "top3", "positive_rate": float(y_top3.mean()),
+        "features": list(X_top3.columns),
+    })
+
+    print("学習完了（馬単 + 三連複）")
 
 
 def run_predict(args) -> None:
@@ -148,6 +166,7 @@ def run_predict(args) -> None:
     repo = Repository()
     model_name = getattr(args, "model_name", "jra_v1")
     top_n = getattr(args, "top_n", 3)
+    bet_type = getattr(args, "bet_type", "exacta")
 
     venue_code = None
     if hasattr(args, "venue") and args.venue != "all":
@@ -156,7 +175,7 @@ def run_predict(args) -> None:
     race_list_scraper = RaceListScraper(use_cache=False, cache_dir=CACHE_DIR)
     entry_scraper = RaceEntryScraper(use_cache=False, cache_dir=CACHE_DIR)
     builder = FeatureBuilder(repo)
-    predictor = ModelPredictor(model_name)
+    predictor = ModelPredictor(model_name, bet_types=[bet_type])
 
     if hasattr(args, "race_id") and args.race_id:
         race_ids = [args.race_id]
@@ -176,7 +195,6 @@ def run_predict(args) -> None:
                 continue
 
             df = builder.build_prediction_rows(race_id, entries, race_info)
-            ranked = predictor.predict_exacta(df, top_n=top_n)
 
             venue = race_info.get("venue_name", race_id[4:6])
             race_num = race_info.get("race_number", "?")
@@ -187,19 +205,37 @@ def run_predict(args) -> None:
 
             print(f"\nRace {race_id} - {venue}競馬場 第{race_num}R "
                   f"{track}{dist}m {cond} ({field_size}頭)")
-            print(f"馬単予想 上位{top_n}組み合わせ:")
 
-            for rank, row in ranked.iterrows():
-                fn = int(row.get("first_horse_number", 0))
-                fn_name = row.get("first_horse_name", "不明")
-                sn = int(row.get("second_horse_number", 0))
-                sn_name = row.get("second_horse_name", "不明")
-                prob = row.get("exacta_prob", 0)
-                print(
-                    f"  {rank}位: {fn}→{sn}  "
-                    f"({fn_name} → {sn_name})  "
-                    f"P={prob:.4f}"
-                )
+            if bet_type == "trio":
+                ranked = predictor.predict_trio(df, top_n=top_n)
+                print(f"三連複予想 上位{top_n}組み合わせ:")
+                for rank, row in ranked.iterrows():
+                    h1 = int(row.get("horse1_number", 0))
+                    h1n = row.get("horse1_name", "不明")
+                    h2 = int(row.get("horse2_number", 0))
+                    h2n = row.get("horse2_name", "不明")
+                    h3 = int(row.get("horse3_number", 0))
+                    h3n = row.get("horse3_name", "不明")
+                    prob = row.get("trio_prob", 0)
+                    print(
+                        f"  {rank}位: {h1}-{h2}-{h3}  "
+                        f"({h1n}, {h2n}, {h3n})  "
+                        f"P={prob:.4f}"
+                    )
+            else:
+                ranked = predictor.predict_exacta(df, top_n=top_n)
+                print(f"馬単予想 上位{top_n}組み合わせ:")
+                for rank, row in ranked.iterrows():
+                    fn = int(row.get("first_horse_number", 0))
+                    fn_name = row.get("first_horse_name", "不明")
+                    sn = int(row.get("second_horse_number", 0))
+                    sn_name = row.get("second_horse_name", "不明")
+                    prob = row.get("exacta_prob", 0)
+                    print(
+                        f"  {rank}位: {fn}→{sn}  "
+                        f"({fn_name} → {sn_name})  "
+                        f"P={prob:.4f}"
+                    )
         except Exception as e:
             logging.warning("Failed to predict race %s: %s", race_id, e)
 
@@ -209,19 +245,23 @@ def run_evaluate(args) -> None:
     from jra_predictor.storage.repository import Repository
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
-    from jra_predictor.model.evaluation import evaluate_exacta_roi, print_evaluation
+    from jra_predictor.model.evaluation import (
+        evaluate_exacta_roi, evaluate_trio_roi, print_evaluation,
+    )
 
     repo = Repository()
     model_name = getattr(args, "model_name", "jra_v1")
     top_n = getattr(args, "top_n", 1)
     threshold = getattr(args, "threshold", 0.01)
+    bet_type = getattr(args, "bet_type", "exacta")
     from_date = _parse_date(args.from_date)
     to_date = datetime.now().strftime("%Y-%m-%d")
 
     builder = FeatureBuilder(repo)
-    predictor = ModelPredictor(model_name)
+    predictor = ModelPredictor(model_name, bet_types=[bet_type])
 
-    print(f"評価期間: {from_date} ~ {to_date}")
+    label = "馬単" if bet_type == "exacta" else "三連複"
+    print(f"評価期間: {from_date} ~ {to_date} ({label})")
     entries_df = repo.get_entries_in_range(from_date, to_date)
     if len(entries_df) == 0:
         print("評価データがありません。先にスクレイピングを実行してください。")
@@ -230,19 +270,26 @@ def run_evaluate(args) -> None:
     all_combos = []
     for race_id, group in entries_df.groupby("race_id"):
         X_race = builder.build_prediction_rows(race_id, group.to_dict("records"), group.iloc[0].to_dict())
-        combos = predictor.predict_exacta(X_race, top_n=10)
+        if bet_type == "trio":
+            combos = predictor.predict_trio(X_race, top_n=10)
+        else:
+            combos = predictor.predict_exacta(X_race, top_n=10)
         combos["race_id"] = race_id
         all_combos.append(combos)
 
     predictions_df = pd.concat(all_combos, ignore_index=True)
-    result = evaluate_exacta_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
-    print_evaluation(result, top_n=top_n, threshold=threshold)
+
+    if bet_type == "trio":
+        result = evaluate_trio_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
+    else:
+        result = evaluate_exacta_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
+    print_evaluation(result, bet_type=bet_type, top_n=top_n, threshold=threshold)
 
 
 def main():
     parser = argparse.ArgumentParser(
         prog="jra",
-        description="JRA 中央競馬 馬単予想システム",
+        description="JRA 中央競馬 馬単・三連複予想システム",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -251,38 +298,26 @@ def main():
     p_scrape.add_argument("--date", help="特定日付 YYYYMMDD または YYYY-MM-DD")
     p_scrape.add_argument("--from-date", dest="from_date", help="開始日")
     p_scrape.add_argument("--to-date", dest="to_date", help="終了日")
-    p_scrape.add_argument(
-        "--venue",
-        choices=[
-            "sapporo", "hakodate", "fukushima", "niigata",
-            "tokyo", "nakayama", "chukyo", "kyoto", "hanshin", "kokura",
-            "all",
-        ],
-        default="all",
-    )
+    p_scrape.add_argument("--venue", choices=VENUE_CHOICES, default="all")
     p_scrape.add_argument("--no-cache", action="store_true", dest="no_cache")
 
     # train
-    p_train = sub.add_parser("train", help="予測モデルを学習する")
+    p_train = sub.add_parser("train", help="予測モデルを学習する（馬単+三連複）")
     p_train.add_argument("--from-date", required=True, dest="from_date")
     p_train.add_argument("--to-date", required=True, dest="to_date")
     p_train.add_argument("--model-name", dest="model_name", default="jra_v1")
 
     # predict
-    p_pred = sub.add_parser("predict", help="出馬表から馬単予想を出力する")
+    p_pred = sub.add_parser("predict", help="出馬表から予想を出力する")
     p_pred.add_argument("--race-id", dest="race_id", help="レースID (例: 202505030801)")
     p_pred.add_argument("--date", help="YYYYMMDD: その日の全レースを予想")
-    p_pred.add_argument(
-        "--venue",
-        choices=[
-            "sapporo", "hakodate", "fukushima", "niigata",
-            "tokyo", "nakayama", "chukyo", "kyoto", "hanshin", "kokura",
-            "all",
-        ],
-        default="all",
-    )
+    p_pred.add_argument("--venue", choices=VENUE_CHOICES, default="all")
     p_pred.add_argument("--model-name", dest="model_name", default="jra_v1")
     p_pred.add_argument("--top-n", dest="top_n", type=int, default=3)
+    p_pred.add_argument(
+        "--bet-type", dest="bet_type", choices=["exacta", "trio"], default="exacta",
+        help="馬券種: exacta=馬単, trio=三連複 (デフォルト: exacta)",
+    )
 
     # evaluate
     p_eval = sub.add_parser("evaluate", help="バックテストでROIを評価する")
@@ -292,6 +327,10 @@ def main():
                         help="上位N組合せを考慮（デフォルト: 1）")
     p_eval.add_argument("--threshold", dest="threshold", type=float, default=0.01,
                         help="確率閾値（デフォルト: 0.01）")
+    p_eval.add_argument(
+        "--bet-type", dest="bet_type", choices=["exacta", "trio"], default="exacta",
+        help="馬券種: exacta=馬単, trio=三連複 (デフォルト: exacta)",
+    )
 
     args = parser.parse_args()
 

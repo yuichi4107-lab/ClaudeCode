@@ -64,7 +64,7 @@ class RaceResultScraper(BaseScraper):
         }
 
     def _parse_payouts(self, soup: BeautifulSoup, race_id: str) -> list[dict]:
-        """払戻金テーブルから馬単・単勝の払戻情報を取得する。"""
+        """払戻金テーブルから馬単・三連複・単勝の払戻情報を取得する。"""
         payouts = []
         for table in soup.select("table.pay_table_01"):
             rows = table.select("tr")
@@ -75,7 +75,9 @@ class RaceResultScraper(BaseScraper):
 
                 bet_type_text = cells[0].get_text(strip=True)
 
-                if "馬単" in bet_type_text:
+                if "三連複" in bet_type_text:
+                    bet_type = "trio"
+                elif "馬単" in bet_type_text:
                     bet_type = "exacta"
                 elif "単勝" in bet_type_text:
                     bet_type = "win"
@@ -85,19 +87,34 @@ class RaceResultScraper(BaseScraper):
                 if len(cells) >= 3:
                     combo_text = cells[1].get_text(strip=True)
                     amount_text = cells[2].get_text(strip=True)
-
-                    combo_m = re.search(r"(\d+)\D+(\d+)", combo_text)
                     amount_m = re.search(r"([\d,]+)", amount_text)
 
-                    if combo_m and amount_m:
-                        combination = f"{combo_m.group(1)}-{combo_m.group(2)}"
-                        payout = float(amount_m.group(1).replace(",", ""))
-                        payouts.append({
-                            "race_id": race_id,
-                            "bet_type": bet_type,
-                            "combination": combination,
-                            "payout": payout,
-                        })
+                    if bet_type == "trio":
+                        # 三連複: "3-7-12" のように3頭の組み合わせ
+                        nums = re.findall(r"\d+", combo_text)
+                        if len(nums) >= 3 and amount_m:
+                            # ソートして順不同の正規形にする
+                            sorted_nums = sorted(nums[:3], key=int)
+                            combination = "-".join(sorted_nums)
+                            payout = float(amount_m.group(1).replace(",", ""))
+                            payouts.append({
+                                "race_id": race_id,
+                                "bet_type": bet_type,
+                                "combination": combination,
+                                "payout": payout,
+                            })
+                    else:
+                        # 馬単・単勝: "3-7" のように2頭
+                        combo_m = re.search(r"(\d+)\D+(\d+)", combo_text)
+                        if combo_m and amount_m:
+                            combination = f"{combo_m.group(1)}-{combo_m.group(2)}"
+                            payout = float(amount_m.group(1).replace(",", ""))
+                            payouts.append({
+                                "race_id": race_id,
+                                "bet_type": bet_type,
+                                "combination": combination,
+                                "payout": payout,
+                            })
 
         return payouts
 

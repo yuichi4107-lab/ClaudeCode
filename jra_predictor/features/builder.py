@@ -89,7 +89,7 @@ class FeatureBuilder:
         """
         Returns (X, y):
           X: 特徴量行列（1行=1出走）
-          y: ラベル。target="win" -> 1着, target="place" -> 2着
+          y: ラベル。target="win" -> 1着, "place" -> 2着, "top3" -> 3着以内
         """
         entries_df = self.repo.get_entries_in_range(from_date, to_date)
         logger.info(
@@ -106,14 +106,18 @@ class FeatureBuilder:
             feature_rows.append(row)
 
         df = pd.DataFrame(feature_rows)
-        if target == "place":
+        if target == "top3":
+            y = df.pop("is_top3").astype(int)
+            df.pop("is_winner", None)
+            df.pop("is_second", None)
+        elif target == "place":
             y = df.pop("is_second").astype(int)
-            if "is_winner" in df.columns:
-                df.pop("is_winner")
+            df.pop("is_winner", None)
+            df.pop("is_top3", None)
         else:
             y = df.pop("is_winner").astype(int)
-            if "is_second" in df.columns:
-                df.pop("is_second")
+            df.pop("is_second", None)
+            df.pop("is_top3", None)
         X = df[NUMERIC_FEATURES]
 
         # 欠損率が極端に高い特徴量を除外
@@ -158,6 +162,7 @@ class FeatureBuilder:
         row["is_winner"] = entry.get("is_winner")
         pos = entry.get("finish_position")
         row["is_second"] = 1 if pos == 2 else (0 if pos is not None else None)
+        row["is_top3"] = 1 if (pos is not None and pos <= 3) else (0 if pos is not None else None)
         return row
 
     def _horse_features(self, entry: pd.Series) -> dict:

@@ -229,6 +229,17 @@ class Repository:
             ).fetchone()
         return row["payout"] if row else None
 
+    def get_trio_payout(self, race_id: str, h1: int, h2: int, h3: int) -> float | None:
+        """三連複払戻金を取得する。combination は馬番をソートした '小-中-大' 形式。"""
+        sorted_nums = sorted([h1, h2, h3])
+        combination = f"{sorted_nums[0]}-{sorted_nums[1]}-{sorted_nums[2]}"
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT payout FROM race_payouts WHERE race_id=? AND bet_type='trio' AND combination=?",
+                (race_id, combination),
+            ).fetchone()
+        return row["payout"] if row else None
+
     def log_scrape(
         self, url: str, status_code: int, error_msg: str = None
     ) -> None:

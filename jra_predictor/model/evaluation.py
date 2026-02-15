@@ -11,10 +11,6 @@ def evaluate_exacta_roi(predictions_df: pd.DataFrame, repo, top_n: int = 1, thre
 
     predictions_df の必要列:
         race_id, first_horse_number, second_horse_number, exacta_prob
-
-    repo: Repository（馬単払戻金の取得に使用）
-    top_n: 1レースあたり考慮する上位組合せ数（1推奨）
-    threshold: 確率閾値（この値以上の予測のみ賭ける）
     """
     results = []
     for race_id, group in predictions_df.groupby("race_id"):
@@ -39,6 +35,44 @@ def evaluate_exacta_roi(predictions_df: pd.DataFrame, repo, top_n: int = 1, thre
                 }
             )
 
+    return _summarize(results)
+
+
+def evaluate_trio_roi(predictions_df: pd.DataFrame, repo, top_n: int = 1, threshold: float = 0.0) -> dict:
+    """
+    予測上位の三連複組み合わせに賭けた場合のROIをシミュレーションする。
+
+    predictions_df の必要列:
+        race_id, horse1_number, horse2_number, horse3_number, trio_prob
+    """
+    results = []
+    for race_id, group in predictions_df.groupby("race_id"):
+        filtered = group[group["trio_prob"] >= threshold]
+        if len(filtered) == 0:
+            continue
+
+        top_combos = filtered.nlargest(top_n, "trio_prob")
+
+        for _, row in top_combos.iterrows():
+            h1 = int(row["horse1_number"])
+            h2 = int(row["horse2_number"])
+            h3 = int(row["horse3_number"])
+
+            payout = repo.get_trio_payout(race_id, h1, h2, h3)
+            hit = payout is not None and payout > 0
+
+            results.append(
+                {
+                    "race_id": race_id,
+                    "hit": hit,
+                    "payout": payout / 100.0 if hit else 0.0,
+                }
+            )
+
+    return _summarize(results)
+
+
+def _summarize(results: list[dict]) -> dict:
     if not results:
         return {"error": "No bets placed (threshold too high or no data)"}
 
@@ -57,8 +91,9 @@ def evaluate_exacta_roi(predictions_df: pd.DataFrame, repo, top_n: int = 1, thre
     }
 
 
-def print_evaluation(result: dict, top_n: int = 1, threshold: float = 0.0) -> None:
-    print("\n=== バックテスト結果（馬単） ===")
+def print_evaluation(result: dict, bet_type: str = "exacta", top_n: int = 1, threshold: float = 0.0) -> None:
+    label = "馬単" if bet_type == "exacta" else "三連複"
+    print(f"\n=== バックテスト結果（{label}） ===")
     print(f"戦略: top_n={top_n}, threshold={threshold:.4f}")
     if "error" in result:
         print(f"エラー: {result['error']}")
