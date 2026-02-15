@@ -86,8 +86,9 @@ class ModelTrainer:
         # 全データで再学習
         pipeline.fit(X, y)
 
-        # 確率キャリブレーション
-        calibrated = CalibratedClassifierCV(pipeline, cv=n_splits, method="isotonic")
+        # 確率キャリブレーション (TimeSeriesSplitで)
+        tscv_cal = TimeSeriesSplit(n_splits=n_splits)
+        calibrated = CalibratedClassifierCV(pipeline, cv=tscv_cal, method="isotonic")
         calibrated.fit(X, y)
 
         return {
