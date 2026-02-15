@@ -154,6 +154,7 @@ def run_train(args) -> None:
 
 
 def run_predict(args) -> None:
+    from math import comb
     from jra_predictor.scraper.race_list import RaceListScraper
     from jra_predictor.scraper.race_entry import RaceEntryScraper
     from jra_predictor.storage.database import init_db
@@ -161,7 +162,8 @@ def run_predict(args) -> None:
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
     from jra_predictor.model.strategy import (
-        score_exacta_race, score_trio_race, select_races, print_race_selection,
+        score_exacta_race, score_trio_race, score_trio_box_race,
+        select_races, print_race_selection,
     )
     from jra_predictor.config.settings import VENUE_CODES, VENUE_NAMES_JP, CACHE_DIR
 
@@ -172,6 +174,7 @@ def run_predict(args) -> None:
     bet_type = getattr(args, "bet_type", "exacta")
     max_races = getattr(args, "max_races", 0)  # 0 = 全レース
     min_confidence = getattr(args, "min_confidence", 0.0)
+    box_size = getattr(args, "box", 0)
 
     venue_code = None
     if hasattr(args, "venue") and args.venue != "all":
@@ -204,26 +207,52 @@ def run_predict(args) -> None:
             df = builder.build_prediction_rows(race_id, entries, race_info)
             field_size = len(entries)
 
-            if bet_type == "trio":
+            if bet_type == "trio" and box_size > 0:
+                # ボックスモード
+                box_result = predictor.predict_trio_box(df, box_size=box_size)
+                all_probs = sorted(
+                    [h["top3_prob"] for h in box_result["selected_horses"]]
+                    + [0.0] * max(0, field_size - box_size),
+                    reverse=True,
+                )
+                # 全馬のP(top3)を取得してスコアリング
+                import numpy as np
+                all_top3 = predictor.predict_top3_probs(df)
+                all_top3_sorted = sorted(all_top3.tolist(), reverse=True)
+                score = score_trio_box_race(
+                    box_result["selected_horses"], box_size, field_size, all_top3_sorted,
+                )
+                score["race_id"] = race_id
+                score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
+                score["race_number"] = race_info.get("race_number", "?")
+                score["race_info"] = race_info
+                score["box_result"] = box_result
+                race_results.append(score)
+            elif bet_type == "trio":
                 ranked = predictor.predict_trio(df, top_n=max(top_n, 5))
                 score = score_trio_race(ranked, field_size)
+                score["race_id"] = race_id
+                score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
+                score["race_number"] = race_info.get("race_number", "?")
+                score["race_info"] = race_info
+                score["ranked"] = ranked
+                race_results.append(score)
             else:
                 ranked = predictor.predict_exacta(df, top_n=max(top_n, 5))
                 score = score_exacta_race(ranked, field_size)
-
-            score["race_id"] = race_id
-            score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
-            score["race_number"] = race_info.get("race_number", "?")
-            score["race_info"] = race_info
-            score["ranked"] = ranked
-            race_results.append(score)
+                score["race_id"] = race_id
+                score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
+                score["race_number"] = race_info.get("race_number", "?")
+                score["race_info"] = race_info
+                score["ranked"] = ranked
+                race_results.append(score)
         except Exception as e:
             logging.warning("Failed to predict race %s: %s", race_id, e)
 
     # 選択的モード: 自信度上位のレースのみ出力
     if max_races > 0:
         selected = select_races(race_results, max_races=max_races, min_confidence=min_confidence)
-        print_race_selection(selected, bet_type=bet_type)
+        print_race_selection(selected, bet_type=bet_type, box_size=box_size)
         output_races = selected
     else:
         output_races = race_results
@@ -232,7 +261,6 @@ def run_predict(args) -> None:
     for score in output_races:
         race_id = score["race_id"]
         race_info = score["race_info"]
-        ranked = score["ranked"]
 
         venue = race_info.get("venue_name", race_id[4:6])
         race_num = race_info.get("race_number", "?")
@@ -241,12 +269,27 @@ def run_predict(args) -> None:
         cond = race_info.get("track_condition", "")
         field_size = score.get("field_size", "?")
 
-        conf_str = f" [自信度: {score['confidence_score']:.2f}, 優位率: {score['edge_ratio']:.1f}x]"
+        conf_str = f" [自信度: {score['confidence_score']:.2f}]"
         print(f"\nRace {race_id} - {venue}競馬場 第{race_num}R "
               f"{track}{dist}m {cond} ({field_size}頭){conf_str}")
 
-        display_ranked = ranked.head(top_n)
-        if bet_type == "trio":
+        if bet_type == "trio" and box_size > 0:
+            # ボックス出力
+            box_result = score["box_result"]
+            n_tickets = box_result["n_tickets"]
+            print(f"三連複 {box_size}頭BOX ({n_tickets}点):")
+            print(f"  選出馬:")
+            for h in box_result["selected_horses"]:
+                print(f"    {int(h['horse_number']):>2} {h['horse_name']:<12} P(top3)={h['top3_prob']:.3f}")
+            print(f"  購入組み合わせ:")
+            for _, row in box_result["box_combos"].iterrows():
+                h1 = int(row["horse1_number"])
+                h2 = int(row["horse2_number"])
+                h3 = int(row["horse3_number"])
+                print(f"    {h1}-{h2}-{h3}")
+        elif bet_type == "trio":
+            ranked = score["ranked"]
+            display_ranked = ranked.head(top_n)
             print(f"三連複予想 上位{top_n}組み合わせ:")
             for rank, row in display_ranked.iterrows():
                 h1 = int(row.get("horse1_number", 0))
@@ -262,6 +305,8 @@ def run_predict(args) -> None:
                     f"P={prob:.4f}"
                 )
         else:
+            ranked = score["ranked"]
+            display_ranked = ranked.head(top_n)
             print(f"馬単予想 上位{top_n}組み合わせ:")
             for rank, row in display_ranked.iterrows():
                 fn = int(row.get("first_horse_number", 0))
@@ -281,7 +326,9 @@ def run_evaluate(args) -> None:
     from jra_predictor.storage.repository import Repository
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
-    from jra_predictor.model.strategy import score_exacta_race, score_trio_race
+    from jra_predictor.model.strategy import (
+        score_exacta_race, score_trio_race, score_trio_box_race,
+    )
     from jra_predictor.model.evaluation import (
         evaluate_exacta_roi, evaluate_trio_roi,
         evaluate_selective_roi,
@@ -295,13 +342,20 @@ def run_evaluate(args) -> None:
     bet_type = getattr(args, "bet_type", "exacta")
     max_races = getattr(args, "max_races", 0)
     min_confidence = getattr(args, "min_confidence", 0.0)
+    box_size = getattr(args, "box", 0)
     from_date = _parse_date(args.from_date)
     to_date = datetime.now().strftime("%Y-%m-%d")
 
     builder = FeatureBuilder(repo)
     predictor = ModelPredictor(model_name, bet_types=[bet_type])
 
-    label = "馬単" if bet_type == "exacta" else "三連複"
+    if bet_type == "trio" and box_size > 0:
+        from math import comb
+        label = f"三連複{box_size}頭BOX({comb(box_size, 3)}点/R)"
+    elif bet_type == "trio":
+        label = "三連複"
+    else:
+        label = "馬単"
     mode = "選択的" if max_races > 0 else "全レース"
     print(f"評価期間: {from_date} ~ {to_date} ({label}, {mode})")
     entries_df = repo.get_entries_in_range(from_date, to_date)
@@ -317,21 +371,41 @@ def run_evaluate(args) -> None:
                 race_id, group.to_dict("records"), group.iloc[0].to_dict()
             )
             field_size = len(group)
+            race_date = f"{race_id[:4]}-{race_id[6:8]}-{race_id[8:10]}"
 
-            if bet_type == "trio":
+            if bet_type == "trio" and box_size > 0:
+                box_result = predictor.predict_trio_box(X_race, box_size=box_size)
+                import numpy as np
+                all_top3 = predictor.predict_top3_probs(X_race)
+                all_top3_sorted = sorted(all_top3.tolist(), reverse=True)
+                score = score_trio_box_race(
+                    box_result["selected_horses"], box_size, field_size, all_top3_sorted,
+                )
+                race_predictions.append({
+                    "race_id": race_id,
+                    "race_date": race_date,
+                    "confidence_score": score["confidence_score"],
+                    "box_combos": box_result["box_combos"],
+                    "predictions": box_result["box_combos"],
+                })
+            elif bet_type == "trio":
                 preds = predictor.predict_trio(X_race, top_n=10)
                 score = score_trio_race(preds, field_size)
+                race_predictions.append({
+                    "race_id": race_id,
+                    "race_date": race_date,
+                    "confidence_score": score["confidence_score"],
+                    "predictions": preds,
+                })
             else:
                 preds = predictor.predict_exacta(X_race, top_n=10)
                 score = score_exacta_race(preds, field_size)
-
-            race_date = f"{race_id[:4]}-{race_id[6:8]}-{race_id[8:10]}"
-            race_predictions.append({
-                "race_id": race_id,
-                "race_date": race_date,
-                "confidence_score": score["confidence_score"],
-                "predictions": preds,
-            })
+                race_predictions.append({
+                    "race_id": race_id,
+                    "race_date": race_date,
+                    "confidence_score": score["confidence_score"],
+                    "predictions": preds,
+                })
 
         result = evaluate_selective_roi(
             race_predictions, repo,
@@ -339,10 +413,12 @@ def run_evaluate(args) -> None:
             max_races_per_day=max_races,
             min_confidence=min_confidence,
             top_n_per_race=top_n,
+            box_size=box_size,
         )
         print_selective_evaluation(
             result, bet_type=bet_type,
-            max_races=max_races, min_confidence=min_confidence, top_n=top_n,
+            max_races=max_races, min_confidence=min_confidence,
+            top_n=top_n, box_size=box_size,
         )
     else:
         # 従来の全レース評価
@@ -407,6 +483,10 @@ def main():
         "--min-confidence", dest="min_confidence", type=float, default=0.0,
         help="最低自信度スコア (デフォルト: 0.0)",
     )
+    p_pred.add_argument(
+        "--box", dest="box", type=int, default=0, choices=[0, 4, 5],
+        help="三連複ボックス頭数 (4=4点BOX, 5=10点BOX, 0=通常)",
+    )
 
     # evaluate
     p_eval = sub.add_parser("evaluate", help="バックテストでROIを評価する")
@@ -427,6 +507,10 @@ def main():
     p_eval.add_argument(
         "--min-confidence", dest="min_confidence", type=float, default=0.0,
         help="最低自信度スコア (デフォルト: 0.0)",
+    )
+    p_eval.add_argument(
+        "--box", dest="box", type=int, default=0, choices=[0, 4, 5],
+        help="三連複ボックス頭数 (4=4点BOX, 5=10点BOX, 0=通常)",
     )
 
     args = parser.parse_args()

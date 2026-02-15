@@ -103,6 +103,10 @@ python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3
 python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --max-races 5
 python -m jra_predictor.cli.main predict --date 20260215 --bet-type exacta --max-races 4 --min-confidence 2.0
 
+# 三連複ボックス買い: 4頭BOX(4点) or 5頭BOX(10点)
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --box 4 --max-races 5
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --box 5 --max-races 4
+
 # バックテスト ROI 評価（全レース）
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type exacta
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio
@@ -111,9 +115,14 @@ python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --max-races 6
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type exacta --max-races 4 --min-confidence 2.0
 
+# バックテスト（三連複ボックス: 1日5R × 4頭BOX = 20点/日）
+python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --box 4 --max-races 5
+python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --box 5 --max-races 4
+
 # setup.py でインストール後はショートカットが使える
 jra scrape --date 20260215
 jra predict --date 20260215 --venue hanshin --bet-type trio
+jra predict --date 20260215 --bet-type trio --box 4 --max-races 5
 ```
 
 ### Architecture
@@ -152,4 +161,5 @@ jra_predictor/
 - **モデル3本構成**: `{name}_win.joblib` + `{name}_place.joblib` + `{name}_top3.joblib`
 - **選択的ベッティング**: `--max-races N` で1日あたりN件に絞り込み。自信度スコア = edge_ratio × (1 + separation/top1_prob) で算出
 - **自信度スコア**: モデル予測確率 / ランダム確率（=優位率）× 確信度係数。高いほど買い
-- **推奨戦略**: `--max-races 4〜6 --min-confidence 2.0` で高自信度レースのみ選択し ROI 向上を狙う
+- **三連複ボックス**: `--box 4` (4頭=4点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全組み合わせ購入
+- **推奨戦略**: `--bet-type trio --box 4 --max-races 5` で1日5R × 4点 = 20点購入、高自信度レースのみ選択

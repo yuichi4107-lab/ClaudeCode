@@ -191,3 +191,60 @@ class ModelPredictor:
         )
         result.index += 1
         return result
+
+    # ----------------------------------------------------------- 三連複ボックス
+
+    def predict_trio_box(
+        self, entries_df: pd.DataFrame, box_size: int = 4
+    ) -> dict:
+        """
+        P(3着以内) 上位 box_size 頭を選び、その全組み合わせをボックス購入する。
+
+        4頭ボックス: C(4,3) =  4 点
+        5頭ボックス: C(5,3) = 10 点
+
+        Returns dict:
+            selected_horses: list[dict]  - 選出馬 (馬番, 馬名, P_top3)
+            box_combos: pd.DataFrame     - 購入する全組み合わせ
+            n_tickets: int               - 購入点数
+        """
+        top3_probs = self.predict_top3_probs(entries_df)
+
+        # P(top3) でソートし上位 box_size 頭を選出
+        indices = np.argsort(top3_probs)[::-1][:box_size]
+        indices = sorted(indices)  # 馬番順に並べ直す
+
+        selected_horses = []
+        for idx in indices:
+            selected_horses.append({
+                "horse_number": entries_df.iloc[idx].get("horse_number"),
+                "horse_name": entries_df.iloc[idx].get("horse_name", ""),
+                "top3_prob": round(top3_probs[idx], 4),
+            })
+
+        # 選出馬の全3頭組み合わせ
+        combos = []
+        for ci, cj, ck in combinations(range(len(indices)), 3):
+            i, j, k = indices[ci], indices[cj], indices[ck]
+            prob = top3_probs[i] * top3_probs[j] * top3_probs[k]
+            combos.append({
+                "horse1_number": entries_df.iloc[i].get("horse_number"),
+                "horse1_name": entries_df.iloc[i].get("horse_name", ""),
+                "horse2_number": entries_df.iloc[j].get("horse_number"),
+                "horse2_name": entries_df.iloc[j].get("horse_name", ""),
+                "horse3_number": entries_df.iloc[k].get("horse_number"),
+                "horse3_name": entries_df.iloc[k].get("horse_name", ""),
+                "trio_prob": round(prob, 6),
+            })
+
+        box_df = pd.DataFrame(combos)
+        if not box_df.empty:
+            box_df = box_df.sort_values("trio_prob", ascending=False).reset_index(drop=True)
+            box_df.index += 1
+
+        return {
+            "selected_horses": selected_horses,
+            "box_combos": box_df,
+            "n_tickets": len(combos),
+            "box_size": box_size,
+        }

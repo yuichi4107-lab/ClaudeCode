@@ -9,7 +9,10 @@
   2. separation: 1位予測と2位予測の確率差（予測の確信度）
   3. confidence_score = edge_ratio × (1 + separation / top1_prob)
 
-高スコアのレースほど「モデルが自信を持っている」＝的中期待値が高い。
+三連複ボックス用:
+  - top_sum: 選出馬のP(top3)合計値。高いほどモデルが上位馬を明確に識別
+  - gap: 選出馬の最下位と次点の差。ボックスの境界が明確か
+  - confidence_score = (top_sum / 3) × (1 + gap) × box_edge
 """
 
 import logging
@@ -76,6 +79,65 @@ def score_trio_race(ranked_df: pd.DataFrame, field_size: int) -> dict:
     }
 
 
+def score_trio_box_race(
+    selected_horses: list[dict],
+    box_size: int,
+    field_size: int,
+    all_top3_probs: list[float],
+) -> dict:
+    """
+    三連複ボックスにおけるレースの自信度スコアを算出する。
+
+    selected_horses: 選出馬リスト（top3_prob 含む）
+    box_size: ボックスサイズ (4 or 5)
+    field_size: 出走頭数
+    all_top3_probs: 全馬のP(top3) ソート済み降順
+
+    スコアの考え方:
+      - top_sum: 選出馬のP(top3)合計。3を超えるほど有力馬が集中
+      - gap: ボックス内最下位とボックス外最上位の差。大きいほど境界が明確
+      - box_edge: ボックス的中確率 / ランダムボックス確率
+    """
+    if len(selected_horses) < box_size or field_size < box_size:
+        return {"confidence_score": 0.0, "top_sum": 0.0, "gap": 0.0, "box_edge": 0.0}
+
+    top_probs = [h["top3_prob"] for h in selected_horses]
+    top_sum = sum(top_probs)
+
+    # ボックス内最下位 vs ボックス外最上位の差
+    if len(all_top3_probs) > box_size:
+        gap = all_top3_probs[box_size - 1] - all_top3_probs[box_size]
+    else:
+        gap = all_top3_probs[box_size - 1]
+
+    # ボックス的中確率の近似: 選出馬のうち3頭が3着以内に入る確率
+    # 全C(box,3)組の中で最大のもの（最も確率が高い3頭組）
+    from itertools import combinations as combs
+    max_combo_prob = 0.0
+    for combo in combs(top_probs, 3):
+        p = combo[0] * combo[1] * combo[2]
+        max_combo_prob = max(max_combo_prob, p)
+
+    # ランダムにbox_size頭選んだときの的中確率
+    n_total_combos = comb(field_size, 3)
+    n_box_combos = comb(box_size, 3)
+    random_box_prob = n_box_combos / max(n_total_combos, 1)
+
+    box_edge = max_combo_prob / max(random_box_prob / n_box_combos, 1e-9)
+
+    confidence_score = (top_sum / 3.0) * (1.0 + gap) * max(box_edge, 1.0)
+
+    return {
+        "confidence_score": round(confidence_score, 4),
+        "top_sum": round(top_sum, 4),
+        "gap": round(gap, 4),
+        "box_edge": round(box_edge, 4),
+        "field_size": field_size,
+        "box_size": box_size,
+        "n_tickets": n_box_combos,
+    }
+
+
 def select_races(
     race_scores: list[dict],
     max_races: int = 6,
@@ -86,7 +148,7 @@ def select_races(
     """
     自信度スコア上位のレースを max_races 件まで選出する。
 
-    race_scores: score_exacta_race / score_trio_race の結果リスト
+    race_scores: score_*_race の結果リスト
                  （各 dict に race_id, confidence_score 等を含む）
     max_races: 1日あたり最大購入レース数
     min_confidence: 最低自信度スコア（これ未満は除外）
@@ -104,21 +166,45 @@ def select_races(
     return sorted_scores[:max_races]
 
 
-def print_race_selection(selected: list[dict], bet_type: str = "exacta") -> None:
+def print_race_selection(selected: list[dict], bet_type: str = "exacta", box_size: int = 0) -> None:
     """選択されたレースの自信度情報を出力する。"""
-    label = "馬単" if bet_type == "exacta" else "三連複"
+    if bet_type == "trio" and box_size > 0:
+        label = f"三連複{box_size}頭BOX"
+        n_tickets = comb(box_size, 3)
+    elif bet_type == "trio":
+        label = "三連複"
+    else:
+        label = "馬単"
+
     print(f"\n=== {label} 厳選レース ({len(selected)}R) ===")
-    print(f"{'No':>3} {'Race ID':>14} {'会場':>6} {'R':>3} {'頭数':>4} "
-          f"{'自信度':>8} {'優位率':>8} {'Top1確率':>10} {'ランダム':>10}")
-    print("-" * 80)
-    for i, s in enumerate(selected, 1):
-        print(
-            f"{i:3d} {s.get('race_id', ''):>14} "
-            f"{s.get('venue', ''):>6} "
-            f"{s.get('race_number', '?'):>3} "
-            f"{s.get('field_size', 0):>4} "
-            f"{s['confidence_score']:>8.2f} "
-            f"{s['edge_ratio']:>7.1f}x "
-            f"{s['top1_prob']:>10.4f} "
-            f"{s['random_prob']:>10.6f}"
-        )
+
+    if bet_type == "trio" and box_size > 0:
+        print(f"{'No':>3} {'Race ID':>14} {'会場':>6} {'R':>3} {'頭数':>4} "
+              f"{'自信度':>8} {'Top合計':>8} {'Gap':>6} {'点数':>4}")
+        print("-" * 72)
+        for i, s in enumerate(selected, 1):
+            print(
+                f"{i:3d} {s.get('race_id', ''):>14} "
+                f"{s.get('venue', ''):>6} "
+                f"{s.get('race_number', '?'):>3} "
+                f"{s.get('field_size', 0):>4} "
+                f"{s['confidence_score']:>8.2f} "
+                f"{s.get('top_sum', 0):>8.3f} "
+                f"{s.get('gap', 0):>6.3f} "
+                f"{s.get('n_tickets', n_tickets):>4}"
+            )
+    else:
+        print(f"{'No':>3} {'Race ID':>14} {'会場':>6} {'R':>3} {'頭数':>4} "
+              f"{'自信度':>8} {'優位率':>8} {'Top1確率':>10} {'ランダム':>10}")
+        print("-" * 80)
+        for i, s in enumerate(selected, 1):
+            print(
+                f"{i:3d} {s.get('race_id', ''):>14} "
+                f"{s.get('venue', ''):>6} "
+                f"{s.get('race_number', '?'):>3} "
+                f"{s.get('field_size', 0):>4} "
+                f"{s['confidence_score']:>8.2f} "
+                f"{s['edge_ratio']:>7.1f}x "
+                f"{s['top1_prob']:>10.4f} "
+                f"{s['random_prob']:>10.6f}"
+            )
