@@ -138,7 +138,7 @@ jra_predictor/
 ├── storage/
 │   ├── database.py         SQLite スキーマ定義・接続管理 (WAL モード) - course_direction 列追加
 │   └── repository.py       CRUD: upsert_race, upsert_entries, get_entries_in_range 等
-├── features/builder.py     特徴量生成 (28特徴量)。芝/ダート適性・コース方向を追加
+├── features/builder.py     特徴量生成 (33特徴量)。上がり3F・馬齢・モメンタム等を追加
 ├── model/
 │   ├── trainer.py          TimeSeriesSplit + LightGBM/HGBT + CalibratedClassifierCV
 │   ├── predictor.py        3モデル(win/place/top3)から馬連・三連複確率を計算
@@ -154,7 +154,7 @@ jra_predictor/
 - **コース方向**: 右回り・左回り・直線の区別を特徴量に追加
 - **出馬表URL**: race.netkeiba.com（JRA用）。nankan は nar.netkeiba.com
 - **DB**: data/jra.db（nankan とは別ファイル）
-- **特徴量**: horse_same_track_type_win_rate (芝/ダート適性), course_direction_enc を追加 (計28特徴量)
+- **特徴量**: 33特徴量。上がり3F平均・前走人気・着順モメンタム・馬齢・性別・騎手3着以内率等を含む
 - **馬券種**: 馬連 (quinella) と三連複 (trio) の2種対応。`--bet-type` オプションで切替
 - **馬連確率**: `P(i,j) ≈ P_win(i)*P_place(j)/(1-P_win(i)) + P_win(j)*P_place(i)/(1-P_win(j))` で近似（順不同）
 - **三連複確率**: `P(i,j,k) ≈ P_top3(i) * P_top3(j) * P_top3(k)` で近似（順不同）
@@ -162,5 +162,5 @@ jra_predictor/
 - **選択的ベッティング**: `--max-races N` で1日あたりN件に絞り込み。自信度スコア = edge_ratio × (1 + separation/top1_prob) で算出
 - **自信度スコア**: モデル予測確率 / ランダム確率（=優位率）× 確信度係数。高いほど買い
 - **三連複ボックス**: `--box 4` (4頭=4点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全組み合わせ購入
-- **推奨戦略**: `--bet-type trio --box 4 --max-races 5` で1日5R × 4点 = 20点購入、高自信度レースのみ選択
+- **推奨戦略**: ROI重視: `--bet-type trio --box 4 --max-races 5` (ROI+159%)、安定重視: `--bet-type trio --box 5 --max-races 5` (ROI+142%, 的中率4.6%)
 - **データ移行**: 馬単(exacta)から馬連(quinella)への変更に伴い、払戻データの再スクレイプが必要（`bet_type='quinella'` で保存）
