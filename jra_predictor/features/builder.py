@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from datetime import datetime
 
 import numpy as np
@@ -49,18 +50,16 @@ NUMERIC_FEATURES = [
     "popularity_rank",
 ]
 
+_VENUE_VALUES = list(VENUE_CODES.values())
 
-def _speed_index(row: pd.Series) -> float:
-    """スピード指数 = 距離(m) / タイム(秒)。高いほど速い。"""
-    dist = row.get("distance")
-    t = row.get("finish_time")
-    if dist and t and t > 0:
-        return dist / t
+
+def _speed_index_vals(distance, finish_time) -> float:
+    if distance and finish_time and finish_time > 0:
+        return distance / finish_time
     return np.nan
 
 
 def _days_between(date_a: str, date_b: str) -> float:
-    """date_a - date_b の日数差（正の値）。"""
     try:
         da = datetime.strptime(date_a[:10], "%Y-%m-%d")
         db = datetime.strptime(date_b[:10], "%Y-%m-%d")
@@ -80,6 +79,9 @@ class FeatureBuilder:
 
     def __init__(self, repo: Repository):
         self.repo = repo
+        self._horse_hist_dict = None  # horse_id -> list of tuples
+        self._jockey_overall_dict = None  # jockey_id -> list of (race_date, finish_pos)
+        self._jockey_venue_dict = None  # (jockey_id, venue_code) -> list of (race_date, finish_pos)
 
     # ------------------------------------------------------------------ public
 
@@ -94,33 +96,41 @@ class FeatureBuilder:
         entries_df = self.repo.get_entries_in_range(from_date, to_date)
         logger.info(
             "Building features for %d entries (%s ~ %s) target=%s",
-            len(entries_df),
-            from_date,
-            to_date,
-            target,
+            len(entries_df), from_date, to_date, target,
         )
 
+        self._preload_data()
+
         feature_rows = []
-        for _, entry in entries_df.iterrows():
+        try:
+            from tqdm import tqdm
+            iterator = tqdm(entries_df.iterrows(), total=len(entries_df), desc="Features")
+        except ImportError:
+            iterator = entries_df.iterrows()
+        for _, entry in iterator:
             row = self._build_row(entry)
             feature_rows.append(row)
 
+        self._horse_hist_dict = None
+        self._jockey_overall_dict = None
+        self._jockey_venue_dict = None
+
         df = pd.DataFrame(feature_rows)
+        drop_labels = {"is_winner", "is_second", "is_top3"}
         if target == "top3":
             y = df.pop("is_top3").astype(int)
-            df.pop("is_winner", None)
-            df.pop("is_second", None)
+            drop_labels.discard("is_top3")
         elif target == "place":
             y = df.pop("is_second").astype(int)
-            df.pop("is_winner", None)
-            df.pop("is_top3", None)
+            drop_labels.discard("is_second")
         else:
             y = df.pop("is_winner").astype(int)
-            df.pop("is_second", None)
-            df.pop("is_top3", None)
+            drop_labels.discard("is_winner")
+        for col in drop_labels:
+            if col in df.columns:
+                df.drop(columns=[col], inplace=True)
         X = df[NUMERIC_FEATURES]
 
-        # 欠損率が極端に高い特徴量を除外
         missing_rate = X.isna().mean()
         threshold = 0.8
         drop_cols = missing_rate[missing_rate > threshold].index.tolist()
@@ -133,9 +143,6 @@ class FeatureBuilder:
     def build_prediction_rows(
         self, race_id: str, entries: list[dict], race_info: dict
     ) -> pd.DataFrame:
-        """
-        出馬表エントリーから予測用特徴量を生成する。
-        """
         rows = []
         for entry in entries:
             entry_series = pd.Series({**entry, **race_info})
@@ -148,10 +155,56 @@ class FeatureBuilder:
         for col in NUMERIC_FEATURES:
             if col not in df.columns:
                 df[col] = np.nan
-
         return df
 
+    def ensure_preloaded(self):
+        """評価時など、外部から明示的にプリロードを呼ぶ。"""
+        if self._horse_hist_dict is None:
+            self._preload_data()
+
     # --------------------------------------------------------------- private
+
+    def _preload_data(self):
+        """全馬の過去成績と騎手成績を辞書にプリロード。"""
+        logger.info("Preloading data into memory...")
+        conn = self.repo._conn()
+
+        # 馬の過去成績をhorse_id別の辞書に格納
+        cursor = conn.execute(
+            """SELECT horse_id, race_date, venue_name, distance,
+                      track_type, finish_position, finish_time
+               FROM horse_history_cache
+               ORDER BY horse_id, race_date DESC"""
+        )
+        self._horse_hist_dict = defaultdict(list)
+        count = 0
+        for row in cursor:
+            self._horse_hist_dict[row[0]].append({
+                "race_date": row[1], "venue_name": row[2],
+                "distance": row[3], "track_type": row[4],
+                "finish_position": row[5], "finish_time": row[6],
+            })
+            count += 1
+        logger.info("  Horse history: %d records, %d horses", count, len(self._horse_hist_dict))
+
+        # 騎手成績をjockey_id別の辞書に格納
+        cursor = conn.execute(
+            """SELECT e.jockey_id, r.race_date, e.finish_position, r.venue_code
+               FROM race_entries e
+               JOIN races r ON e.race_id = r.race_id
+               WHERE e.finish_position IS NOT NULL
+               ORDER BY e.jockey_id, r.race_date"""
+        )
+        self._jockey_overall_dict = defaultdict(list)
+        self._jockey_venue_dict = defaultdict(list)
+        count = 0
+        for row in cursor:
+            jid, rdate, fpos, vc = row
+            self._jockey_overall_dict[jid].append((rdate, fpos))
+            self._jockey_venue_dict[(jid, vc)].append((rdate, fpos))
+            count += 1
+        logger.info("  Jockey stats: %d records, %d jockeys", count, len(self._jockey_overall_dict))
+        conn.close()
 
     def _build_row(self, entry: pd.Series) -> dict:
         row = {}
@@ -191,56 +244,73 @@ class FeatureBuilder:
         if not horse_id or not race_date:
             return null_feats
 
-        history = self.repo.get_horse_history(horse_id, before_date=race_date, limit=20)
-        if history.empty:
+        # 辞書からO(1)で取得してフィルタ
+        if self._horse_hist_dict is not None:
+            all_hist = self._horse_hist_dict.get(horse_id, [])
+            # already sorted by race_date DESC, filter before_date
+            history = [h for h in all_hist if h["race_date"] < race_date][:20]
+        else:
+            hist_df = self.repo.get_horse_history(horse_id, before_date=race_date, limit=20)
+            if hist_df.empty:
+                return null_feats
+            history = hist_df.to_dict("records")
+
+        if not history:
             return null_feats
 
-        last1 = history.iloc[0]
-        last3 = history.head(3)
-        last5 = history.head(5)
+        last1 = history[0]
+        last3 = history[:3]
+        last5 = history[:5]
 
-        same_venue = history[history["venue_name"] == venue_name]
+        # 着順リスト
+        all_pos = [h["finish_position"] for h in history if h["finish_position"] is not None]
+        l3_pos = [h["finish_position"] for h in last3 if h["finish_position"] is not None]
+        l5_pos = [h["finish_position"] for h in last5 if h["finish_position"] is not None]
+
+        # 同会場
+        sv_pos = [h["finish_position"] for h in history
+                   if h["venue_name"] == venue_name and h["finish_position"] is not None]
+
+        # 同距離（±100m）
         if distance:
-            same_dist = history[
-                history["distance"].apply(
-                    lambda d: abs(d - distance) <= 100 if pd.notna(d) else False
-                )
-            ]
+            sd_pos = [h["finish_position"] for h in history
+                       if h["distance"] is not None and abs(h["distance"] - distance) <= 100
+                       and h["finish_position"] is not None]
         else:
-            same_dist = pd.DataFrame()
+            sd_pos = []
 
-        # 同じコース種別（芝/ダート）での成績
+        # 同コース種別
         if track_type:
-            same_track = history[history["track_type"] == track_type]
+            st_pos = [h["finish_position"] for h in history
+                       if h["track_type"] == track_type and h["finish_position"] is not None]
         else:
-            same_track = pd.DataFrame()
+            st_pos = []
+
+        # スピード指数
+        si_last1 = _speed_index_vals(last1.get("distance"), last1.get("finish_time"))
+        si_last3 = [_speed_index_vals(h.get("distance"), h.get("finish_time")) for h in last3]
+        si_last3_valid = [s for s in si_last3 if not np.isnan(s)]
 
         return {
             "horse_last1_finish": last1["finish_position"],
-            "horse_last3_avg_finish": last3["finish_position"].mean(),
-            "horse_last5_win_rate": (last5["finish_position"] == 1).mean(),
-            "horse_last5_top3_rate": (last5["finish_position"] <= 3).mean(),
-            "horse_career_win_rate": (history["finish_position"] == 1).mean(),
+            "horse_last3_avg_finish": np.mean(l3_pos) if l3_pos else np.nan,
+            "horse_last5_win_rate": sum(1 for p in l5_pos if p == 1) / len(l5_pos) if l5_pos else np.nan,
+            "horse_last5_top3_rate": sum(1 for p in l5_pos if p <= 3) / len(l5_pos) if l5_pos else np.nan,
+            "horse_career_win_rate": sum(1 for p in all_pos if p == 1) / len(all_pos) if all_pos else np.nan,
             "horse_days_since_last": _days_between(race_date, str(last1["race_date"])),
             "horse_same_venue_win_rate": (
-                (same_venue["finish_position"] == 1).mean()
-                if len(same_venue) > 0
-                else np.nan
+                sum(1 for p in sv_pos if p == 1) / len(sv_pos) if sv_pos else np.nan
             ),
             "horse_same_dist_win_rate": (
-                (same_dist["finish_position"] == 1).mean()
-                if len(same_dist) > 0
-                else np.nan
+                sum(1 for p in sd_pos if p == 1) / len(sd_pos) if sd_pos else np.nan
             ),
             "horse_same_track_type_win_rate": (
-                (same_track["finish_position"] == 1).mean()
-                if len(same_track) > 0
-                else np.nan
+                sum(1 for p in st_pos if p == 1) / len(st_pos) if st_pos else np.nan
             ),
-            "horse_speed_index_last1": _speed_index(last1),
-            "horse_speed_index_last3": last3.apply(_speed_index, axis=1).mean(),
+            "horse_speed_index_last1": si_last1,
+            "horse_speed_index_last3": np.mean(si_last3_valid) if si_last3_valid else np.nan,
             "horse_weight_change": entry.get("weight_change", np.nan),
-            "horse_avg_last3f": np.nan,  # 上がり3Fは horse_history_cache に未保存のため近似
+            "horse_avg_last3f": np.nan,
         }
 
     def _jockey_features(self, entry: pd.Series) -> dict:
@@ -257,32 +327,34 @@ class FeatureBuilder:
         if not jockey_id or not race_date:
             return null_feats
 
-        overall = self.repo.get_jockey_stats(jockey_id, before_date=race_date)
-        venue_stats = self.repo.get_jockey_stats(
-            jockey_id, before_date=race_date, venue_code=venue_code
-        )
+        # 辞書から取得してフィルタ
+        if self._jockey_overall_dict is not None:
+            overall = [(d, p) for d, p in self._jockey_overall_dict.get(jockey_id, []) if d < race_date]
+            venue_stats = [(d, p) for d, p in self._jockey_venue_dict.get((jockey_id, venue_code), []) if d < race_date]
+        else:
+            overall_df = self.repo.get_jockey_stats(jockey_id, before_date=race_date)
+            venue_df = self.repo.get_jockey_stats(jockey_id, before_date=race_date, venue_code=venue_code)
+            overall = list(zip([""] * len(overall_df), overall_df["finish_position"].tolist())) if len(overall_df) > 0 else []
+            venue_stats = list(zip([""] * len(venue_df), venue_df["finish_position"].tolist())) if len(venue_df) > 0 else []
 
         overall_win_rate = (
-            (overall["finish_position"] == 1).mean() if len(overall) > 0 else np.nan
+            sum(1 for _, p in overall if p == 1) / len(overall)
+            if overall else np.nan
         )
         venue_win_rate = (
-            (venue_stats["finish_position"] == 1).mean()
-            if len(venue_stats) > 0
-            else np.nan
+            sum(1 for _, p in venue_stats if p == 1) / len(venue_stats)
+            if venue_stats else np.nan
         )
-
-        pair_wins = np.nan
 
         return {
             "jockey_win_rate_overall": overall_win_rate,
             "jockey_win_rate_venue": venue_win_rate,
-            "jockey_horse_pair_wins": pair_wins,
+            "jockey_horse_pair_wins": np.nan,
         }
 
     def _race_features(self, entry: pd.Series) -> dict:
         venue_code = entry.get("venue_code", "")
-        venue_values = list(VENUE_CODES.values())
-        venue_enc = venue_values.index(venue_code) if venue_code in venue_values else np.nan
+        venue_enc = _VENUE_VALUES.index(venue_code) if venue_code in _VENUE_VALUES else np.nan
         track_type = entry.get("track_type", "")
         track_cond = entry.get("track_condition", "")
         course_dir = entry.get("course_direction", "")

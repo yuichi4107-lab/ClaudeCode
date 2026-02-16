@@ -15,7 +15,9 @@ def _fill_and_select(df: pd.DataFrame, features: list[str]) -> pd.DataFrame:
     for col in features:
         if col not in df.columns:
             df[col] = np.nan
-    return df[features].astype(float)
+    result = df[features].astype(float)
+    result.columns = features  # feature name を明示的に保持
+    return result
 
 
 def _extract_feature_names_from_model(model) -> list[str] | None:

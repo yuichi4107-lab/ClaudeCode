@@ -347,6 +347,7 @@ def run_evaluate(args) -> None:
     to_date = datetime.now().strftime("%Y-%m-%d")
 
     builder = FeatureBuilder(repo)
+    builder.ensure_preloaded()  # メモリにプリロードして高速化
     predictor = ModelPredictor(model_name, bet_types=[bet_type])
 
     if bet_type == "trio" and box_size > 0:

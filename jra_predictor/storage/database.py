@@ -92,6 +92,15 @@ CREATE TABLE IF NOT EXISTS scrape_log (
     status_code INTEGER,
     error_msg   TEXT
 );
+
+-- パフォーマンス用インデックス
+CREATE INDEX IF NOT EXISTS idx_races_race_date ON races(race_date);
+CREATE INDEX IF NOT EXISTS idx_races_venue_code ON races(venue_code);
+CREATE INDEX IF NOT EXISTS idx_race_entries_race_id ON race_entries(race_id);
+CREATE INDEX IF NOT EXISTS idx_race_entries_horse_id ON race_entries(horse_id);
+CREATE INDEX IF NOT EXISTS idx_race_entries_jockey_id ON race_entries(jockey_id);
+CREATE INDEX IF NOT EXISTS idx_horse_history_horse_date ON horse_history_cache(horse_id, race_date);
+CREATE INDEX IF NOT EXISTS idx_race_payouts_lookup ON race_payouts(race_id, bet_type);
 """
 
 
