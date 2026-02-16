@@ -102,9 +102,13 @@ python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3
 # 当日予想（三連複）
 python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3 --bet-type trio
 
-# 厳選予想: 1日最大5R、自信度上位のみ（推奨）
-python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --max-races 5
-python -m jra_predictor.cli.main predict --date 20260215 --bet-type quinella --max-races 4 --min-confidence 2.0
+# 厳選予想（推奨: 馬連top5 × 5R/日）
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type quinella --max-races 5 --top-n 5
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type quinella --max-races 6 --top-n 5
+
+# 馬連ボックス買い: 3頭BOX(3点) / 4頭BOX(6点) / 5頭BOX(10点)
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type quinella --box 5 --max-races 6
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type quinella --box 4 --max-races 7
 
 # 三連複ボックス買い: 4頭BOX(4点) or 5頭BOX(10点)
 python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --box 4 --max-races 5
@@ -114,18 +118,22 @@ python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --box 5
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type quinella
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio
 
-# バックテスト ROI 評価（選択的: 1日最大6R、日別成績付き）
-python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --max-races 6
-python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type quinella --max-races 4 --min-confidence 2.0
+# バックテスト ROI 評価（選択的: 馬連top5推奨）
+python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type quinella --max-races 5 --top-n 5
+python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type quinella --max-races 6 --top-n 5
 
-# バックテスト（三連複ボックス: 1日5R × 4頭BOX = 20点/日）
-python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --box 4 --max-races 5
-python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --box 5 --max-races 4
+# バックテスト（馬連ボックス: 1日6R × 5頭BOX = 60点/日）
+python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type quinella --box 5 --max-races 6
+python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type quinella --box 5 --max-races 7
+
+# バックテスト（三連複ボックス: 1日5R × 5頭BOX = 50点/日）
+python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type trio --box 5 --max-races 5
 
 # setup.py でインストール後はショートカットが使える
 jra scrape --date 20260215
 jra predict --date 20260215 --venue hanshin --bet-type trio
-jra predict --date 20260215 --bet-type trio --box 4 --max-races 5
+jra predict --date 20260215 --bet-type quinella --max-races 5 --top-n 5
+jra predict --date 20260215 --bet-type quinella --box 5 --max-races 6
 ```
 
 ### Architecture
@@ -164,8 +172,11 @@ jra_predictor/
 - **モデル3本構成**: `{name}_win.joblib` + `{name}_place.joblib` + `{name}_top3.joblib`
 - **選択的ベッティング**: `--max-races N` で1日あたりN件に絞り込み。自信度スコア = edge_ratio × (1 + separation/top1_prob) で算出
 - **自信度スコア**: モデル予測確率 / ランダム確率（=優位率）× 確信度係数。高いほど買い
+- **馬連ボックス**: `--box 3` (3頭=3点) / `--box 4` (4頭=6点) / `--box 5` (5頭=10点)。P(win)+P(place)スコア上位の馬を選出し全2頭組み合わせ購入
 - **三連複ボックス**: `--box 4` (4頭=4点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全組み合わせ購入
 - **LightGBMパラメータ**: lr=0.03, depth=4, leaves=31, subsample=1.0, colsample=0.8, reg_alpha/lambda=0.1（チューニング済）
 - **ハイパーパラメータチューニング**: `train --tune` でランダムサーチ（24回）。TimeSeriesSplit AUCで最適化
-- **推奨戦略**: `--bet-type trio --box 5 --max-races 5` (ROI+159%, 的中率5.0%, プラス日21/101)。安定性重視: `--box 5 --max-races 4` (ROI+151%)
+- **推奨戦略（安定重視）**: `--bet-type quinella --max-races 6 --top-n 5` (ROI+270%, プラス日57/101=56%, 1日3000円)
+- **推奨戦略（的中率重視）**: `--bet-type quinella --box 5 --max-races 7` (ROI+100%, 的中率16%, プラス日56/101=55%, 1日7000円)
+- **推奨戦略（高ROI）**: `--bet-type trio --box 5 --max-races 5` (ROI+159%, 的中率5.0%, プラス日21/101=21%)
 - **データ移行**: 馬単(exacta)から馬連(quinella)への変更に伴い、払戻データの再スクレイプが必要（`bet_type='quinella'` で保存）

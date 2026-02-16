@@ -196,6 +196,74 @@ class ModelPredictor:
         result.index += 1
         return result
 
+    # ----------------------------------------------------------- 馬連ボックス
+
+    def predict_quinella_box(
+        self, entries_df: pd.DataFrame, box_size: int = 3
+    ) -> dict:
+        """
+        P(win) + P(place) のスコア上位 box_size 頭を選び、
+        その全2頭組み合わせを馬連ボックス購入する。
+
+        3頭ボックス: C(3,2) =  3 点
+        4頭ボックス: C(4,2) =  6 点
+        5頭ボックス: C(5,2) = 10 点
+
+        Returns dict:
+            selected_horses: list[dict]  - 選出馬 (馬番, 馬名, win_prob, place_prob, score)
+            box_combos: pd.DataFrame     - 購入する全組み合わせ
+            n_tickets: int               - 購入点数
+        """
+        win_probs = self.predict_win_probs(entries_df)
+        place_probs = self.predict_place_probs(entries_df)
+
+        # 選出スコア: P(win) + P(place) で総合力を評価
+        scores = win_probs + place_probs
+
+        # スコア上位 box_size 頭を選出
+        indices = np.argsort(scores)[::-1][:box_size]
+        indices = sorted(indices)  # 馬番順に並べ直す
+
+        selected_horses = []
+        for idx in indices:
+            selected_horses.append({
+                "horse_number": entries_df.iloc[idx].get("horse_number"),
+                "horse_name": entries_df.iloc[idx].get("horse_name", ""),
+                "win_prob": round(float(win_probs[idx]), 4),
+                "place_prob": round(float(place_probs[idx]), 4),
+                "score": round(float(scores[idx]), 4),
+            })
+
+        # 選出馬の全2頭組み合わせ
+        combos = []
+        for ci, cj in combinations(range(len(indices)), 2):
+            i, j = indices[ci], indices[cj]
+            p_win_i = win_probs[i]
+            p_win_j = win_probs[j]
+            denom_i = max(1 - p_win_i, 1e-6)
+            denom_j = max(1 - p_win_j, 1e-6)
+            prob = (p_win_i * place_probs[j] / denom_i
+                    + p_win_j * place_probs[i] / denom_j)
+            combos.append({
+                "horse1_number": entries_df.iloc[i].get("horse_number"),
+                "horse1_name": entries_df.iloc[i].get("horse_name", ""),
+                "horse2_number": entries_df.iloc[j].get("horse_number"),
+                "horse2_name": entries_df.iloc[j].get("horse_name", ""),
+                "quinella_prob": round(float(prob), 6),
+            })
+
+        box_df = pd.DataFrame(combos)
+        if not box_df.empty:
+            box_df = box_df.sort_values("quinella_prob", ascending=False).reset_index(drop=True)
+            box_df.index += 1
+
+        return {
+            "selected_horses": selected_horses,
+            "box_combos": box_df,
+            "n_tickets": len(combos),
+            "box_size": box_size,
+        }
+
     # ----------------------------------------------------------- 三連複ボックス
 
     def predict_trio_box(

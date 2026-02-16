@@ -185,7 +185,8 @@ def run_predict(args) -> None:
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
     from jra_predictor.model.strategy import (
-        score_quinella_race, score_trio_race, score_trio_box_race,
+        score_quinella_race, score_quinella_box_race,
+        score_trio_race, score_trio_box_race,
         select_races, print_race_selection,
     )
     from jra_predictor.config.settings import VENUE_CODES, VENUE_NAMES_JP, CACHE_DIR
@@ -230,8 +231,24 @@ def run_predict(args) -> None:
             df = builder.build_prediction_rows(race_id, entries, race_info)
             field_size = len(entries)
 
-            if bet_type == "trio" and box_size > 0:
-                # ボックスモード
+            if bet_type == "quinella" and box_size > 0:
+                # 馬連ボックスモード
+                box_result = predictor.predict_quinella_box(df, box_size=box_size)
+                import numpy as np
+                win_p = predictor.predict_win_probs(df)
+                place_p = predictor.predict_place_probs(df)
+                all_scores_sorted = sorted((win_p + place_p).tolist(), reverse=True)
+                score = score_quinella_box_race(
+                    box_result["selected_horses"], box_size, field_size, all_scores_sorted,
+                )
+                score["race_id"] = race_id
+                score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
+                score["race_number"] = race_info.get("race_number", "?")
+                score["race_info"] = race_info
+                score["box_result"] = box_result
+                race_results.append(score)
+            elif bet_type == "trio" and box_size > 0:
+                # 三連複ボックスモード
                 box_result = predictor.predict_trio_box(df, box_size=box_size)
                 all_probs = sorted(
                     [h["top3_prob"] for h in box_result["selected_horses"]]
@@ -296,8 +313,23 @@ def run_predict(args) -> None:
         print(f"\nRace {race_id} - {venue}競馬場 第{race_num}R "
               f"{track}{dist}m {cond} ({field_size}頭){conf_str}")
 
-        if bet_type == "trio" and box_size > 0:
-            # ボックス出力
+        if bet_type == "quinella" and box_size > 0:
+            # 馬連ボックス出力
+            box_result = score["box_result"]
+            n_tickets = box_result["n_tickets"]
+            print(f"馬連 {box_size}頭BOX ({n_tickets}点):")
+            print(f"  選出馬:")
+            for h in box_result["selected_horses"]:
+                print(f"    {int(h['horse_number']):>2} {h['horse_name']:<12} "
+                      f"P(win)={h['win_prob']:.3f} P(place)={h['place_prob']:.3f} "
+                      f"score={h['score']:.3f}")
+            print(f"  購入組み合わせ:")
+            for _, row in box_result["box_combos"].iterrows():
+                h1 = int(row["horse1_number"])
+                h2 = int(row["horse2_number"])
+                print(f"    {h1}-{h2}")
+        elif bet_type == "trio" and box_size > 0:
+            # 三連複ボックス出力
             box_result = score["box_result"]
             n_tickets = box_result["n_tickets"]
             print(f"三連複 {box_size}頭BOX ({n_tickets}点):")
@@ -350,7 +382,8 @@ def run_evaluate(args) -> None:
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
     from jra_predictor.model.strategy import (
-        score_quinella_race, score_trio_race, score_trio_box_race,
+        score_quinella_race, score_quinella_box_race,
+        score_trio_race, score_trio_box_race,
     )
     from jra_predictor.model.evaluation import (
         evaluate_quinella_roi, evaluate_trio_roi,
@@ -373,7 +406,10 @@ def run_evaluate(args) -> None:
     builder.ensure_preloaded()  # メモリにプリロードして高速化
     predictor = ModelPredictor(model_name, bet_types=[bet_type])
 
-    if bet_type == "trio" and box_size > 0:
+    if bet_type == "quinella" and box_size > 0:
+        from math import comb
+        label = f"馬連{box_size}頭BOX({comb(box_size, 2)}点/R)"
+    elif bet_type == "trio" and box_size > 0:
         from math import comb
         label = f"三連複{box_size}頭BOX({comb(box_size, 3)}点/R)"
     elif bet_type == "trio":
@@ -397,7 +433,23 @@ def run_evaluate(args) -> None:
             field_size = len(group)
             race_date = f"{race_id[:4]}-{race_id[6:8]}-{race_id[8:10]}"
 
-            if bet_type == "trio" and box_size > 0:
+            if bet_type == "quinella" and box_size > 0:
+                box_result = predictor.predict_quinella_box(X_race, box_size=box_size)
+                import numpy as np
+                win_p = predictor.predict_win_probs(X_race)
+                place_p = predictor.predict_place_probs(X_race)
+                all_scores_sorted = sorted((win_p + place_p).tolist(), reverse=True)
+                score = score_quinella_box_race(
+                    box_result["selected_horses"], box_size, field_size, all_scores_sorted,
+                )
+                race_predictions.append({
+                    "race_id": race_id,
+                    "race_date": race_date,
+                    "confidence_score": score["confidence_score"],
+                    "box_combos": box_result["box_combos"],
+                    "predictions": box_result["box_combos"],
+                })
+            elif bet_type == "trio" and box_size > 0:
                 box_result = predictor.predict_trio_box(X_race, box_size=box_size)
                 import numpy as np
                 all_top3 = predictor.predict_top3_probs(X_race)
@@ -512,8 +564,8 @@ def main():
         help="最低自信度スコア (デフォルト: 0.0)",
     )
     p_pred.add_argument(
-        "--box", dest="box", type=int, default=0, choices=[0, 4, 5],
-        help="三連複ボックス頭数 (4=4点BOX, 5=10点BOX, 0=通常)",
+        "--box", dest="box", type=int, default=0, choices=[0, 3, 4, 5],
+        help="ボックス頭数 (馬連: 3=3点,4=6点,5=10点 / 三連複: 4=4点,5=10点 / 0=通常)",
     )
 
     # evaluate
@@ -537,8 +589,8 @@ def main():
         help="最低自信度スコア (デフォルト: 0.0)",
     )
     p_eval.add_argument(
-        "--box", dest="box", type=int, default=0, choices=[0, 4, 5],
-        help="三連複ボックス頭数 (4=4点BOX, 5=10点BOX, 0=通常)",
+        "--box", dest="box", type=int, default=0, choices=[0, 3, 4, 5],
+        help="ボックス頭数 (馬連: 3=3点,4=6点,5=10点 / 三連複: 4=4点,5=10点 / 0=通常)",
     )
 
     args = parser.parse_args()

@@ -53,6 +53,70 @@ def score_quinella_race(ranked_df: pd.DataFrame, field_size: int) -> dict:
     }
 
 
+def score_quinella_box_race(
+    selected_horses: list[dict],
+    box_size: int,
+    field_size: int,
+    all_scores: list[float],
+) -> dict:
+    """
+    馬連ボックスにおけるレースの自信度スコアを算出する。
+
+    selected_horses: 選出馬リスト（win_prob, place_prob, score 含む）
+    box_size: ボックスサイズ (3, 4, or 5)
+    field_size: 出走頭数
+    all_scores: 全馬のスコア (win_prob+place_prob) ソート済み降順
+
+    スコアの考え方:
+      - top_sum: 選出馬のスコア合計。高いほど有力馬が集中
+      - gap: ボックス内最下位とボックス外最上位の差。大きいほど境界が明確
+      - box_edge: ボックス的中確率 / ランダムボックス確率
+    """
+    if len(selected_horses) < box_size or field_size < box_size:
+        return {"confidence_score": 0.0, "top_sum": 0.0, "gap": 0.0, "box_edge": 0.0}
+
+    top_scores = [h["score"] for h in selected_horses]
+    top_sum = sum(top_scores)
+
+    # ボックス内最下位 vs ボックス外最上位の差
+    if len(all_scores) > box_size:
+        gap = all_scores[box_size - 1] - all_scores[box_size]
+    else:
+        gap = all_scores[box_size - 1]
+
+    # ボックス的中確率の近似
+    n_total_combos = comb(field_size, 2)
+    n_box_combos = comb(box_size, 2)
+    random_box_prob = n_box_combos / max(n_total_combos, 1)
+
+    # 最大の組み合わせ確率
+    from itertools import combinations as combs
+    win_probs = [h["win_prob"] for h in selected_horses]
+    place_probs = [h["place_prob"] for h in selected_horses]
+    max_combo_prob = 0.0
+    for ci, cj in combs(range(len(win_probs)), 2):
+        pi = win_probs[ci]
+        pj = win_probs[cj]
+        di = max(1 - pi, 1e-6)
+        dj = max(1 - pj, 1e-6)
+        p = pi * place_probs[cj] / di + pj * place_probs[ci] / dj
+        max_combo_prob = max(max_combo_prob, p)
+
+    box_edge = max_combo_prob / max(random_box_prob / n_box_combos, 1e-9)
+
+    confidence_score = (top_sum / 2.0) * (1.0 + gap) * max(box_edge, 1.0)
+
+    return {
+        "confidence_score": round(confidence_score, 4),
+        "top_sum": round(top_sum, 4),
+        "gap": round(gap, 4),
+        "box_edge": round(box_edge, 4),
+        "field_size": field_size,
+        "box_size": box_size,
+        "n_tickets": n_box_combos,
+    }
+
+
 def score_trio_race(ranked_df: pd.DataFrame, field_size: int) -> dict:
     """
     三連複予測結果からレースの自信度スコアを算出する。

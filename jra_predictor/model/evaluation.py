@@ -117,7 +117,34 @@ def evaluate_selective_roi(
         for rp in selected:
             race_id = rp["race_id"]
 
-            if bet_type == "trio" and box_size > 0:
+            if bet_type == "quinella" and box_size > 0:
+                # 馬連ボックス: 全組み合わせを購入
+                box_combos = rp.get("box_combos", pd.DataFrame())
+                if box_combos.empty:
+                    continue
+                n_tickets = len(box_combos)
+                race_hit = False
+                race_payout = 0.0
+                for _, row in box_combos.iterrows():
+                    h1 = int(row["horse1_number"])
+                    h2 = int(row["horse2_number"])
+                    payout = repo.get_quinella_payout(race_id, h1, h2)
+                    if payout is not None and payout > 0:
+                        race_hit = True
+                        race_payout += payout / 100.0
+                results.append({
+                    "race_id": race_id, "date": date,
+                    "hit": race_hit,
+                    "payout": race_payout,
+                    "invested": n_tickets,
+                    "confidence": rp["confidence_score"],
+                })
+                day_invested += n_tickets
+                day_returned += race_payout
+                if race_hit:
+                    day_hits += 1
+
+            elif bet_type == "trio" and box_size > 0:
                 # ボックス: 全組み合わせを購入
                 box_combos = rp.get("box_combos", pd.DataFrame())
                 if box_combos.empty:
@@ -263,7 +290,10 @@ def print_selective_evaluation(
     show_daily: bool = True,
 ) -> None:
     from math import comb as _comb
-    if bet_type == "trio" and box_size > 0:
+    if bet_type == "quinella" and box_size > 0:
+        label = f"馬連{box_size}頭BOX"
+        tickets_str = f"1Rあたり{_comb(box_size, 2)}点(={box_size}頭BOX)"
+    elif bet_type == "trio" and box_size > 0:
         label = f"三連複{box_size}頭BOX"
         tickets_str = f"1Rあたり{_comb(box_size, 3)}点(={box_size}頭BOX)"
     elif bet_type == "trio":
