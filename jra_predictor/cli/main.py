@@ -115,40 +115,63 @@ def run_train(args) -> None:
     from_date = _parse_date(args.from_date)
     to_date = _parse_date(args.to_date)
     model_name = getattr(args, "model_name", "jra_v1")
-    trainer = ModelTrainer()
+    do_tune = getattr(args, "tune", False)
+    n_iter = getattr(args, "tune_iter", 24)
+
+    lgbm_params = None
+
+    if do_tune:
+        # ハイパーパラメータチューニング（win モデルのデータで探索）
+        print(f"=== ハイパーパラメータチューニング ({n_iter}回探索) ===")
+        print(f"[0/3] 特徴量生成中... ({from_date} ~ {to_date})")
+        X_tune, y_tune = builder.build_training_set(from_date, to_date, target="win")
+        print(f"  サンプル: {len(X_tune)}, 1着率: {y_tune.mean():.1%}")
+        lgbm_params, best_auc = ModelTrainer.tune(X_tune, y_tune, n_iter=n_iter)
+        print(f"  チューニング完了: AUC={best_auc:.4f}")
+
+    trainer = ModelTrainer(lgbm_params=lgbm_params)
 
     # --- 1着モデル (馬連用) ---
     print(f"[1/3] 1着モデル学習中... ({from_date} ~ {to_date})")
     X_win, y_win = builder.build_training_set(from_date, to_date, target="win")
     print(f"  サンプル: {len(X_win)}, 1着率: {y_win.mean():.1%}")
     win_model = trainer.train(X_win, y_win)
-    save_model(win_model, f"{model_name}_win", {
+    meta = {
         "from_date": from_date, "to_date": to_date,
         "target": "win", "positive_rate": float(y_win.mean()),
         "features": list(X_win.columns),
-    })
+    }
+    if lgbm_params:
+        meta["lgbm_params"] = lgbm_params
+    save_model(win_model, f"{model_name}_win", meta)
 
     # --- 2着モデル (馬連用) ---
     print(f"[2/3] 2着モデル学習中...")
     X_place, y_place = builder.build_training_set(from_date, to_date, target="place")
     print(f"  サンプル: {len(X_place)}, 2着率: {y_place.mean():.1%}")
     place_model = trainer.train(X_place, y_place)
-    save_model(place_model, f"{model_name}_place", {
+    meta = {
         "from_date": from_date, "to_date": to_date,
         "target": "place", "positive_rate": float(y_place.mean()),
         "features": list(X_place.columns),
-    })
+    }
+    if lgbm_params:
+        meta["lgbm_params"] = lgbm_params
+    save_model(place_model, f"{model_name}_place", meta)
 
     # --- 3着以内モデル (三連複用) ---
     print(f"[3/3] 3着以内モデル学習中...")
     X_top3, y_top3 = builder.build_training_set(from_date, to_date, target="top3")
     print(f"  サンプル: {len(X_top3)}, 3着以内率: {y_top3.mean():.1%}")
     top3_model = trainer.train(X_top3, y_top3)
-    save_model(top3_model, f"{model_name}_top3", {
+    meta = {
         "from_date": from_date, "to_date": to_date,
         "target": "top3", "positive_rate": float(y_top3.mean()),
         "features": list(X_top3.columns),
-    })
+    }
+    if lgbm_params:
+        meta["lgbm_params"] = lgbm_params
+    save_model(top3_model, f"{model_name}_top3", meta)
 
     print("学習完了（馬連 + 三連複）")
 
@@ -464,6 +487,10 @@ def main():
     p_train.add_argument("--from-date", required=True, dest="from_date")
     p_train.add_argument("--to-date", required=True, dest="to_date")
     p_train.add_argument("--model-name", dest="model_name", default="jra_v1")
+    p_train.add_argument("--tune", action="store_true",
+                         help="ハイパーパラメータチューニングを実行してから学習する")
+    p_train.add_argument("--tune-iter", dest="tune_iter", type=int, default=24,
+                         help="チューニング探索回数 (デフォルト: 24)")
 
     # predict
     p_pred = sub.add_parser("predict", help="出馬表から予想を出力する")

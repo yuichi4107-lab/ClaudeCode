@@ -93,6 +93,9 @@ python -m jra_predictor.cli.main scrape --date 20260215 --venue tokyo
 # モデル学習
 python -m jra_predictor.cli.main train --from-date 2024-01-01 --to-date 2025-12-31
 
+# ハイパーパラメータチューニング付き学習
+python -m jra_predictor.cli.main train --from-date 2024-01-01 --to-date 2025-12-31 --tune --tune-iter 24
+
 # 当日予想（馬連）
 python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3 --bet-type quinella
 
@@ -140,12 +143,12 @@ jra_predictor/
 │   └── repository.py       CRUD: upsert_race, upsert_entries, get_entries_in_range 等
 ├── features/builder.py     特徴量生成 (33特徴量)。上がり3F・馬齢・モメンタム等を追加
 ├── model/
-│   ├── trainer.py          TimeSeriesSplit + LightGBM/HGBT + CalibratedClassifierCV
+│   ├── trainer.py          TimeSeriesSplit + LightGBM/HGBT + CalibratedClassifierCV + HPチューニング
 │   ├── predictor.py        3モデル(win/place/top3)から馬連・三連複確率を計算
 │   ├── evaluation.py       馬連・三連複 ROI バックテスト（全レース・選択的）
 │   ├── strategy.py         選択的ベッティング: 自信度スコア算出・レース選出
 │   └── registry.py         joblib でモデル保存・読み込み (data/models/)
-└── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate --bet-type quinella/trio --max-races)
+└── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate --bet-type/--tune/--max-races)
 ```
 
 ### JRA固有の設計
@@ -162,5 +165,7 @@ jra_predictor/
 - **選択的ベッティング**: `--max-races N` で1日あたりN件に絞り込み。自信度スコア = edge_ratio × (1 + separation/top1_prob) で算出
 - **自信度スコア**: モデル予測確率 / ランダム確率（=優位率）× 確信度係数。高いほど買い
 - **三連複ボックス**: `--box 4` (4頭=4点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全組み合わせ購入
-- **推奨戦略**: ROI重視: `--bet-type trio --box 4 --max-races 5` (ROI+159%)、安定重視: `--bet-type trio --box 5 --max-races 5` (ROI+142%, 的中率4.6%)
+- **LightGBMパラメータ**: lr=0.03, depth=4, leaves=31, subsample=1.0, colsample=0.8, reg_alpha/lambda=0.1（チューニング済）
+- **ハイパーパラメータチューニング**: `train --tune` でランダムサーチ（24回）。TimeSeriesSplit AUCで最適化
+- **推奨戦略**: `--bet-type trio --box 5 --max-races 5` (ROI+159%, 的中率5.0%, プラス日21/101)。安定性重視: `--box 5 --max-races 4` (ROI+151%)
 - **データ移行**: 馬単(exacta)から馬連(quinella)への変更に伴い、払戻データの再スクレイプが必要（`bet_type='quinella'` で保存）
