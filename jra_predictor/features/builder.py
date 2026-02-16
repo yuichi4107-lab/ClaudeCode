@@ -16,7 +16,7 @@ from jra_predictor.config.settings import (
 logger = logging.getLogger(__name__)
 
 NUMERIC_FEATURES = [
-    # 馬の過去成績 (13)
+    # 馬の過去成績 (16)
     "horse_last1_finish",
     "horse_last3_avg_finish",
     "horse_last5_win_rate",
@@ -30,9 +30,13 @@ NUMERIC_FEATURES = [
     "horse_speed_index_last3",
     "horse_weight_change",
     "horse_avg_last3f",
-    # 騎手 (3)
+    "horse_last1_popularity",
+    "horse_momentum",
+    "horse_career_top3_rate",
+    # 騎手 (4)
     "jockey_win_rate_overall",
     "jockey_win_rate_venue",
+    "jockey_top3_rate_overall",
     "jockey_horse_pair_wins",
     # レース情報 (7)
     "field_size",
@@ -42,12 +46,14 @@ NUMERIC_FEATURES = [
     "track_cond_enc",
     "course_direction_enc",
     "race_number",
-    # 出走馬情報 (5)
+    # 出走馬情報 (7)
     "gate_number",
     "horse_number",
     "weight_carried",
     "horse_weight",
     "popularity_rank",
+    "horse_age",
+    "horse_sex_enc",
 ]
 
 _VENUE_VALUES = list(VENUE_CODES.values())
@@ -114,6 +120,8 @@ class FeatureBuilder:
         self._horse_hist_dict = None
         self._jockey_overall_dict = None
         self._jockey_venue_dict = None
+        self._jockey_horse_dict = None
+        self._horse_last3f_dict = None
 
         df = pd.DataFrame(feature_rows)
         drop_labels = {"is_winner", "is_second", "is_top3"}
@@ -172,7 +180,8 @@ class FeatureBuilder:
         # 馬の過去成績をhorse_id別の辞書に格納
         cursor = conn.execute(
             """SELECT horse_id, race_date, venue_name, distance,
-                      track_type, finish_position, finish_time
+                      track_type, finish_position, finish_time,
+                      popularity_rank, field_size
                FROM horse_history_cache
                ORDER BY horse_id, race_date DESC"""
         )
@@ -183,6 +192,7 @@ class FeatureBuilder:
                 "race_date": row[1], "venue_name": row[2],
                 "distance": row[3], "track_type": row[4],
                 "finish_position": row[5], "finish_time": row[6],
+                "popularity_rank": row[7], "field_size": row[8],
             })
             count += 1
         logger.info("  Horse history: %d records, %d horses", count, len(self._horse_hist_dict))
@@ -204,6 +214,32 @@ class FeatureBuilder:
             self._jockey_venue_dict[(jid, vc)].append((rdate, fpos))
             count += 1
         logger.info("  Jockey stats: %d records, %d jockeys", count, len(self._jockey_overall_dict))
+
+        # 騎手-馬ペアの成績を辞書に格納
+        cursor = conn.execute(
+            """SELECT e.jockey_id, e.horse_id, r.race_date, e.finish_position
+               FROM race_entries e
+               JOIN races r ON e.race_id = r.race_id
+               WHERE e.finish_position IS NOT NULL AND e.horse_id IS NOT NULL
+               ORDER BY r.race_date"""
+        )
+        self._jockey_horse_dict = defaultdict(list)
+        for row in cursor:
+            jid, hid, rdate, fpos = row
+            self._jockey_horse_dict[(jid, hid)].append((rdate, fpos))
+
+        # 上がり3F辞書 (horse_id -> list of (race_date, last_3f_time))
+        cursor = conn.execute(
+            """SELECT e.horse_id, r.race_date, e.last_3f_time
+               FROM race_entries e
+               JOIN races r ON e.race_id = r.race_id
+               WHERE e.last_3f_time IS NOT NULL AND e.horse_id IS NOT NULL
+               ORDER BY e.horse_id, r.race_date DESC"""
+        )
+        self._horse_last3f_dict = defaultdict(list)
+        for row in cursor:
+            self._horse_last3f_dict[row[0]].append((row[1], row[2]))
+
         conn.close()
 
     def _build_row(self, entry: pd.Series) -> dict:
@@ -231,6 +267,7 @@ class FeatureBuilder:
             "horse_last5_win_rate": np.nan,
             "horse_last5_top3_rate": np.nan,
             "horse_career_win_rate": np.nan,
+            "horse_career_top3_rate": np.nan,
             "horse_days_since_last": np.nan,
             "horse_same_venue_win_rate": np.nan,
             "horse_same_dist_win_rate": np.nan,
@@ -239,6 +276,8 @@ class FeatureBuilder:
             "horse_speed_index_last3": np.nan,
             "horse_weight_change": entry.get("weight_change", np.nan),
             "horse_avg_last3f": np.nan,
+            "horse_last1_popularity": np.nan,
+            "horse_momentum": np.nan,
         }
 
         if not horse_id or not race_date:
@@ -291,12 +330,31 @@ class FeatureBuilder:
         si_last3 = [_speed_index_vals(h.get("distance"), h.get("finish_time")) for h in last3]
         si_last3_valid = [s for s in si_last3 if not np.isnan(s)]
 
+        # 上がり3F (race_entries の last_3f_time から)
+        avg_last3f = np.nan
+        if self._horse_last3f_dict is not None:
+            l3f_records = self._horse_last3f_dict.get(horse_id, [])
+            l3f_vals = [t for d, t in l3f_records if d < race_date][:3]
+            if l3f_vals:
+                avg_last3f = np.mean(l3f_vals)
+
+        # 前走人気
+        last1_pop = last1.get("popularity_rank")
+
+        # モメンタム（直近3走の着順改善度: 負=改善中, 正=悪化中）
+        momentum = np.nan
+        if len(l3_pos) >= 2:
+            # 最新から古い順に着順差の平均: 古い→新しいで着順が下がっていればマイナス
+            diffs = [l3_pos[i] - l3_pos[i + 1] for i in range(len(l3_pos) - 1)]
+            momentum = np.mean(diffs)
+
         return {
             "horse_last1_finish": last1["finish_position"],
             "horse_last3_avg_finish": np.mean(l3_pos) if l3_pos else np.nan,
             "horse_last5_win_rate": sum(1 for p in l5_pos if p == 1) / len(l5_pos) if l5_pos else np.nan,
             "horse_last5_top3_rate": sum(1 for p in l5_pos if p <= 3) / len(l5_pos) if l5_pos else np.nan,
             "horse_career_win_rate": sum(1 for p in all_pos if p == 1) / len(all_pos) if all_pos else np.nan,
+            "horse_career_top3_rate": sum(1 for p in all_pos if p <= 3) / len(all_pos) if all_pos else np.nan,
             "horse_days_since_last": _days_between(race_date, str(last1["race_date"])),
             "horse_same_venue_win_rate": (
                 sum(1 for p in sv_pos if p == 1) / len(sv_pos) if sv_pos else np.nan
@@ -310,17 +368,21 @@ class FeatureBuilder:
             "horse_speed_index_last1": si_last1,
             "horse_speed_index_last3": np.mean(si_last3_valid) if si_last3_valid else np.nan,
             "horse_weight_change": entry.get("weight_change", np.nan),
-            "horse_avg_last3f": np.nan,
+            "horse_avg_last3f": avg_last3f,
+            "horse_last1_popularity": last1_pop,
+            "horse_momentum": momentum,
         }
 
     def _jockey_features(self, entry: pd.Series) -> dict:
         jockey_id = entry.get("jockey_id")
+        horse_id = entry.get("horse_id")
         race_date = str(entry.get("race_date", ""))
         venue_code = entry.get("venue_code")
 
         null_feats = {
             "jockey_win_rate_overall": np.nan,
             "jockey_win_rate_venue": np.nan,
+            "jockey_top3_rate_overall": np.nan,
             "jockey_horse_pair_wins": np.nan,
         }
 
@@ -345,11 +407,23 @@ class FeatureBuilder:
             sum(1 for _, p in venue_stats if p == 1) / len(venue_stats)
             if venue_stats else np.nan
         )
+        top3_rate = (
+            sum(1 for _, p in overall if p <= 3) / len(overall)
+            if overall else np.nan
+        )
+
+        # 騎手-馬ペアの過去勝利数
+        pair_wins = np.nan
+        if self._jockey_horse_dict is not None and horse_id:
+            pair_records = [(d, p) for d, p in self._jockey_horse_dict.get((jockey_id, horse_id), []) if d < race_date]
+            if pair_records:
+                pair_wins = sum(1 for _, p in pair_records if p == 1)
 
         return {
             "jockey_win_rate_overall": overall_win_rate,
             "jockey_win_rate_venue": venue_win_rate,
-            "jockey_horse_pair_wins": np.nan,
+            "jockey_top3_rate_overall": top3_rate,
+            "jockey_horse_pair_wins": pair_wins,
         }
 
     def _race_features(self, entry: pd.Series) -> dict:
@@ -370,10 +444,14 @@ class FeatureBuilder:
         }
 
     def _entry_features(self, entry: pd.Series) -> dict:
+        sex = entry.get("horse_sex", "")
+        sex_enc = {"牡": 0, "牝": 1, "セ": 2}.get(sex, np.nan)
         return {
             "gate_number": entry.get("gate_number", np.nan),
             "horse_number": entry.get("horse_number", np.nan),
             "weight_carried": entry.get("weight_carried", np.nan),
             "horse_weight": entry.get("horse_weight", np.nan),
             "popularity_rank": entry.get("popularity_rank", np.nan),
+            "horse_age": entry.get("horse_age", np.nan),
+            "horse_sex_enc": sex_enc,
         }
