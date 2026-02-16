@@ -6,26 +6,26 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def evaluate_exacta_roi(predictions_df: pd.DataFrame, repo, top_n: int = 1, threshold: float = 0.0) -> dict:
+def evaluate_quinella_roi(predictions_df: pd.DataFrame, repo, top_n: int = 1, threshold: float = 0.0) -> dict:
     """
-    予測上位の馬単組み合わせに賭けた場合のROIをシミュレーションする。
+    予測上位の馬連組み合わせに賭けた場合のROIをシミュレーションする。
 
     predictions_df の必要列:
-        race_id, first_horse_number, second_horse_number, exacta_prob
+        race_id, horse1_number, horse2_number, quinella_prob
     """
     results = []
     for race_id, group in predictions_df.groupby("race_id"):
-        filtered = group[group["exacta_prob"] >= threshold]
+        filtered = group[group["quinella_prob"] >= threshold]
         if len(filtered) == 0:
             continue
 
-        top_combos = filtered.nlargest(top_n, "exacta_prob")
+        top_combos = filtered.nlargest(top_n, "quinella_prob")
 
         for _, row in top_combos.iterrows():
-            first = int(row["first_horse_number"])
-            second = int(row["second_horse_number"])
+            h1 = int(row["horse1_number"])
+            h2 = int(row["horse2_number"])
 
-            payout = repo.get_exacta_payout(race_id, first, second)
+            payout = repo.get_quinella_payout(race_id, h1, h2)
             hit = payout is not None and payout > 0
 
             results.append(
@@ -76,7 +76,7 @@ def evaluate_trio_roi(predictions_df: pd.DataFrame, repo, top_n: int = 1, thresh
 def evaluate_selective_roi(
     race_predictions: list[dict],
     repo,
-    bet_type: str = "exacta",
+    bet_type: str = "quinella",
     max_races_per_day: int = 6,
     min_confidence: float = 0.0,
     top_n_per_race: int = 1,
@@ -87,7 +87,7 @@ def evaluate_selective_roi(
 
     race_predictions: list of {
         race_id, race_date, confidence_score,
-        predictions: DataFrame (predict_exacta / predict_trio の結果)
+        predictions: DataFrame (predict_quinella / predict_trio の結果)
         box_combos: DataFrame (ボックス時のみ)
     }
     max_races_per_day: 1日あたり最大購入レース数
@@ -163,11 +163,11 @@ def evaluate_selective_roi(
                         day_hits += 1
             else:
                 preds = rp["predictions"]
-                top_combos = preds.nlargest(top_n_per_race, "exacta_prob")
+                top_combos = preds.nlargest(top_n_per_race, "quinella_prob")
                 for _, row in top_combos.iterrows():
-                    first = int(row["first_horse_number"])
-                    second = int(row["second_horse_number"])
-                    payout = repo.get_exacta_payout(race_id, first, second)
+                    h1 = int(row["horse1_number"])
+                    h2 = int(row["horse2_number"])
+                    payout = repo.get_quinella_payout(race_id, h1, h2)
                     hit = payout is not None and payout > 0
                     ret = payout / 100.0 if hit else 0.0
                     results.append({"race_id": race_id, "date": date, "hit": hit, "payout": ret,
@@ -238,8 +238,8 @@ def _summarize_with_cost(results: list[dict]) -> dict:
     }
 
 
-def print_evaluation(result: dict, bet_type: str = "exacta", top_n: int = 1, threshold: float = 0.0) -> None:
-    label = "馬単" if bet_type == "exacta" else "三連複"
+def print_evaluation(result: dict, bet_type: str = "quinella", top_n: int = 1, threshold: float = 0.0) -> None:
+    label = "馬連" if bet_type == "quinella" else "三連複"
     print(f"\n=== バックテスト結果（{label}） ===")
     print(f"戦略: top_n={top_n}, threshold={threshold:.4f}")
     if "error" in result:
@@ -255,7 +255,7 @@ def print_evaluation(result: dict, bet_type: str = "exacta", top_n: int = 1, thr
 
 def print_selective_evaluation(
     result: dict,
-    bet_type: str = "exacta",
+    bet_type: str = "quinella",
     max_races: int = 6,
     min_confidence: float = 0.0,
     top_n: int = 1,
@@ -270,7 +270,7 @@ def print_selective_evaluation(
         label = "三連複"
         tickets_str = f"1Rあたり{top_n}点購入"
     else:
-        label = "馬単"
+        label = "馬連"
         tickets_str = f"1Rあたり{top_n}点購入"
     print(f"\n{'='*60}")
     print(f"  選択的ベッティング バックテスト結果（{label}）")

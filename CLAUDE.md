@@ -79,8 +79,8 @@ nankan_predictor/
 ## JRA 中央競馬予想システム (jra_predictor)
 
 ### Overview
-JRA 中央競馬10場（札幌・函館・福島・新潟・東京・中山・中京・京都・阪神・小倉）を対象とした馬単・三連複予想システム。
-nankan_predictor と同一アーキテクチャで、netkeiba.com からデータを収集し LightGBM で馬単・三連複を予測する。
+JRA 中央競馬10場（札幌・函館・福島・新潟・東京・中山・中京・京都・阪神・小倉）を対象とした馬連・三連複予想システム。
+nankan_predictor と同一アーキテクチャで、netkeiba.com からデータを収集し LightGBM で馬連・三連複を予測する。
 
 ### Usage
 ```bash
@@ -93,27 +93,27 @@ python -m jra_predictor.cli.main scrape --date 20260215 --venue tokyo
 # モデル学習
 python -m jra_predictor.cli.main train --from-date 2024-01-01 --to-date 2025-12-31
 
-# 当日予想（馬単）
-python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3 --bet-type exacta
+# 当日予想（馬連）
+python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3 --bet-type quinella
 
 # 当日予想（三連複）
 python -m jra_predictor.cli.main predict --date 20260215 --venue tokyo --top-n 3 --bet-type trio
 
 # 厳選予想: 1日最大5R、自信度上位のみ（推奨）
 python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --max-races 5
-python -m jra_predictor.cli.main predict --date 20260215 --bet-type exacta --max-races 4 --min-confidence 2.0
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type quinella --max-races 4 --min-confidence 2.0
 
 # 三連複ボックス買い: 4頭BOX(4点) or 5頭BOX(10点)
 python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --box 4 --max-races 5
 python -m jra_predictor.cli.main predict --date 20260215 --bet-type trio --box 5 --max-races 4
 
 # バックテスト ROI 評価（全レース）
-python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type exacta
+python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type quinella
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio
 
 # バックテスト ROI 評価（選択的: 1日最大6R、日別成績付き）
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --max-races 6
-python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type exacta --max-races 4 --min-confidence 2.0
+python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type quinella --max-races 4 --min-confidence 2.0
 
 # バックテスト（三連複ボックス: 1日5R × 4頭BOX = 20点/日）
 python -m jra_predictor.cli.main evaluate --from-date 2026-01-01 --bet-type trio --box 4 --max-races 5
@@ -141,11 +141,11 @@ jra_predictor/
 ├── features/builder.py     特徴量生成 (28特徴量)。芝/ダート適性・コース方向を追加
 ├── model/
 │   ├── trainer.py          TimeSeriesSplit + LightGBM/HGBT + CalibratedClassifierCV
-│   ├── predictor.py        3モデル(win/place/top3)から馬単・三連複確率を計算
-│   ├── evaluation.py       馬単・三連複 ROI バックテスト（全レース・選択的）
+│   ├── predictor.py        3モデル(win/place/top3)から馬連・三連複確率を計算
+│   ├── evaluation.py       馬連・三連複 ROI バックテスト（全レース・選択的）
 │   ├── strategy.py         選択的ベッティング: 自信度スコア算出・レース選出
 │   └── registry.py         joblib でモデル保存・読み込み (data/models/)
-└── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate --bet-type --max-races)
+└── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate --bet-type quinella/trio --max-races)
 ```
 
 ### JRA固有の設計
@@ -155,11 +155,12 @@ jra_predictor/
 - **出馬表URL**: race.netkeiba.com（JRA用）。nankan は nar.netkeiba.com
 - **DB**: data/jra.db（nankan とは別ファイル）
 - **特徴量**: horse_same_track_type_win_rate (芝/ダート適性), course_direction_enc を追加 (計28特徴量)
-- **馬券種**: 馬単 (exacta) と三連複 (trio) の2種対応。`--bet-type` オプションで切替
-- **馬単確率**: `P(i→j) ≈ P_win(i) * P_place(j) / (1 - P_win(i))` で近似
+- **馬券種**: 馬連 (quinella) と三連複 (trio) の2種対応。`--bet-type` オプションで切替
+- **馬連確率**: `P(i,j) ≈ P_win(i)*P_place(j)/(1-P_win(i)) + P_win(j)*P_place(i)/(1-P_win(j))` で近似（順不同）
 - **三連複確率**: `P(i,j,k) ≈ P_top3(i) * P_top3(j) * P_top3(k)` で近似（順不同）
 - **モデル3本構成**: `{name}_win.joblib` + `{name}_place.joblib` + `{name}_top3.joblib`
 - **選択的ベッティング**: `--max-races N` で1日あたりN件に絞り込み。自信度スコア = edge_ratio × (1 + separation/top1_prob) で算出
 - **自信度スコア**: モデル予測確率 / ランダム確率（=優位率）× 確信度係数。高いほど買い
 - **三連複ボックス**: `--box 4` (4頭=4点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全組み合わせ購入
 - **推奨戦略**: `--bet-type trio --box 4 --max-races 5` で1日5R × 4点 = 20点購入、高自信度レースのみ選択
+- **データ移行**: 馬単(exacta)から馬連(quinella)への変更に伴い、払戻データの再スクレイプが必要（`bet_type='quinella'` で保存）

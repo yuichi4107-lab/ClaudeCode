@@ -219,12 +219,13 @@ class Repository:
                 (race_id, bet_type, combination, payout),
             )
 
-    def get_exacta_payout(self, race_id: str, first: int, second: int) -> float | None:
-        """馬単払戻金を取得する。combination は '馬番1着-馬番2着' 形式。"""
-        combination = f"{first}-{second}"
+    def get_quinella_payout(self, race_id: str, h1: int, h2: int) -> float | None:
+        """馬連払戻金を取得する。combination は馬番をソートした '小-大' 形式。"""
+        sorted_nums = sorted([h1, h2])
+        combination = f"{sorted_nums[0]}-{sorted_nums[1]}"
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT payout FROM race_payouts WHERE race_id=? AND bet_type='exacta' AND combination=?",
+                "SELECT payout FROM race_payouts WHERE race_id=? AND bet_type='quinella' AND combination=?",
                 (race_id, combination),
             ).fetchone()
         return row["payout"] if row else None

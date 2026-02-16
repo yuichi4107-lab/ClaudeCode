@@ -117,7 +117,7 @@ def run_train(args) -> None:
     model_name = getattr(args, "model_name", "jra_v1")
     trainer = ModelTrainer()
 
-    # --- 1着モデル (馬単用) ---
+    # --- 1着モデル (馬連用) ---
     print(f"[1/3] 1着モデル学習中... ({from_date} ~ {to_date})")
     X_win, y_win = builder.build_training_set(from_date, to_date, target="win")
     print(f"  サンプル: {len(X_win)}, 1着率: {y_win.mean():.1%}")
@@ -128,7 +128,7 @@ def run_train(args) -> None:
         "features": list(X_win.columns),
     })
 
-    # --- 2着モデル (馬単用) ---
+    # --- 2着モデル (馬連用) ---
     print(f"[2/3] 2着モデル学習中...")
     X_place, y_place = builder.build_training_set(from_date, to_date, target="place")
     print(f"  サンプル: {len(X_place)}, 2着率: {y_place.mean():.1%}")
@@ -150,7 +150,7 @@ def run_train(args) -> None:
         "features": list(X_top3.columns),
     })
 
-    print("学習完了（馬単 + 三連複）")
+    print("学習完了（馬連 + 三連複）")
 
 
 def run_predict(args) -> None:
@@ -162,7 +162,7 @@ def run_predict(args) -> None:
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
     from jra_predictor.model.strategy import (
-        score_exacta_race, score_trio_race, score_trio_box_race,
+        score_quinella_race, score_trio_race, score_trio_box_race,
         select_races, print_race_selection,
     )
     from jra_predictor.config.settings import VENUE_CODES, VENUE_NAMES_JP, CACHE_DIR
@@ -171,7 +171,7 @@ def run_predict(args) -> None:
     repo = Repository()
     model_name = getattr(args, "model_name", "jra_v1")
     top_n = getattr(args, "top_n", 3)
-    bet_type = getattr(args, "bet_type", "exacta")
+    bet_type = getattr(args, "bet_type", "quinella")
     max_races = getattr(args, "max_races", 0)  # 0 = 全レース
     min_confidence = getattr(args, "min_confidence", 0.0)
     box_size = getattr(args, "box", 0)
@@ -238,8 +238,8 @@ def run_predict(args) -> None:
                 score["ranked"] = ranked
                 race_results.append(score)
             else:
-                ranked = predictor.predict_exacta(df, top_n=max(top_n, 5))
-                score = score_exacta_race(ranked, field_size)
+                ranked = predictor.predict_quinella(df, top_n=max(top_n, 5))
+                score = score_quinella_race(ranked, field_size)
                 score["race_id"] = race_id
                 score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
                 score["race_number"] = race_info.get("race_number", "?")
@@ -307,16 +307,16 @@ def run_predict(args) -> None:
         else:
             ranked = score["ranked"]
             display_ranked = ranked.head(top_n)
-            print(f"馬単予想 上位{top_n}組み合わせ:")
+            print(f"馬連予想 上位{top_n}組み合わせ:")
             for rank, row in display_ranked.iterrows():
-                fn = int(row.get("first_horse_number", 0))
-                fn_name = row.get("first_horse_name", "不明")
-                sn = int(row.get("second_horse_number", 0))
-                sn_name = row.get("second_horse_name", "不明")
-                prob = row.get("exacta_prob", 0)
+                h1 = int(row.get("horse1_number", 0))
+                h1_name = row.get("horse1_name", "不明")
+                h2 = int(row.get("horse2_number", 0))
+                h2_name = row.get("horse2_name", "不明")
+                prob = row.get("quinella_prob", 0)
                 print(
-                    f"  {rank}位: {fn}→{sn}  "
-                    f"({fn_name} → {sn_name})  "
+                    f"  {rank}位: {h1}-{h2}  "
+                    f"({h1_name}, {h2_name})  "
                     f"P={prob:.4f}"
                 )
 
@@ -327,10 +327,10 @@ def run_evaluate(args) -> None:
     from jra_predictor.features.builder import FeatureBuilder
     from jra_predictor.model.predictor import ModelPredictor
     from jra_predictor.model.strategy import (
-        score_exacta_race, score_trio_race, score_trio_box_race,
+        score_quinella_race, score_trio_race, score_trio_box_race,
     )
     from jra_predictor.model.evaluation import (
-        evaluate_exacta_roi, evaluate_trio_roi,
+        evaluate_quinella_roi, evaluate_trio_roi,
         evaluate_selective_roi,
         print_evaluation, print_selective_evaluation,
     )
@@ -339,7 +339,7 @@ def run_evaluate(args) -> None:
     model_name = getattr(args, "model_name", "jra_v1")
     top_n = getattr(args, "top_n", 1)
     threshold = getattr(args, "threshold", 0.01)
-    bet_type = getattr(args, "bet_type", "exacta")
+    bet_type = getattr(args, "bet_type", "quinella")
     max_races = getattr(args, "max_races", 0)
     min_confidence = getattr(args, "min_confidence", 0.0)
     box_size = getattr(args, "box", 0)
@@ -356,7 +356,7 @@ def run_evaluate(args) -> None:
     elif bet_type == "trio":
         label = "三連複"
     else:
-        label = "馬単"
+        label = "馬連"
     mode = "選択的" if max_races > 0 else "全レース"
     print(f"評価期間: {from_date} ~ {to_date} ({label}, {mode})")
     entries_df = repo.get_entries_in_range(from_date, to_date)
@@ -399,8 +399,8 @@ def run_evaluate(args) -> None:
                     "predictions": preds,
                 })
             else:
-                preds = predictor.predict_exacta(X_race, top_n=10)
-                score = score_exacta_race(preds, field_size)
+                preds = predictor.predict_quinella(X_race, top_n=10)
+                score = score_quinella_race(preds, field_size)
                 race_predictions.append({
                     "race_id": race_id,
                     "race_date": race_date,
@@ -431,7 +431,7 @@ def run_evaluate(args) -> None:
             if bet_type == "trio":
                 combos = predictor.predict_trio(X_race, top_n=10)
             else:
-                combos = predictor.predict_exacta(X_race, top_n=10)
+                combos = predictor.predict_quinella(X_race, top_n=10)
             combos["race_id"] = race_id
             all_combos.append(combos)
 
@@ -440,14 +440,14 @@ def run_evaluate(args) -> None:
         if bet_type == "trio":
             result = evaluate_trio_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
         else:
-            result = evaluate_exacta_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
+            result = evaluate_quinella_roi(predictions_df, repo, top_n=top_n, threshold=threshold)
         print_evaluation(result, bet_type=bet_type, top_n=top_n, threshold=threshold)
 
 
 def main():
     parser = argparse.ArgumentParser(
         prog="jra",
-        description="JRA 中央競馬 馬単・三連複予想システム",
+        description="JRA 中央競馬 馬連・三連複予想システム",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -460,7 +460,7 @@ def main():
     p_scrape.add_argument("--no-cache", action="store_true", dest="no_cache")
 
     # train
-    p_train = sub.add_parser("train", help="予測モデルを学習する（馬単+三連複）")
+    p_train = sub.add_parser("train", help="予測モデルを学習する（馬連+三連複）")
     p_train.add_argument("--from-date", required=True, dest="from_date")
     p_train.add_argument("--to-date", required=True, dest="to_date")
     p_train.add_argument("--model-name", dest="model_name", default="jra_v1")
@@ -473,8 +473,8 @@ def main():
     p_pred.add_argument("--model-name", dest="model_name", default="jra_v1")
     p_pred.add_argument("--top-n", dest="top_n", type=int, default=3)
     p_pred.add_argument(
-        "--bet-type", dest="bet_type", choices=["exacta", "trio"], default="exacta",
-        help="馬券種: exacta=馬単, trio=三連複 (デフォルト: exacta)",
+        "--bet-type", dest="bet_type", choices=["quinella", "trio"], default="quinella",
+        help="馬券種: quinella=馬連, trio=三連複 (デフォルト: quinella)",
     )
     p_pred.add_argument(
         "--max-races", dest="max_races", type=int, default=0,
@@ -498,8 +498,8 @@ def main():
     p_eval.add_argument("--threshold", dest="threshold", type=float, default=0.01,
                         help="確率閾値（デフォルト: 0.01）")
     p_eval.add_argument(
-        "--bet-type", dest="bet_type", choices=["exacta", "trio"], default="exacta",
-        help="馬券種: exacta=馬単, trio=三連複 (デフォルト: exacta)",
+        "--bet-type", dest="bet_type", choices=["quinella", "trio"], default="quinella",
+        help="馬券種: quinella=馬連, trio=三連複 (デフォルト: quinella)",
     )
     p_eval.add_argument(
         "--max-races", dest="max_races", type=int, default=0,

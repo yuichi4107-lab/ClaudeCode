@@ -23,19 +23,20 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def score_exacta_race(ranked_df: pd.DataFrame, field_size: int) -> dict:
+def score_quinella_race(ranked_df: pd.DataFrame, field_size: int) -> dict:
     """
-    馬単予測結果からレースの自信度スコアを算出する。
+    馬連予測結果からレースの自信度スコアを算出する。
 
-    ranked_df: predict_exacta() の戻り値（上位N組の確率）
+    ranked_df: predict_quinella() の戻り値（上位N組の確率）
     field_size: 出走頭数
     """
     if len(ranked_df) < 2 or field_size < 2:
         return {"confidence_score": 0.0, "edge_ratio": 0.0, "separation": 0.0}
 
-    top1_prob = ranked_df.iloc[0]["exacta_prob"]
-    top2_prob = ranked_df.iloc[1]["exacta_prob"]
-    random_prob = 1.0 / (field_size * (field_size - 1))
+    top1_prob = ranked_df.iloc[0]["quinella_prob"]
+    top2_prob = ranked_df.iloc[1]["quinella_prob"]
+    # 馬連の組み合わせ数: C(n,2) = n*(n-1)/2
+    random_prob = 2.0 / (field_size * (field_size - 1))
 
     edge_ratio = top1_prob / max(random_prob, 1e-9)
     separation = top1_prob - top2_prob
@@ -166,7 +167,7 @@ def select_races(
     return sorted_scores[:max_races]
 
 
-def print_race_selection(selected: list[dict], bet_type: str = "exacta", box_size: int = 0) -> None:
+def print_race_selection(selected: list[dict], bet_type: str = "quinella", box_size: int = 0) -> None:
     """選択されたレースの自信度情報を出力する。"""
     if bet_type == "trio" and box_size > 0:
         label = f"三連複{box_size}頭BOX"
@@ -174,7 +175,7 @@ def print_race_selection(selected: list[dict], bet_type: str = "exacta", box_siz
     elif bet_type == "trio":
         label = "三連複"
     else:
-        label = "馬単"
+        label = "馬連"
 
     print(f"\n=== {label} 厳選レース ({len(selected)}R) ===")
 

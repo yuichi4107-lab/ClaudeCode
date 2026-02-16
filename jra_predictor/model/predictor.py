@@ -55,12 +55,12 @@ def _extract_feature_names_from_model(model) -> list[str] | None:
 
 class ModelPredictor:
     """
-    馬単・三連複予想のためのマルチモデルプレディクター。
+    馬連・三連複予想のためのマルチモデルプレディクター。
 
-    馬単 (exacta):
+    馬連 (quinella):
       - win_model:   P(1着) を予測
       - place_model: P(2着) を予測
-      - P(i→j) ≈ P_win(i) * P_place(j) / (1 - P_win(i))
+      - P(i,j) ≈ P_win(i)*P_place(j)/(1-P_win(i)) + P_win(j)*P_place(i)/(1-P_win(j))  (順不同)
 
     三連複 (trio):
       - top3_model:  P(3着以内) を予測
@@ -69,10 +69,10 @@ class ModelPredictor:
 
     def __init__(self, model_name: str = "jra_v1", bet_types: list[str] = None):
         self.model_name = model_name
-        bet_types = bet_types or ["exacta", "trio"]
+        bet_types = bet_types or ["quinella", "trio"]
 
-        # 馬単用モデル
-        if "exacta" in bet_types:
+        # 馬連用モデル
+        if "quinella" in bet_types:
             self.win_model = load_model(f"{model_name}_win")
             self.place_model = load_model(f"{model_name}_place")
             win_meta = load_meta(f"{model_name}_win")
@@ -112,41 +112,43 @@ class ModelPredictor:
         Xf = _fill_and_select(X, self.top3_features)
         return self.top3_model.predict_proba(Xf)[:, 1]
 
-    # ---------------------------------------------------------------- 馬単
+    # ---------------------------------------------------------------- 馬連
 
-    def predict_exacta(
+    def predict_quinella(
         self, entries_df: pd.DataFrame, top_n: int = 5
     ) -> pd.DataFrame:
         """
-        全 (1着, 2着) 組み合わせの確率を計算し、上位 top_n 件を返す。
+        全 (i, j) 順不同組み合わせの確率を計算し、上位 top_n 件を返す。
+        P(i,j) ≈ P_win(i)*P_place(j)/(1-P_win(i)) + P_win(j)*P_place(i)/(1-P_win(j))
         """
         win_probs = self.predict_win_probs(entries_df)
         place_probs = self.predict_place_probs(entries_df)
 
         n = len(entries_df)
         combos = []
-        for i in range(n):
+        for i, j in combinations(range(n), 2):
             p_win_i = win_probs[i]
-            denom = max(1 - p_win_i, 1e-6)
-            for j in range(n):
-                if i == j:
-                    continue
-                prob = p_win_i * place_probs[j] / denom
-                combos.append(
-                    {
-                        "first_horse_number": entries_df.iloc[i].get("horse_number"),
-                        "first_horse_name": entries_df.iloc[i].get("horse_name", ""),
-                        "first_win_prob": round(p_win_i, 4),
-                        "second_horse_number": entries_df.iloc[j].get("horse_number"),
-                        "second_horse_name": entries_df.iloc[j].get("horse_name", ""),
-                        "second_place_prob": round(place_probs[j], 4),
-                        "exacta_prob": round(prob, 6),
-                    }
-                )
+            p_win_j = win_probs[j]
+            denom_i = max(1 - p_win_i, 1e-6)
+            denom_j = max(1 - p_win_j, 1e-6)
+            # 順不同: i→j の確率 + j→i の確率
+            prob = (p_win_i * place_probs[j] / denom_i
+                    + p_win_j * place_probs[i] / denom_j)
+            combos.append(
+                {
+                    "horse1_number": entries_df.iloc[i].get("horse_number"),
+                    "horse1_name": entries_df.iloc[i].get("horse_name", ""),
+                    "horse1_win_prob": round(p_win_i, 4),
+                    "horse2_number": entries_df.iloc[j].get("horse_number"),
+                    "horse2_name": entries_df.iloc[j].get("horse_name", ""),
+                    "horse2_win_prob": round(p_win_j, 4),
+                    "quinella_prob": round(prob, 6),
+                }
+            )
 
         result = (
             pd.DataFrame(combos)
-            .sort_values("exacta_prob", ascending=False)
+            .sort_values("quinella_prob", ascending=False)
             .head(top_n)
             .reset_index(drop=True)
         )
