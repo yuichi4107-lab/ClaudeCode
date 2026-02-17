@@ -1,4 +1,5 @@
 import logging
+import re
 from urllib.parse import urlencode
 
 from bs4 import BeautifulSoup
@@ -15,22 +16,41 @@ class RaceListScraper(BaseScraper):
     """指定年月・会場のレースIDリストを db.netkeiba.com から取得する（JRA中央競馬）。"""
 
     def get_race_ids_for_month(self, year: int, month: int) -> list[str]:
-        """月別のレースID一覧を取得"""
-        params = [
-            ("pid", "race_list"),
-            ("start_year", year),
-            ("start_mon", month),
-            ("end_year", year),
-            ("end_mon", month),
-            ("list", 200),
-        ] + [("jyo[]", v) for v in JRA_VENUES]
+        """月別のレースID一覧を取得（ページネーション対応）。"""
+        all_ids = set()
+        page = 1
+        max_pages = 10  # 安全上限
 
-        url = BASE_URL + "?" + urlencode(params)
-        logger.info("Fetching JRA race list: %d/%02d", year, month)
-        html = self.get(url)
-        race_ids = self._parse_race_ids(html)
-        logger.info("Found %d JRA races for %d/%02d", len(race_ids), year, month)
-        return race_ids
+        while page <= max_pages:
+            params = [
+                ("pid", "race_list"),
+                ("start_year", year),
+                ("start_mon", month),
+                ("end_year", year),
+                ("end_mon", month),
+                ("page", page),
+                ("list", 100),
+            ] + [("jyo[]", v) for v in JRA_VENUES]
+
+            url = BASE_URL + "?" + urlencode(params)
+            logger.info("Fetching JRA race list: %d/%02d (page %d)", year, month, page)
+            html = self.get(url)
+            page_ids = self._parse_race_ids(html)
+
+            if not page_ids:
+                break
+
+            new_ids = set(page_ids) - all_ids
+            all_ids.update(page_ids)
+
+            # 次ページの有無を確認
+            if not self._has_next_page(html) or not new_ids:
+                break
+
+            page += 1
+
+        logger.info("Found %d JRA races for %d/%02d (%d pages)", len(all_ids), year, month, page)
+        return list(all_ids)
 
     def get_race_ids_for_date(
         self, date_str: str, venue_code: str = None
@@ -60,3 +80,16 @@ class RaceListScraper(BaseScraper):
                 if rid[4:6] in JRA_VENUES:
                     race_ids.add(rid)
         return list(race_ids)
+
+    @staticmethod
+    def _has_next_page(html: str) -> bool:
+        """ページネーションに「次」リンクがあるか判定する。"""
+        soup = BeautifulSoup(html, "lxml")
+        # db.netkeiba.com は pager クラスで次ページリンクを提供
+        pager = soup.select_one(".pager")
+        if pager:
+            for a in pager.select("a"):
+                text = a.get_text(strip=True)
+                if "次" in text or ">" in text:
+                    return True
+        return False
