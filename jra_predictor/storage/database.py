@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS races (
     race_date        TEXT NOT NULL,
     race_number      INTEGER,
     race_name        TEXT,
+    race_class       TEXT,
     distance         INTEGER,
     track_type       TEXT,
     track_condition  TEXT,
@@ -116,5 +117,10 @@ def get_connection(db_path: str = DB_PATH) -> sqlite3.Connection:
 def init_db(db_path: str = DB_PATH) -> None:
     conn = get_connection(db_path)
     conn.executescript(CREATE_TABLES_SQL)
+    # マイグレーション: race_class 列がなければ追加
+    try:
+        conn.execute("SELECT race_class FROM races LIMIT 1")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE races ADD COLUMN race_class TEXT")
     conn.commit()
     conn.close()

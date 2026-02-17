@@ -160,6 +160,12 @@ class RaceResultScraper(BaseScraper):
             if cond_m:
                 info["track_condition"] = cond_m.group(1)
 
+        # レース条件 (RaceData02): "新馬", "未勝利", "1勝クラス", "オープン" 等
+        data02 = soup.select_one(".RaceData02")
+        if data02:
+            text02 = data02.get_text()
+            info["race_class"] = self._parse_race_class(text02)
+
         # fallback
         if "distance" not in info or info.get("distance") is None:
             alt = soup.select_one(".raceData, .data01")
@@ -172,6 +178,30 @@ class RaceResultScraper(BaseScraper):
                     info["distance"] = int(m.group(3))
 
         return info
+
+    @staticmethod
+    def _parse_race_class(text: str) -> str:
+        """RaceData02 のテキストからレース条件を抽出する。"""
+        # 優先度順にチェック
+        if "障害" in text:
+            return "障害"
+        if "新馬" in text:
+            return "新馬"
+        if "未勝利" in text:
+            return "未勝利"
+        if "1勝クラス" in text or "500万下" in text:
+            return "1勝クラス"
+        if "2勝クラス" in text or "1000万下" in text:
+            return "2勝クラス"
+        if "3勝クラス" in text or "1600万下" in text:
+            return "3勝クラス"
+        if "オープン" in text or "OP" in text:
+            return "オープン"
+        # G1/G2/G3 もオープンに含まれる
+        for g in ["(G1)", "(G2)", "(G3)", "(Ｇ１)", "(Ｇ２)", "(Ｇ３)", "(L)", "(Ｌ)"]:
+            if g in text:
+                return "オープン"
+        return ""
 
     def _parse_result_table(self, soup: BeautifulSoup, race_id: str) -> list[dict]:
         entries = []

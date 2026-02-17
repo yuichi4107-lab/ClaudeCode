@@ -92,14 +92,15 @@ class FeatureBuilder:
     # ------------------------------------------------------------------ public
 
     def build_training_set(
-        self, from_date: str, to_date: str, target: str = "win"
+        self, from_date: str, to_date: str, target: str = "win",
+        exclude_classes: list[str] | None = None,
     ) -> tuple[pd.DataFrame, pd.Series]:
         """
         Returns (X, y):
           X: 特徴量行列（1行=1出走）
           y: ラベル。target="win" -> 1着, "place" -> 2着, "top3" -> 3着以内
         """
-        entries_df = self.repo.get_entries_in_range(from_date, to_date)
+        entries_df = self.repo.get_entries_in_range(from_date, to_date, exclude_classes=exclude_classes)
         logger.info(
             "Building features for %d entries (%s ~ %s) target=%s",
             len(entries_df), from_date, to_date, target,

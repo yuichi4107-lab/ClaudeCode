@@ -124,16 +124,20 @@ def run_train(args) -> None:
         # ハイパーパラメータチューニング（win モデルのデータで探索）
         print(f"=== ハイパーパラメータチューニング ({n_iter}回探索) ===")
         print(f"[0/3] 特徴量生成中... ({from_date} ~ {to_date})")
-        X_tune, y_tune = builder.build_training_set(from_date, to_date, target="win")
+        X_tune, y_tune = builder.build_training_set(from_date, to_date, target="win", exclude_classes=exclude_classes)
         print(f"  サンプル: {len(X_tune)}, 1着率: {y_tune.mean():.1%}")
         lgbm_params, best_auc = ModelTrainer.tune(X_tune, y_tune, n_iter=n_iter)
         print(f"  チューニング完了: AUC={best_auc:.4f}")
 
     trainer = ModelTrainer(lgbm_params=lgbm_params)
 
+    # 除外クラス
+    exclude_classes = getattr(args, "exclude_class", None) or ["新馬"]
+
     # --- 1着モデル (馬連用) ---
     print(f"[1/3] 1着モデル学習中... ({from_date} ~ {to_date})")
-    X_win, y_win = builder.build_training_set(from_date, to_date, target="win")
+    print(f"  除外クラス: {exclude_classes}")
+    X_win, y_win = builder.build_training_set(from_date, to_date, target="win", exclude_classes=exclude_classes)
     print(f"  サンプル: {len(X_win)}, 1着率: {y_win.mean():.1%}")
     win_model = trainer.train(X_win, y_win)
     meta = {
@@ -147,7 +151,7 @@ def run_train(args) -> None:
 
     # --- 2着モデル (馬連用) ---
     print(f"[2/3] 2着モデル学習中...")
-    X_place, y_place = builder.build_training_set(from_date, to_date, target="place")
+    X_place, y_place = builder.build_training_set(from_date, to_date, target="place", exclude_classes=exclude_classes)
     print(f"  サンプル: {len(X_place)}, 2着率: {y_place.mean():.1%}")
     place_model = trainer.train(X_place, y_place)
     meta = {
@@ -161,7 +165,7 @@ def run_train(args) -> None:
 
     # --- 3着以内モデル (三連複用) ---
     print(f"[3/3] 3着以内モデル学習中...")
-    X_top3, y_top3 = builder.build_training_set(from_date, to_date, target="top3")
+    X_top3, y_top3 = builder.build_training_set(from_date, to_date, target="top3", exclude_classes=exclude_classes)
     print(f"  サンプル: {len(X_top3)}, 3着以内率: {y_top3.mean():.1%}")
     top3_model = trainer.train(X_top3, y_top3)
     meta = {
@@ -416,9 +420,11 @@ def run_evaluate(args) -> None:
         label = "三連複"
     else:
         label = "馬連"
+    exclude_classes = getattr(args, "exclude_class", None) or ["新馬"]
     mode = "選択的" if max_races > 0 else "全レース"
-    print(f"評価期間: {from_date} ~ {to_date} ({label}, {mode})")
-    entries_df = repo.get_entries_in_range(from_date, to_date)
+    excl_str = f", 除外: {','.join(exclude_classes)}" if exclude_classes else ""
+    print(f"評価期間: {from_date} ~ {to_date} ({label}, {mode}{excl_str})")
+    entries_df = repo.get_entries_in_range(from_date, to_date, exclude_classes=exclude_classes)
     if len(entries_df) == 0:
         print("評価データがありません。先にスクレイピングを実行してください。")
         return
@@ -519,6 +525,74 @@ def run_evaluate(args) -> None:
         print_evaluation(result, bet_type=bet_type, top_n=top_n, threshold=threshold)
 
 
+def run_update_race_class(args) -> None:
+    """既存レースの race_class を再スクレイプで埋める。"""
+    from tqdm import tqdm
+    from jra_predictor.scraper.race_result import RaceResultScraper
+    from jra_predictor.storage.database import init_db, get_connection
+    from jra_predictor.config.settings import CACHE_DIR, DB_PATH
+
+    init_db()
+    conn = get_connection(DB_PATH)
+
+    # race_class が NULL のレースを取得
+    rows = conn.execute(
+        "SELECT race_id FROM races WHERE race_class IS NULL ORDER BY race_id"
+    ).fetchall()
+    conn.close()
+
+    race_ids = [r["race_id"] for r in rows]
+    print(f"race_class 未設定: {len(race_ids)} レース")
+
+    if not race_ids:
+        print("全レースの race_class が設定済みです。")
+        return
+
+    scraper = RaceResultScraper(use_cache=True, cache_dir=CACHE_DIR)
+    updated = 0
+    errors = 0
+
+    for race_id in tqdm(race_ids, desc="Updating race_class"):
+        try:
+            url = f"https://db.netkeiba.com/race/{race_id}/"
+            html = scraper.get(url)
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html, "lxml")
+
+            race_class = ""
+            data02 = soup.select_one(".RaceData02")
+            if data02:
+                race_class = RaceResultScraper._parse_race_class(data02.get_text())
+
+            # race_name も更新
+            race_name = None
+            race_name_el = soup.select_one(".RaceName")
+            if race_name_el:
+                race_name = race_name_el.get_text(strip=True)
+
+            conn = get_connection(DB_PATH)
+            conn.execute(
+                "UPDATE races SET race_class = ?, race_name = COALESCE(?, race_name) WHERE race_id = ?",
+                (race_class, race_name, race_id),
+            )
+            conn.commit()
+            conn.close()
+            updated += 1
+        except Exception as e:
+            errors += 1
+            logging.warning("Failed to update race %s: %s", race_id, e)
+
+    print(f"更新完了: {updated} 件 (エラー: {errors} 件)")
+
+    # 結果サマリ
+    conn = get_connection(DB_PATH)
+    for row in conn.execute(
+        "SELECT race_class, COUNT(*) FROM races GROUP BY race_class ORDER BY COUNT(*) DESC"
+    ):
+        print(f"  {row[0] or '(空)':12s}: {row[1]:,} 件")
+    conn.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="jra",
@@ -543,6 +617,9 @@ def main():
                          help="ハイパーパラメータチューニングを実行してから学習する")
     p_train.add_argument("--tune-iter", dest="tune_iter", type=int, default=24,
                          help="チューニング探索回数 (デフォルト: 24)")
+    p_train.add_argument("--exclude-class", dest="exclude_class", nargs="*",
+                         default=["新馬"],
+                         help="除外するレースクラス (デフォルト: 新馬。障害は常に除外)")
 
     # predict
     p_pred = sub.add_parser("predict", help="出馬表から予想を出力する")
@@ -592,6 +669,12 @@ def main():
         "--box", dest="box", type=int, default=0, choices=[0, 3, 4, 5],
         help="ボックス頭数 (馬連: 3=3点,4=6点,5=10点 / 三連複: 4=4点,5=10点 / 0=通常)",
     )
+    p_eval.add_argument("--exclude-class", dest="exclude_class", nargs="*",
+                        default=["新馬"],
+                        help="除外するレースクラス (デフォルト: 新馬。障害は常に除外)")
+
+    # update-race-class
+    sub.add_parser("update-race-class", help="既存レースの race_class を再取得する")
 
     args = parser.parse_args()
 
@@ -603,6 +686,8 @@ def main():
         run_predict(args)
     elif args.command == "evaluate":
         run_evaluate(args)
+    elif args.command == "update-race-class":
+        run_update_race_class(args)
 
 
 if __name__ == "__main__":

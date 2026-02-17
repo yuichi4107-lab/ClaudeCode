@@ -19,14 +19,15 @@ class Repository:
     def upsert_race(self, race_info: dict) -> None:
         sql = """
         INSERT INTO races (race_id, venue_code, venue_name, race_date, race_number,
-                           race_name, distance, track_type, track_condition,
+                           race_name, race_class, distance, track_type, track_condition,
                            course_direction, weather, field_size, scraped_at)
         VALUES (:race_id, :venue_code, :venue_name, :race_date, :race_number,
-                :race_name, :distance, :track_type, :track_condition,
+                :race_name, :race_class, :distance, :track_type, :track_condition,
                 :course_direction, :weather, :field_size, :scraped_at)
         ON CONFLICT(race_id) DO UPDATE SET
             venue_name       = excluded.venue_name,
             race_name        = excluded.race_name,
+            race_class       = excluded.race_class,
             distance         = excluded.distance,
             track_type       = excluded.track_type,
             track_condition  = excluded.track_condition,
@@ -36,7 +37,7 @@ class Repository:
             scraped_at       = excluded.scraped_at
         """
         defaults = {
-            "race_name": None, "distance": None, "track_type": None,
+            "race_name": None, "race_class": None, "distance": None, "track_type": None,
             "track_condition": None, "course_direction": None,
             "weather": None, "field_size": None, "venue_name": None,
         }
@@ -142,19 +143,29 @@ class Repository:
 
     # --------------------------------------------------------- query helpers
 
-    def get_entries_in_range(self, from_date: str, to_date: str) -> pd.DataFrame:
+    def get_entries_in_range(
+        self, from_date: str, to_date: str,
+        exclude_classes: list[str] | None = None,
+    ) -> pd.DataFrame:
         sql = """
         SELECT e.*, r.venue_code, r.venue_name, r.race_date, r.distance,
                r.track_type, r.track_condition, r.course_direction,
-               r.field_size, r.race_number
+               r.field_size, r.race_number, r.race_class
         FROM race_entries e
         JOIN races r ON e.race_id = r.race_id
         WHERE r.race_date BETWEEN ? AND ?
           AND e.finish_position IS NOT NULL
-        ORDER BY r.race_date, e.race_id, e.horse_number
         """
+        params: list = [from_date, to_date]
+        if exclude_classes:
+            placeholders = ",".join("?" for _ in exclude_classes)
+            sql += f"  AND (r.race_class IS NULL OR r.race_class NOT IN ({placeholders}))\n"
+            params.extend(exclude_classes)
+        # 障害レースは常に除外
+        sql += "  AND r.track_type != '障害'\n"
+        sql += "ORDER BY r.race_date, e.race_id, e.horse_number"
         with self._conn() as conn:
-            return pd.read_sql_query(sql, conn, params=(from_date, to_date))
+            return pd.read_sql_query(sql, conn, params=params)
 
     def get_horse_history(
         self,
