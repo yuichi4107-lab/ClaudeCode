@@ -127,7 +127,7 @@ class FeatureBuilder:
         race_date = race_info.get("race_date", "")
         rows = []
         for entry in entries:
-            entry_series = pd.Series({**entry, **race_info})
+            entry_series = pd.Series({**race_info, **entry})
             row = self._build_row(entry_series)
             row["horse_number"] = entry.get("horse_number")
             row["horse_name"] = entry.get("horse_name")
