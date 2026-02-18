@@ -120,6 +120,9 @@ def run_train(args) -> None:
 
     lgbm_params = None
 
+    # 除外クラス
+    exclude_classes = getattr(args, "exclude_class", None) or ["新馬"]
+
     if do_tune:
         # ハイパーパラメータチューニング（win モデルのデータで探索）
         print(f"=== ハイパーパラメータチューニング ({n_iter}回探索) ===")
@@ -130,9 +133,6 @@ def run_train(args) -> None:
         print(f"  チューニング完了: AUC={best_auc:.4f}")
 
     trainer = ModelTrainer(lgbm_params=lgbm_params)
-
-    # 除外クラス
-    exclude_classes = getattr(args, "exclude_class", None) or ["新馬"]
 
     # --- 1着モデル (馬連用) ---
     print(f"[1/3] 1着モデル学習中... ({from_date} ~ {to_date})")
