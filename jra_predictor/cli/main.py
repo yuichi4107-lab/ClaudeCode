@@ -191,6 +191,7 @@ def run_predict(args) -> None:
     from jra_predictor.model.strategy import (
         score_quinella_race, score_quinella_box_race,
         score_trio_race, score_trio_box_race,
+        score_wide_race, score_wide_box_race,
         select_races, print_race_selection,
     )
     from jra_predictor.config.settings import VENUE_CODES, VENUE_NAMES_JP, CACHE_DIR
@@ -235,7 +236,31 @@ def run_predict(args) -> None:
             df = builder.build_prediction_rows(race_id, entries, race_info)
             field_size = len(entries)
 
-            if bet_type == "quinella" and box_size > 0:
+            if bet_type == "wide" and box_size > 0:
+                # ワイドボックスモード
+                box_result = predictor.predict_wide_box(df, box_size=box_size)
+                import numpy as np
+                all_top3 = predictor.predict_top3_probs(df)
+                all_top3_sorted = sorted(all_top3.tolist(), reverse=True)
+                score = score_wide_box_race(
+                    box_result["selected_horses"], box_size, field_size, all_top3_sorted,
+                )
+                score["race_id"] = race_id
+                score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
+                score["race_number"] = race_info.get("race_number", "?")
+                score["race_info"] = race_info
+                score["box_result"] = box_result
+                race_results.append(score)
+            elif bet_type == "wide":
+                ranked = predictor.predict_wide(df, top_n=max(top_n, 5))
+                score = score_wide_race(ranked, field_size)
+                score["race_id"] = race_id
+                score["venue"] = race_info.get("venue_name", VENUE_NAMES_JP.get(race_id[4:6], ""))
+                score["race_number"] = race_info.get("race_number", "?")
+                score["race_info"] = race_info
+                score["ranked"] = ranked
+                race_results.append(score)
+            elif bet_type == "quinella" and box_size > 0:
                 # 馬連ボックスモード
                 box_result = predictor.predict_quinella_box(df, box_size=box_size)
                 import numpy as np
@@ -317,7 +342,31 @@ def run_predict(args) -> None:
         print(f"\nRace {race_id} - {venue}競馬場 第{race_num}R "
               f"{track}{dist}m {cond} ({field_size}頭){conf_str}")
 
-        if bet_type == "quinella" and box_size > 0:
+        if bet_type == "wide" and box_size > 0:
+            # ワイドボックス出力
+            box_result = score["box_result"]
+            n_tickets = box_result["n_tickets"]
+            print(f"ワイド {box_size}頭BOX ({n_tickets}点):")
+            print(f"  選出馬:")
+            for h in box_result["selected_horses"]:
+                print(f"    {int(h['horse_number']):>2} {h['horse_name']:<12} P(top3)={h['top3_prob']:.3f}")
+            print(f"  購入組み合わせ:")
+            for _, row in box_result["box_combos"].iterrows():
+                h1 = int(row["horse1_number"])
+                h2 = int(row["horse2_number"])
+                print(f"    {h1}-{h2}")
+        elif bet_type == "wide":
+            ranked = score["ranked"]
+            display_ranked = ranked.head(top_n)
+            print(f"ワイド予想 上位{top_n}組み合わせ:")
+            for rank, row in display_ranked.iterrows():
+                h1 = int(row.get("horse1_number", 0))
+                h1n = row.get("horse1_name", "不明")
+                h2 = int(row.get("horse2_number", 0))
+                h2n = row.get("horse2_name", "不明")
+                prob = row.get("wide_prob", 0)
+                print(f"  {rank}位: {h1}-{h2}  ({h1n}, {h2n})  P={prob:.4f}")
+        elif bet_type == "quinella" and box_size > 0:
             # 馬連ボックス出力
             box_result = score["box_result"]
             n_tickets = box_result["n_tickets"]
@@ -388,6 +437,7 @@ def run_evaluate(args) -> None:
     from jra_predictor.model.strategy import (
         score_quinella_race, score_quinella_box_race,
         score_trio_race, score_trio_box_race,
+        score_wide_race, score_wide_box_race,
     )
     from jra_predictor.model.evaluation import (
         evaluate_quinella_roi, evaluate_trio_roi,
@@ -410,7 +460,12 @@ def run_evaluate(args) -> None:
     builder.ensure_preloaded()  # メモリにプリロードして高速化
     predictor = ModelPredictor(model_name, bet_types=[bet_type])
 
-    if bet_type == "quinella" and box_size > 0:
+    if bet_type == "wide" and box_size > 0:
+        from math import comb
+        label = f"ワイド{box_size}頭BOX({comb(box_size, 2)}点/R)"
+    elif bet_type == "wide":
+        label = "ワイド"
+    elif bet_type == "quinella" and box_size > 0:
         from math import comb
         label = f"馬連{box_size}頭BOX({comb(box_size, 2)}点/R)"
     elif bet_type == "trio" and box_size > 0:
@@ -439,7 +494,31 @@ def run_evaluate(args) -> None:
             field_size = len(group)
             race_date = f"{race_id[:4]}-{race_id[6:8]}-{race_id[8:10]}"
 
-            if bet_type == "quinella" and box_size > 0:
+            if bet_type == "wide" and box_size > 0:
+                box_result = predictor.predict_wide_box(X_race, box_size=box_size)
+                import numpy as np
+                all_top3 = predictor.predict_top3_probs(X_race)
+                all_top3_sorted = sorted(all_top3.tolist(), reverse=True)
+                score = score_wide_box_race(
+                    box_result["selected_horses"], box_size, field_size, all_top3_sorted,
+                )
+                race_predictions.append({
+                    "race_id": race_id,
+                    "race_date": race_date,
+                    "confidence_score": score["confidence_score"],
+                    "box_combos": box_result["box_combos"],
+                    "predictions": box_result["box_combos"],
+                })
+            elif bet_type == "wide":
+                preds = predictor.predict_wide(X_race, top_n=10)
+                score = score_wide_race(preds, field_size)
+                race_predictions.append({
+                    "race_id": race_id,
+                    "race_date": race_date,
+                    "confidence_score": score["confidence_score"],
+                    "predictions": preds,
+                })
+            elif bet_type == "quinella" and box_size > 0:
                 box_result = predictor.predict_quinella_box(X_race, box_size=box_size)
                 import numpy as np
                 win_p = predictor.predict_win_probs(X_race)
@@ -629,8 +708,8 @@ def main():
     p_pred.add_argument("--model-name", dest="model_name", default="jra_v1")
     p_pred.add_argument("--top-n", dest="top_n", type=int, default=3)
     p_pred.add_argument(
-        "--bet-type", dest="bet_type", choices=["quinella", "trio"], default="quinella",
-        help="馬券種: quinella=馬連, trio=三連複 (デフォルト: quinella)",
+        "--bet-type", dest="bet_type", choices=["quinella", "trio", "wide"], default="quinella",
+        help="馬券種: quinella=馬連, trio=三連複, wide=ワイド (デフォルト: quinella)",
     )
     p_pred.add_argument(
         "--max-races", dest="max_races", type=int, default=0,
@@ -654,8 +733,8 @@ def main():
     p_eval.add_argument("--threshold", dest="threshold", type=float, default=0.01,
                         help="確率閾値（デフォルト: 0.01）")
     p_eval.add_argument(
-        "--bet-type", dest="bet_type", choices=["quinella", "trio"], default="quinella",
-        help="馬券種: quinella=馬連, trio=三連複 (デフォルト: quinella)",
+        "--bet-type", dest="bet_type", choices=["quinella", "trio", "wide"], default="quinella",
+        help="馬券種: quinella=馬連, trio=三連複, wide=ワイド (デフォルト: quinella)",
     )
     p_eval.add_argument(
         "--max-races", dest="max_races", type=int, default=0,

@@ -144,6 +144,33 @@ def evaluate_selective_roi(
                 if race_hit:
                     day_hits += 1
 
+            elif bet_type == "wide" and box_size > 0:
+                # ワイドボックス: 全組み合わせを購入（1レースで最大3組的中）
+                box_combos = rp.get("box_combos", pd.DataFrame())
+                if box_combos.empty:
+                    continue
+                n_tickets = len(box_combos)
+                race_hit = False
+                race_payout = 0.0
+                for _, row in box_combos.iterrows():
+                    h1 = int(row["horse1_number"])
+                    h2 = int(row["horse2_number"])
+                    payout = repo.get_wide_payout(race_id, h1, h2)
+                    if payout is not None and payout > 0:
+                        race_hit = True
+                        race_payout += payout / 100.0
+                results.append({
+                    "race_id": race_id, "date": date,
+                    "hit": race_hit,
+                    "payout": race_payout,
+                    "invested": n_tickets,
+                    "confidence": rp["confidence_score"],
+                })
+                day_invested += n_tickets
+                day_returned += race_payout
+                if race_hit:
+                    day_hits += 1
+
             elif bet_type == "trio" and box_size > 0:
                 # ボックス: 全組み合わせを購入
                 box_combos = rp.get("box_combos", pd.DataFrame())
@@ -171,6 +198,22 @@ def evaluate_selective_roi(
                 day_returned += race_payout
                 if race_hit:
                     day_hits += 1
+
+            elif bet_type == "wide":
+                preds = rp["predictions"]
+                top_combos = preds.nlargest(top_n_per_race, "wide_prob")
+                for _, row in top_combos.iterrows():
+                    h1 = int(row["horse1_number"])
+                    h2 = int(row["horse2_number"])
+                    payout = repo.get_wide_payout(race_id, h1, h2)
+                    hit = payout is not None and payout > 0
+                    ret = payout / 100.0 if hit else 0.0
+                    results.append({"race_id": race_id, "date": date, "hit": hit, "payout": ret,
+                                    "invested": 1, "confidence": rp["confidence_score"]})
+                    day_invested += 1
+                    day_returned += ret
+                    if hit:
+                        day_hits += 1
 
             elif bet_type == "trio":
                 preds = rp["predictions"]
@@ -266,7 +309,7 @@ def _summarize_with_cost(results: list[dict]) -> dict:
 
 
 def print_evaluation(result: dict, bet_type: str = "quinella", top_n: int = 1, threshold: float = 0.0) -> None:
-    label = "馬連" if bet_type == "quinella" else "三連複"
+    label = {"quinella": "馬連", "trio": "三連複", "wide": "ワイド"}.get(bet_type, bet_type)
     print(f"\n=== バックテスト結果（{label}） ===")
     print(f"戦略: top_n={top_n}, threshold={threshold:.4f}")
     if "error" in result:
@@ -290,12 +333,18 @@ def print_selective_evaluation(
     show_daily: bool = True,
 ) -> None:
     from math import comb as _comb
-    if bet_type == "quinella" and box_size > 0:
+    if bet_type == "wide" and box_size > 0:
+        label = f"ワイド{box_size}頭BOX"
+        tickets_str = f"1Rあたり{_comb(box_size, 2)}点(={box_size}頭BOX)"
+    elif bet_type == "quinella" and box_size > 0:
         label = f"馬連{box_size}頭BOX"
         tickets_str = f"1Rあたり{_comb(box_size, 2)}点(={box_size}頭BOX)"
     elif bet_type == "trio" and box_size > 0:
         label = f"三連複{box_size}頭BOX"
         tickets_str = f"1Rあたり{_comb(box_size, 3)}点(={box_size}頭BOX)"
+    elif bet_type == "wide":
+        label = "ワイド"
+        tickets_str = f"1Rあたり{top_n}点購入"
     elif bet_type == "trio":
         label = "三連複"
         tickets_str = f"1Rあたり{top_n}点購入"

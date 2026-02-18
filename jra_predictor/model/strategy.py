@@ -203,6 +203,83 @@ def score_trio_box_race(
     }
 
 
+def score_wide_race(ranked_df: pd.DataFrame, field_size: int) -> dict:
+    """
+    ワイド予測結果からレースの自信度スコアを算出する。
+    """
+    if len(ranked_df) < 2 or field_size < 3:
+        return {"confidence_score": 0.0, "edge_ratio": 0.0, "separation": 0.0}
+
+    top1_prob = ranked_df.iloc[0]["wide_prob"]
+    top2_prob = ranked_df.iloc[1]["wide_prob"]
+    # ワイドの的中組み合わせ: C(3,2)=3 通り（3着以内の馬のペア）
+    # 全組み合わせ: C(n,2)
+    random_prob = 3.0 * 2.0 / (field_size * (field_size - 1))
+
+    edge_ratio = top1_prob / max(random_prob, 1e-9)
+    separation = top1_prob - top2_prob
+
+    confidence_score = edge_ratio * (1.0 + separation / max(top1_prob, 1e-9))
+
+    return {
+        "confidence_score": round(confidence_score, 4),
+        "edge_ratio": round(edge_ratio, 4),
+        "separation": round(separation, 6),
+        "top1_prob": round(top1_prob, 6),
+        "random_prob": round(random_prob, 6),
+        "field_size": field_size,
+    }
+
+
+def score_wide_box_race(
+    selected_horses: list[dict],
+    box_size: int,
+    field_size: int,
+    all_top3_probs: list[float],
+) -> dict:
+    """
+    ワイドボックスにおけるレースの自信度スコアを算出する。
+
+    ワイドは3着以内の2頭を当てる。1レースで最大C(3,2)=3組の的中。
+    """
+    if len(selected_horses) < box_size or field_size < box_size:
+        return {"confidence_score": 0.0, "top_sum": 0.0, "gap": 0.0, "box_edge": 0.0}
+
+    top_probs = [h["top3_prob"] for h in selected_horses]
+    top_sum = sum(top_probs)
+
+    if len(all_top3_probs) > box_size:
+        gap = all_top3_probs[box_size - 1] - all_top3_probs[box_size]
+    else:
+        gap = all_top3_probs[box_size - 1]
+
+    # ワイドボックスの的中確率: 選出馬のうち2頭以上が3着以内に入る
+    n_total_combos = comb(field_size, 2)
+    n_box_combos = comb(box_size, 2)
+    # ワイドは3組当たりがあるので、ランダム確率は 3 * n_box_combos / n_total_combos
+    random_box_prob = 3.0 * n_box_combos / max(n_total_combos, 1)
+
+    from itertools import combinations as combs
+    max_combo_prob = 0.0
+    for combo in combs(top_probs, 2):
+        p = combo[0] * combo[1]
+        max_combo_prob = max(max_combo_prob, p)
+
+    box_edge = max_combo_prob / max(random_box_prob / n_box_combos, 1e-9)
+
+    confidence_score = (top_sum / 3.0) * (1.0 + gap) * max(box_edge, 1.0)
+
+    return {
+        "confidence_score": round(confidence_score, 4),
+        "top_sum": round(top_sum, 4),
+        "gap": round(gap, 4),
+        "box_edge": round(box_edge, 4),
+        "field_size": field_size,
+        "box_size": box_size,
+        "n_tickets": n_box_combos,
+    }
+
+
 def select_races(
     race_scores: list[dict],
     max_races: int = 6,

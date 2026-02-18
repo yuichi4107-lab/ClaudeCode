@@ -89,8 +89,8 @@ class ModelPredictor:
             self.win_model = None
             self.place_model = None
 
-        # 三連複用モデル
-        if "trio" in bet_types:
+        # 三連複・ワイド用モデル
+        if "trio" in bet_types or "wide" in bet_types:
             self.top3_model = load_model(f"{model_name}_top3")
             top3_meta = load_meta(f"{model_name}_top3")
             self.top3_features = (
@@ -312,6 +312,94 @@ class ModelPredictor:
         box_df = pd.DataFrame(combos)
         if not box_df.empty:
             box_df = box_df.sort_values("trio_prob", ascending=False).reset_index(drop=True)
+            box_df.index += 1
+
+        return {
+            "selected_horses": selected_horses,
+            "box_combos": box_df,
+            "n_tickets": len(combos),
+            "box_size": box_size,
+        }
+
+    # ----------------------------------------------------------- ワイド
+
+    def predict_wide(
+        self, entries_df: pd.DataFrame, top_n: int = 5
+    ) -> pd.DataFrame:
+        """
+        ワイド（2頭が共に3着以内）の確率を計算し、上位 top_n 件を返す。
+        P_wide(i,j) ≈ P_top3(i) * P_top3(j)
+        """
+        top3_probs = self.predict_top3_probs(entries_df)
+
+        n = len(entries_df)
+        combos = []
+        for i, j in combinations(range(n), 2):
+            prob = top3_probs[i] * top3_probs[j]
+            combos.append({
+                "horse1_number": entries_df.iloc[i].get("horse_number"),
+                "horse1_name": entries_df.iloc[i].get("horse_name", ""),
+                "horse1_top3_prob": round(top3_probs[i], 4),
+                "horse2_number": entries_df.iloc[j].get("horse_number"),
+                "horse2_name": entries_df.iloc[j].get("horse_name", ""),
+                "horse2_top3_prob": round(top3_probs[j], 4),
+                "wide_prob": round(float(prob), 6),
+            })
+
+        result = (
+            pd.DataFrame(combos)
+            .sort_values("wide_prob", ascending=False)
+            .head(top_n)
+            .reset_index(drop=True)
+        )
+        result.index += 1
+        return result
+
+    # ----------------------------------------------------------- ワイドボックス
+
+    def predict_wide_box(
+        self, entries_df: pd.DataFrame, box_size: int = 5
+    ) -> dict:
+        """
+        P(top3) 上位 box_size 頭を選び、全2頭組み合わせをワイドボックス購入する。
+
+        ワイドは1レースで最大3組が的中（3着以内の馬同士の全ペア）。
+        box=5 なら C(5,2)=10 点で、最大3点が的中する可能性がある。
+
+        Returns dict:
+            selected_horses: list[dict]
+            box_combos: pd.DataFrame
+            n_tickets: int
+            box_size: int
+        """
+        top3_probs = self.predict_top3_probs(entries_df)
+
+        indices = np.argsort(top3_probs)[::-1][:box_size]
+        indices = sorted(indices)
+
+        selected_horses = []
+        for idx in indices:
+            selected_horses.append({
+                "horse_number": entries_df.iloc[idx].get("horse_number"),
+                "horse_name": entries_df.iloc[idx].get("horse_name", ""),
+                "top3_prob": round(float(top3_probs[idx]), 4),
+            })
+
+        combos = []
+        for ci, cj in combinations(range(len(indices)), 2):
+            i, j = indices[ci], indices[cj]
+            prob = top3_probs[i] * top3_probs[j]
+            combos.append({
+                "horse1_number": entries_df.iloc[i].get("horse_number"),
+                "horse1_name": entries_df.iloc[i].get("horse_name", ""),
+                "horse2_number": entries_df.iloc[j].get("horse_number"),
+                "horse2_name": entries_df.iloc[j].get("horse_name", ""),
+                "wide_prob": round(float(prob), 6),
+            })
+
+        box_df = pd.DataFrame(combos)
+        if not box_df.empty:
+            box_df = box_df.sort_values("wide_prob", ascending=False).reset_index(drop=True)
             box_df.index += 1
 
         return {

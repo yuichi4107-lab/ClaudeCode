@@ -64,10 +64,11 @@ class RaceResultScraper(BaseScraper):
         }
 
     def _parse_payouts(self, soup: BeautifulSoup, race_id: str) -> list[dict]:
-        """払戻金テーブルから馬連・三連複・単勝の払戻情報を取得する。"""
+        """払戻金テーブルから馬連・三連複・単勝・ワイドの払戻情報を取得する。"""
         payouts = []
         for table in soup.select("table.pay_table_01"):
             rows = table.select("tr")
+            current_bet_type = None
             for tr in rows:
                 cells = tr.select("td, th")
                 if len(cells) < 2:
@@ -75,13 +76,40 @@ class RaceResultScraper(BaseScraper):
 
                 bet_type_text = cells[0].get_text(strip=True)
 
+                # bet type の検出（新しい行ヘッダーがある場合）
                 if "三連複" in bet_type_text:
-                    bet_type = "trio"
+                    current_bet_type = "trio"
+                elif "ワイド" in bet_type_text:
+                    current_bet_type = "wide"
                 elif "馬連" in bet_type_text:
-                    bet_type = "quinella"
+                    current_bet_type = "quinella"
                 elif "単勝" in bet_type_text:
-                    bet_type = "win"
+                    current_bet_type = "win"
+                elif len(cells) >= 3:
+                    # ヘッダーなし＝前の bet_type の継続行 (rowspan)
+                    pass
+                elif len(cells) == 2 and current_bet_type == "wide":
+                    # ワイドの rowspan 継続行 (2セルのみ)
+                    combo_text = cells[0].get_text(strip=True)
+                    amount_text = cells[1].get_text(strip=True)
+                    amount_m = re.search(r"([\d,]+)", amount_text)
+                    combo_m = re.search(r"(\d+)\D+(\d+)", combo_text)
+                    if combo_m and amount_m:
+                        nums = sorted([int(combo_m.group(1)), int(combo_m.group(2))])
+                        combination = f"{nums[0]}-{nums[1]}"
+                        payout = float(amount_m.group(1).replace(",", ""))
+                        payouts.append({
+                            "race_id": race_id,
+                            "bet_type": "wide",
+                            "combination": combination,
+                            "payout": payout,
+                        })
+                    continue
                 else:
+                    current_bet_type = None
+                    continue
+
+                if current_bet_type is None:
                     continue
 
                 if len(cells) >= 3:
@@ -89,22 +117,19 @@ class RaceResultScraper(BaseScraper):
                     amount_text = cells[2].get_text(strip=True)
                     amount_m = re.search(r"([\d,]+)", amount_text)
 
-                    if bet_type == "trio":
-                        # 三連複: "3-7-12" のように3頭の組み合わせ
+                    if current_bet_type == "trio":
                         nums = re.findall(r"\d+", combo_text)
                         if len(nums) >= 3 and amount_m:
-                            # ソートして順不同の正規形にする
                             sorted_nums = sorted(nums[:3], key=int)
                             combination = "-".join(sorted_nums)
                             payout = float(amount_m.group(1).replace(",", ""))
                             payouts.append({
                                 "race_id": race_id,
-                                "bet_type": bet_type,
+                                "bet_type": "trio",
                                 "combination": combination,
                                 "payout": payout,
                             })
-                    elif bet_type == "quinella":
-                        # 馬連: "3-7" のように2頭（順不同なのでソート）
+                    elif current_bet_type in ("quinella", "wide"):
                         combo_m = re.search(r"(\d+)\D+(\d+)", combo_text)
                         if combo_m and amount_m:
                             nums = sorted([int(combo_m.group(1)), int(combo_m.group(2))])
@@ -112,19 +137,18 @@ class RaceResultScraper(BaseScraper):
                             payout = float(amount_m.group(1).replace(",", ""))
                             payouts.append({
                                 "race_id": race_id,
-                                "bet_type": bet_type,
+                                "bet_type": current_bet_type,
                                 "combination": combination,
                                 "payout": payout,
                             })
-                    else:
-                        # 単勝: "3" のように1頭
+                    elif current_bet_type == "win":
                         combo_m = re.search(r"(\d+)", combo_text)
                         if combo_m and amount_m:
                             combination = combo_m.group(1)
                             payout = float(amount_m.group(1).replace(",", ""))
                             payouts.append({
                                 "race_id": race_id,
-                                "bet_type": bet_type,
+                                "bet_type": "win",
                                 "combination": combination,
                                 "payout": payout,
                             })

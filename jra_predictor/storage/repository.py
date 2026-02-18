@@ -252,6 +252,17 @@ class Repository:
             ).fetchone()
         return row["payout"] if row else None
 
+    def get_wide_payout(self, race_id: str, h1: int, h2: int) -> float | None:
+        """ワイド払戻金を取得する。combination は馬番をソートした '小-大' 形式。"""
+        sorted_nums = sorted([h1, h2])
+        combination = f"{sorted_nums[0]}-{sorted_nums[1]}"
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT payout FROM race_payouts WHERE race_id=? AND bet_type='wide' AND combination=?",
+                (race_id, combination),
+            ).fetchone()
+        return row["payout"] if row else None
+
     def log_scrape(
         self, url: str, status_code: int, error_msg: str = None
     ) -> None:

@@ -79,8 +79,8 @@ nankan_predictor/
 ## JRA 中央競馬予想システム (jra_predictor)
 
 ### Overview
-JRA 中央競馬10場（札幌・函館・福島・新潟・東京・中山・中京・京都・阪神・小倉）を対象とした馬連・三連複予想システム。
-nankan_predictor と同一アーキテクチャで、netkeiba.com からデータを収集し LightGBM で馬連・三連複を予測する。
+JRA 中央競馬10場（札幌・函館・福島・新潟・東京・中山・中京・京都・阪神・小倉）を対象とした馬連・三連複・ワイド予想システム。
+nankan_predictor と同一アーキテクチャで、netkeiba.com からデータを収集し LightGBM で馬連・三連複・ワイドを予測する。
 
 ### Usage
 ```bash
@@ -129,6 +129,14 @@ python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type quin
 # バックテスト（三連複ボックス: 1日5R × 5頭BOX = 50点/日）
 python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type trio --box 5 --max-races 5
 
+# ワイドボックス買い: 3頭BOX(3点) / 4頭BOX(6点) / 5頭BOX(10点)
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type wide --box 5 --max-races 6
+python -m jra_predictor.cli.main predict --date 20260215 --bet-type wide --box 4 --max-races 9
+
+# バックテスト（ワイドボックス: 1日6R × 5頭BOX = 60点/日）
+python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type wide --box 5 --max-races 6
+python -m jra_predictor.cli.main evaluate --from-date 2025-01-01 --bet-type wide --box 4 --max-races 9
+
 # setup.py でインストール後はショートカットが使える
 jra scrape --date 20260215
 jra predict --date 20260215 --venue hanshin --bet-type trio
@@ -152,8 +160,8 @@ jra_predictor/
 ├── features/builder.py     特徴量生成 (33特徴量)。上がり3F・馬齢・モメンタム等を追加
 ├── model/
 │   ├── trainer.py          TimeSeriesSplit + LightGBM/HGBT + CalibratedClassifierCV + HPチューニング
-│   ├── predictor.py        3モデル(win/place/top3)から馬連・三連複確率を計算
-│   ├── evaluation.py       馬連・三連複 ROI バックテスト（全レース・選択的）
+│   ├── predictor.py        3モデル(win/place/top3)から馬連・三連複・ワイド確率を計算
+│   ├── evaluation.py       馬連・三連複・ワイド ROI バックテスト（全レース・選択的）
 │   ├── strategy.py         選択的ベッティング: 自信度スコア算出・レース選出
 │   └── registry.py         joblib でモデル保存・読み込み (data/models/)
 └── cli/main.py             argparse エントリーポイント (scrape/train/predict/evaluate --bet-type/--tune/--max-races)
@@ -166,7 +174,7 @@ jra_predictor/
 - **出馬表URL**: race.netkeiba.com（JRA用）。nankan は nar.netkeiba.com
 - **DB**: data/jra.db（nankan とは別ファイル）
 - **特徴量**: 33特徴量。上がり3F平均・前走人気・着順モメンタム・馬齢・性別・騎手3着以内率等を含む
-- **馬券種**: 馬連 (quinella) と三連複 (trio) の2種対応。`--bet-type` オプションで切替
+- **馬券種**: 馬連 (quinella)・三連複 (trio)・ワイド (wide) の3種対応。`--bet-type` オプションで切替
 - **馬連確率**: `P(i,j) ≈ P_win(i)*P_place(j)/(1-P_win(i)) + P_win(j)*P_place(i)/(1-P_win(j))` で近似（順不同）
 - **三連複確率**: `P(i,j,k) ≈ P_top3(i) * P_top3(j) * P_top3(k)` で近似（順不同）
 - **モデル3本構成**: `{name}_win.joblib` + `{name}_place.joblib` + `{name}_top3.joblib`
@@ -174,9 +182,12 @@ jra_predictor/
 - **自信度スコア**: モデル予測確率 / ランダム確率（=優位率）× 確信度係数。高いほど買い
 - **馬連ボックス**: `--box 3` (3頭=3点) / `--box 4` (4頭=6点) / `--box 5` (5頭=10点)。P(win)+P(place)スコア上位の馬を選出し全2頭組み合わせ購入
 - **三連複ボックス**: `--box 4` (4頭=4点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全組み合わせ購入
+- **ワイド確率**: `P_wide(i,j) ≈ P_top3(i) * P_top3(j)` で近似（3着以内の2頭ペア、1レース最大3組的中）
+- **ワイドボックス**: `--box 3` (3頭=3点) / `--box 4` (4頭=6点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全2頭組み合わせ購入
 - **LightGBMパラメータ**: lr=0.03, depth=4, leaves=31, subsample=1.0, colsample=0.8, reg_alpha/lambda=0.1（チューニング済）
 - **ハイパーパラメータチューニング**: `train --tune` でランダムサーチ（24回）。TimeSeriesSplit AUCで最適化
 - **推奨戦略（安定重視）**: `--bet-type quinella --max-races 6 --top-n 5` (ROI+270%, プラス日57/101=56%, 1日3000円)
 - **推奨戦略（的中率重視）**: `--bet-type quinella --box 5 --max-races 7` (ROI+100%, 的中率16%, プラス日56/101=55%, 1日7000円)
 - **推奨戦略（高ROI）**: `--bet-type trio --box 5 --max-races 5` (ROI+159%, 的中率5.0%, プラス日21/101=21%)
+- **推奨戦略（高的中率）**: `--bet-type wide --box 5 --max-races 6` (的中率33.8%, 1日6R×10点=60点/日) ※要実払戻データ
 - **データ移行**: 馬単(exacta)から馬連(quinella)への変更に伴い、払戻データの再スクレイプが必要（`bet_type='quinella'` で保存）
