@@ -41,3 +41,4 @@ USE_CACHE = True
 TRACK_CONDITION_ENC = {"良": 0, "稍重": 1, "重": 2, "不良": 3}
 TRACK_TYPE_ENC = {"ダート": 0, "芝": 1, "障害": 2}
 COURSE_DIRECTION_ENC = {"右": 0, "左": 1, "直線": 2}
+RACE_CLASS_ENC = {"未勝利": 1, "1勝クラス": 2, "2勝クラス": 3, "3勝クラス": 4, "オープン": 5}

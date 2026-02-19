@@ -157,7 +157,7 @@ jra_predictor/
 ├── storage/
 │   ├── database.py         SQLite スキーマ定義・接続管理 (WAL モード) - course_direction 列追加
 │   └── repository.py       CRUD: upsert_race, upsert_entries, get_entries_in_range 等
-├── features/builder.py     特徴量生成 (33特徴量)。上がり3F・馬齢・モメンタム等を追加
+├── features/builder.py     特徴量生成 (45特徴量)。調教師・走法・オッズ・枠順比等を追加
 ├── model/
 │   ├── trainer.py          TimeSeriesSplit + LightGBM/HGBT + CalibratedClassifierCV + HPチューニング
 │   ├── predictor.py        3モデル(win/place/top3)から馬連・三連複・ワイド確率を計算
@@ -173,7 +173,7 @@ jra_predictor/
 - **コース方向**: 右回り・左回り・直線の区別を特徴量に追加
 - **出馬表URL**: race.netkeiba.com（JRA用）。nankan は nar.netkeiba.com
 - **DB**: data/jra.db（nankan とは別ファイル）
-- **特徴量**: 33特徴量。上がり3F平均・前走人気・着順モメンタム・馬齢・性別・騎手3着以内率等を含む
+- **特徴量**: 45特徴量（42有効）。調教師勝率・走法・通過順位比・オッズ・相対枠順・斤量比等を追加
 - **馬券種**: 馬連 (quinella)・三連複 (trio)・ワイド (wide) の3種対応。`--bet-type` オプションで切替
 - **馬連確率**: `P(i,j) ≈ P_win(i)*P_place(j)/(1-P_win(i)) + P_win(j)*P_place(i)/(1-P_win(j))` で近似（順不同）
 - **三連複確率**: `P(i,j,k) ≈ P_top3(i) * P_top3(j) * P_top3(k)` で近似（順不同）
@@ -184,10 +184,10 @@ jra_predictor/
 - **三連複ボックス**: `--box 4` (4頭=4点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全組み合わせ購入
 - **ワイド確率**: `P_wide(i,j) ≈ P_top3(i) * P_top3(j)` で近似（3着以内の2頭ペア、1レース最大3組的中）
 - **ワイドボックス**: `--box 3` (3頭=3点) / `--box 4` (4頭=6点) / `--box 5` (5頭=10点)。P(top3)上位の馬を選出し全2頭組み合わせ購入
-- **LightGBMパラメータ**: lr=0.03, depth=4, leaves=31, subsample=1.0, colsample=0.8, reg_alpha/lambda=0.1（チューニング済）
+- **LightGBMパラメータ**: lr=0.01, depth=4, leaves=63, n_est=500, sub=1.0, col=0.7, alpha=1.0, lambda=0.1（45特徴量チューニング済, AUC=0.790）
 - **ハイパーパラメータチューニング**: `train --tune` でランダムサーチ（24回）。TimeSeriesSplit AUCで最適化
-- **推奨戦略（安定重視）**: `--bet-type quinella --max-races 6 --top-n 5` (ROI+270%, プラス日57/101=56%, 1日3000円)
-- **推奨戦略（的中率重視）**: `--bet-type quinella --box 5 --max-races 7` (ROI+100%, 的中率16%, プラス日56/101=55%, 1日7000円)
-- **推奨戦略（高ROI）**: `--bet-type trio --box 5 --max-races 5` (ROI+159%, 的中率5.0%, プラス日21/101=21%)
-- **推奨戦略（高的中率）**: `--bet-type wide --box 5 --max-races 6` (的中率33.8%, 1日6R×10点=60点/日) ※要実払戻データ
+- **推奨戦略（安定重視）**: `--bet-type quinella --max-races 6 --top-n 5` (ROI+302%, プラス日57/101=56%, 1日3000円)
+- **推奨戦略（的中率重視）**: `--bet-type quinella --box 5 --max-races 6` (ROI+108%, プラス日57/101=56%, 1日6000円)
+- **推奨戦略（高ROI）**: `--bet-type trio --box 5 --max-races 5` (ROI+183%, プラス日20/101=20%)
+- **推奨戦略（高的中率）**: `--bet-type wide --box 5 --max-races 6` (ROI-25%, 的中率高, 1日6R×10点=60点/日)
 - **データ移行**: 馬単(exacta)から馬連(quinella)への変更に伴い、払戻データの再スクレイプが必要（`bet_type='quinella'` で保存）
