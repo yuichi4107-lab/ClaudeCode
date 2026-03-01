@@ -15,10 +15,12 @@ setup(
         "joblib>=1.3.0",
         "tqdm>=4.66.0",
         "colorama>=0.4.6",
+        "google-genai>=1.0.0",
     ],
     entry_points={
         "console_scripts": [
             "nankan=nankan_predictor.cli.main:main",
+            "imagegen=image_generator.cli:main",
         ],
     },
     python_requires=">=3.10",

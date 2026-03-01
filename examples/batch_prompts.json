@@ -1,0 +1,24 @@
+[
+    {
+        "prompt": "A cute cat sitting on a windowsill watching the rain",
+        "filename": "rainy_cat.png",
+        "aspect_ratio": "4:3"
+    },
+    {
+        "prompt": "A futuristic Tokyo cityscape at sunset with neon lights",
+        "filename": "tokyo_future.png",
+        "aspect_ratio": "16:9",
+        "style_prefix": "cyberpunk digital art"
+    },
+    {
+        "prompt": "A serene Japanese garden with cherry blossoms in spring",
+        "filename": "sakura_garden.png",
+        "aspect_ratio": "3:2"
+    },
+    {
+        "prompt": "A horse racing at full speed on a dirt track",
+        "filename": "horse_race.png",
+        "aspect_ratio": "16:9",
+        "style_prefix": "dynamic action photography"
+    }
+]
