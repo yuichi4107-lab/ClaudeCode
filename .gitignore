@@ -8,4 +8,4 @@ build/
 
 # OpenClaw agent workspaces (each has its own .git repo)
 # IDENTITY.md copies are tracked in config/agents/ instead
-agents/
+/agents/
