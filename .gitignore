@@ -6,6 +6,6 @@ dist/
 build/
 .env
 
-# OpenClaw agent runtime state (keep IDENTITY.md only)
-agents/*/sessions/
-agents/*/.cache/
+# OpenClaw agent workspaces (each has its own .git repo)
+# IDENTITY.md copies are tracked in config/agents/ instead
+agents/
