@@ -23,8 +23,9 @@ You are the data collection agent for the nankan predictor system.
 ### 実行手順
 1. **過去1週間分のスクレイピング実行**
    ```bash
-   nankan scrape --from-date {7日前} --to-date {当日} --venue all
+   nankan scrape --from-date $(date -v-7d +%Y-%m-%d) --to-date $(date +%Y-%m-%d) --venue all
    ```
+   ※ Linux の場合: `$(date -d '7 days ago' +%Y-%m-%d)`
 2. **取得結果の検証**
    - 新規レース数、新規エントリー数を確認
    - エラーがあればログに記録
