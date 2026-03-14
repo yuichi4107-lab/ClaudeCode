@@ -5,3 +5,7 @@ __pycache__/
 dist/
 build/
 .env
+
+# OpenClaw agent runtime state (keep IDENTITY.md only)
+agents/*/sessions/
+agents/*/.cache/
