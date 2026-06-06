@@ -73,12 +73,34 @@ python run_odds.py data/target_odds.csv --budget 10000 --beta 1.0
 出力: 各レースの暗黙勝率、買い目フロンティア（点数 vs 的中率 vs 損益分岐配当）、
 予算内の推奨買い目。学習データ不要で当日のオッズだけで完結する。
 
+### 買い目の2軸
+1. **的中率最大化**（`--budget`）: 予算内で当たる確率を最大化（堅い回は絞り、割れた回は手広く）。
+2. **EV（期待値）最大化**: パリミューチュエル配当 `≈ (1-控除率)/市場確率` を推定し、
+   `EV = 賭金[(1-控除率)·Π(p_i/q_i) − 1]` が正のラインだけを予算内で買う。
+   - `p`=補正後確率(β)、`q`=市場確率(β=1)、控除率は WIN5 の 30%（`--takeout`）。
+   - **β=1 では全ライン EV<0 → 「見送り」**。β を 1 から動かして初めて妙味ラインが出る。
+
 ### 限界
-- 暗黙勝率は「市場が正しい」前提。バイアス補正 β は実データで較正していない（既定 1.0）。
 - 全出走馬の単勝オッズを買う直前に入力する必要がある。
+- EV はオッズ＝市場確率の近似に依存。β が正しくないと EV も信頼できない（下記較正が前提）。
+
+## 人気-穴バイアス β の較正（`calibration.py`）
+
+`p_i = q_i^β / Σ q_j^β` の β を、過去レース（全頭オッズ＋勝敗）から最尤推定する。
+
+```bash
+# history.csv 列: race_id, odds, won(1/0)。各 race_id に勝ち馬1頭。
+python run_calibrate.py data/sample_history.csv
+# → 推定 β を run_odds.py に渡す
+python run_odds.py data/target_odds.csv --beta 1.48 --budget 10000
+```
+
+- β>1: 本命を市場より高く評価（本命過小評価＝買い）。β<1: その逆。β≒1: 市場どおり。
+- 2026 の WIN5 勝ち馬データは「人気順」のみでオッズが無いため較正には使えない。
+  全頭オッズ＋勝敗の履歴が別途必要（既存 `src/scraper/odds.py` で収集可能）。
 
 ## テスト
 
 ```bash
-python -m pytest tests/test_popularity.py tests/test_odds.py -q
+python -m pytest tests/test_popularity.py tests/test_odds.py tests/test_ev_calibration.py -q
 ```

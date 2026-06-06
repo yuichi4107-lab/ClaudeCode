@@ -20,11 +20,16 @@ from .odds import (
     Horse,
     Race,
     Selection,
+    EVLine,
+    EVPlan,
     implied_win_probs,
     optimize_win5,
     best_within_budget,
     combination_fair_odds,
+    enumerate_ev_lines,
+    optimize_win5_ev,
 )
+from .calibration import fit_beta, load_history
 
 __all__ = [
     "load_results",
@@ -39,8 +44,14 @@ __all__ = [
     "Horse",
     "Race",
     "Selection",
+    "EVLine",
+    "EVPlan",
     "implied_win_probs",
     "optimize_win5",
     "best_within_budget",
     "combination_fair_odds",
+    "enumerate_ev_lines",
+    "optimize_win5_ev",
+    "fit_beta",
+    "load_history",
 ]

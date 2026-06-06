@@ -20,6 +20,7 @@ from popularity import (  # noqa: E402
     combination_fair_odds,
     load_target_races,
     optimize_win5,
+    optimize_win5_ev,
 )
 
 
@@ -35,6 +36,7 @@ def main():
     ap.add_argument("--budget", type=int, default=10_000, help="予算（円）")
     ap.add_argument("--beta", type=float, default=1.0, help="人気-穴バイアス補正（>1で本命寄り）")
     ap.add_argument("--max-points", type=int, default=20_000, help="フロンティア探索の上限点数")
+    ap.add_argument("--takeout", type=float, default=0.30, help="WIN5 控除率（既定0.30）")
     args = ap.parse_args()
 
     races = load_target_races(args.csv, beta=args.beta)
@@ -72,6 +74,24 @@ def main():
     for pr in best.per_race:
         print(f"   {pr['race']}: 馬番 {pr['umaban']}  （上位{pr['k']}頭・的中率{pr['cum_prob']*100:.1f}%）")
     print(f"\n  参考: 本命ライン理論オッズ = {combination_fair_odds(races):,.0f} 倍")
+
+    # ---- EV（期待値）最大化 ----
+    print("\n" + "=" * 64)
+    print(f"EV最大化（予算 {yen(args.budget)}・控除率 {args.takeout:.0%}・EV>0 のラインのみ）")
+    print("-" * 64)
+    plan = optimize_win5_ev(races, budget_yen=args.budget, takeout=args.takeout, positive_only=True)
+    if plan.points == 0:
+        print("  妙味のあるライン（EV>0）はありません → 見送り推奨。")
+        print("  ※ β=1（市場どおり）では全ライン EV<0。run_calibrate.py で β を較正すると")
+        print("    本命寄り(β>1)などで EV>0 のラインが出る場合があります。")
+    else:
+        print(f"  採用ライン {plan.points} 点  費用 {yen(plan.cost_yen)}  推定ROI {plan.expected_roi*100:+.1f}%")
+        print(f"  合計期待値 {yen(plan.total_ev_yen)}  的中率 {plan.hit_prob*100:.2f}%")
+        print("  上位ライン:")
+        for l in plan.lines[:10]:
+            print(
+                f"   馬番 {tuple(l.umaban)}  真勝率 {l.p_true*100:.3f}%  推定配当 {yen(l.payout_yen)}  EV {yen(l.ev_yen)}"
+            )
 
 
 if __name__ == "__main__":

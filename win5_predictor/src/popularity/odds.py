@@ -24,7 +24,8 @@ class Horse:
     odds: float
     name: str = ""
     pop: Optional[int] = None  # 人気順（任意・検証用）
-    prob: float = 0.0  # 計算後に埋まる暗黙勝率
+    prob: float = 0.0  # 補正後の暗黙勝率（β 適用）
+    prob_market: float = 0.0  # 市場の暗黙勝率（β=1, 控除率除去のみ）
 
 
 def implied_win_probs(odds: Sequence[float], beta: float = 1.0) -> np.ndarray:
@@ -50,9 +51,12 @@ class Race:
     def __init__(self, horses: List[Horse], beta: float = 1.0, name: str = ""):
         if not horses:
             raise ValueError("出走馬が空です。")
-        probs = implied_win_probs([h.odds for h in horses], beta=beta)
-        for h, p in zip(horses, probs):
+        odds_list = [h.odds for h in horses]
+        probs = implied_win_probs(odds_list, beta=beta)
+        market = implied_win_probs(odds_list, beta=1.0)
+        for h, p, q in zip(horses, probs, market):
             h.prob = float(p)
+            h.prob_market = float(q)
         # 勝率降順（=オッズ昇順=人気順）
         self.horses: List[Horse] = sorted(horses, key=lambda h: -h.prob)
         self.name = name
@@ -159,3 +163,112 @@ def combination_fair_odds(races: List[Race]) -> float:
     for r in races:
         p *= r.horses[0].prob
     return (1.0 / p) if p > 0 else float("inf")
+
+
+# ---- 期待値（EV）最大化 ----
+#
+# パリミューチュエル WIN5 の組合せ C の配当（賭金あたり）は
+#   payout(C) ≈ (1 - takeout) / Pmkt(C)
+# と近似できる（その組合せに賭けられた割合 ≒ 市場確率 Pmkt(C)=Π q_i）。
+# 1 ライン(賭金 unit)の期待値は
+#   EV(C) = Ptrue(C)·payout(C) - unit = unit[(1-takeout)·Π(p_i/q_i) - 1]
+# β=1 では p=q なので全ライン EV = -unit·takeout（常にマイナス＝妙味なし）。
+# β を 1 から動かすと p≠q となり、市場より勝つと見るラインの EV が正に出る。
+
+
+@dataclass
+class EVLine:
+    umaban: Sequence[int]
+    p_true: float       # Π p_i
+    p_market: float     # Π q_i
+    payout_yen: float   # 推定配当（unit あたり）
+    ev_yen: float       # 1 ライン期待値
+
+
+@dataclass
+class EVPlan:
+    takeout: float
+    unit_yen: int
+    lines: List[EVLine]
+
+    @property
+    def points(self) -> int:
+        return len(self.lines)
+
+    @property
+    def cost_yen(self) -> int:
+        return self.points * self.unit_yen
+
+    @property
+    def total_ev_yen(self) -> float:
+        return sum(l.ev_yen for l in self.lines)
+
+    @property
+    def hit_prob(self) -> float:
+        return sum(l.p_true for l in self.lines)
+
+    @property
+    def expected_roi(self) -> float:
+        return (self.total_ev_yen / self.cost_yen) if self.cost_yen else float("nan")
+
+
+def _line_ev(p_true: float, p_market: float, takeout: float, unit_yen: int) -> tuple[float, float]:
+    payout = unit_yen * (1.0 - takeout) / p_market if p_market > 0 else 0.0
+    return payout, p_true * payout - unit_yen
+
+
+def enumerate_ev_lines(
+    races: List[Race],
+    takeout: float = 0.30,
+    unit_yen: int = 100,
+    max_per_race: int = 8,
+) -> List[EVLine]:
+    """各レース上位 max_per_race 頭から作れる全ラインの EV を計算して返す（EV 降順）。"""
+    if len(races) != 5:
+        raise ValueError("WIN5 は 5 レース必要です。")
+    import itertools
+
+    cands = [r.top(min(max_per_race, len(r.horses))) for r in races]
+    lines: List[EVLine] = []
+    for combo in itertools.product(*cands):
+        p_true = 1.0
+        p_mkt = 1.0
+        for h in combo:
+            p_true *= h.prob
+            p_mkt *= h.prob_market
+        payout, ev = _line_ev(p_true, p_mkt, takeout, unit_yen)
+        lines.append(
+            EVLine(
+                umaban=tuple(h.umaban for h in combo),
+                p_true=p_true,
+                p_market=p_mkt,
+                payout_yen=payout,
+                ev_yen=ev,
+            )
+        )
+    lines.sort(key=lambda l: -l.ev_yen)
+    return lines
+
+
+def optimize_win5_ev(
+    races: List[Race],
+    budget_yen: int,
+    takeout: float = 0.30,
+    unit_yen: int = 100,
+    max_per_race: int = 8,
+    positive_only: bool = True,
+) -> EVPlan:
+    """EV の高いラインから予算内で買う計画を返す。
+
+    positive_only=True なら EV>0 のラインだけを採用する（無ければ「見送り」= 0 ライン）。
+    """
+    lines = enumerate_ev_lines(races, takeout=takeout, unit_yen=unit_yen, max_per_race=max_per_race)
+    max_lines = max(0, budget_yen // unit_yen)
+    chosen: List[EVLine] = []
+    for l in lines:
+        if len(chosen) >= max_lines:
+            break
+        if positive_only and l.ev_yen <= 0:
+            break
+        chosen.append(l)
+    return EVPlan(takeout=takeout, unit_yen=unit_yen, lines=chosen)
