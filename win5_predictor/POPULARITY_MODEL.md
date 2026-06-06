@@ -99,6 +99,15 @@ python run_odds.py data/target_odds.csv --beta 1.48 --budget 10000
 - 2026 の WIN5 勝ち馬データは「人気順」のみでオッズが無いため較正には使えない。
   全頭オッズ＋勝敗の履歴が別途必要（既存 `src/scraper/odds.py` で収集可能）。
 
+### DB から履歴 CSV を生成
+スクレイパーで `race_results`（odds・finish_position）を埋めたら、DB から較正用 CSV を作れる:
+```bash
+python build_history.py --db data/win5.db --out data/history.csv --start 2020-01-01
+python run_calibrate.py data/history.csv
+```
+※ このクラウド実行環境は許可リスト型ネットワークで netkeiba 非許可のため、スクレイプは
+ローカル実行か、環境のネットワークポリシー変更が必要。
+
 ## テスト
 
 ```bash
