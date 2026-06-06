@@ -61,6 +61,36 @@ def rounds_with_pops(
     return out
 
 
+def load_target_races(path: str | Path, beta: float = 1.0):
+    """対象 5 レースの単勝オッズ CSV を読み込み、Race のリストを返す。
+
+    CSV 列: race(1..5), umaban, odds, horse(任意), pop(任意=人気順)
+    `#` 始まりはコメント。
+    """
+    from .odds import Horse, Race  # 遅延 import で循環回避
+
+    df = pd.read_csv(path, comment="#")
+    df["race"] = pd.to_numeric(df["race"], errors="coerce")
+    df["umaban"] = pd.to_numeric(df["umaban"], errors="coerce")
+    df["odds"] = pd.to_numeric(df["odds"], errors="coerce")
+    if "pop" in df.columns:
+        df["pop"] = pd.to_numeric(df["pop"], errors="coerce")
+    races = []
+    for race_no in sorted(df["race"].dropna().unique()):
+        sub = df[df["race"] == race_no]
+        horses = [
+            Horse(
+                umaban=int(r["umaban"]),
+                odds=float(r["odds"]),
+                name=str(r["horse"]) if "horse" in df.columns and pd.notna(r.get("horse")) else "",
+                pop=(int(r["pop"]) if "pop" in df.columns and pd.notna(r.get("pop")) else None),
+            )
+            for _, r in sub.iterrows()
+        ]
+        races.append(Race(horses, beta=beta, name=f"R{int(race_no)}"))
+    return races
+
+
 def data_coverage(df: pd.DataFrame) -> dict:
     """データの埋まり具合を返す（人気が何回ぶん入っているか等）。"""
     n_total = len(df)

@@ -6,13 +6,29 @@
 出走馬の特徴量を必要とせず、結果データのみで完結する。
 """
 
-from .loader import load_results, winning_popularities, rounds_with_pops, POP_COLS
+from .loader import (
+    load_results,
+    load_target_races,
+    winning_popularities,
+    rounds_with_pops,
+    POP_COLS,
+)
 from .model import PopularityModel
 from .strategy import uniform_strategies, greedy_budget_frontier
 from .backtest import backtest_uniform
+from .odds import (
+    Horse,
+    Race,
+    Selection,
+    implied_win_probs,
+    optimize_win5,
+    best_within_budget,
+    combination_fair_odds,
+)
 
 __all__ = [
     "load_results",
+    "load_target_races",
     "winning_popularities",
     "rounds_with_pops",
     "POP_COLS",
@@ -20,4 +36,11 @@ __all__ = [
     "uniform_strategies",
     "greedy_budget_frontier",
     "backtest_uniform",
+    "Horse",
+    "Race",
+    "Selection",
+    "implied_win_probs",
+    "optimize_win5",
+    "best_within_budget",
+    "combination_fair_odds",
 ]
