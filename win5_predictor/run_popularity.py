@@ -103,5 +103,5 @@ def main(path: str) -> None:
 
 
 if __name__ == "__main__":
-    csv_path = sys.argv[1] if len(sys.argv) > 1 else "data/win5_results_2025.csv"
+    csv_path = sys.argv[1] if len(sys.argv) > 1 else "data/win5_results_2026.csv"
     main(csv_path)
