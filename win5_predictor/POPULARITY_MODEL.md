@@ -108,8 +108,23 @@ python run_calibrate.py data/history.csv
 ※ このクラウド実行環境は許可リスト型ネットワークで netkeiba 非許可のため、スクレイプは
 ローカル実行か、環境のネットワークポリシー変更が必要。
 
+## レース順の傾向クロス集計（`crosstab.py`）
+
+「何レース目が堅い／荒れやすいか」を、横軸=人気バケット（1-3 / 4-6 / 7-9 / 10人気〜）、
+縦軸=レース順（1〜5レース目）で集計する。買い目の点数配分（堅い回は絞り、荒れる回は手広く）の根拠に使う。
+
+```bash
+python run_crosstab.py            # data/win5_results_2026.csv
+```
+
+出力: レース順×人気バケット（件数／%）、レース順ごとの堅さ指標（1-3人気%）、
+1回あたり3番人気以内の勝ち馬数の分布、オッズ×人気の2次元マップ（o1..o5 があれば）。
+
+- 当選馬の単勝オッズ倍率（`o1..o5`）を CSV に足すと「オッズ×人気」マップも埋まる。
+- n=28 と少数のため傾向は暫定。年数を足すほど安定する。
+
 ## テスト
 
 ```bash
-python -m pytest tests/test_popularity.py tests/test_odds.py tests/test_ev_calibration.py -q
+python -m pytest tests/ -q -k "popularity or odds or ev_calibration or build_history or crosstab"
 ```
