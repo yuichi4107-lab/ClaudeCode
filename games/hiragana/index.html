@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffd54f">
+  <title>ひらがな で あそぼう！</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- スタート画面：カテゴリ選択 -->
+    <section id="start-screen" class="screen">
+      <h1 class="title">ひらがな で あそぼう！</h1>
+      <p class="subtitle">えに あう もじを えらんでね</p>
+      <div class="category-buttons">
+        <button class="cat-btn" data-category="vehicle">
+          <span class="cat-emoji">🚛</span>
+          <span class="cat-label">はたらく くるま</span>
+        </button>
+        <button class="cat-btn" data-category="animal">
+          <span class="cat-emoji">🦁</span>
+          <span class="cat-label">どうぶつ</span>
+        </button>
+        <button class="cat-btn" data-category="all">
+          <span class="cat-emoji">🌈</span>
+          <span class="cat-label">ぜんぶ</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ゲーム画面 -->
+    <section id="game-screen" class="screen hidden">
+      <header class="game-header">
+        <button id="home-btn" class="icon-btn" aria-label="さいしょにもどる">🏠</button>
+        <div id="score" class="score">⭐ <span id="score-num">0</span></div>
+      </header>
+
+      <p class="prompt">この えは なにかな？<br>さいしょの もじを えらんでね</p>
+
+      <button id="picture" class="picture" aria-label="えを もういちど きく">
+        <span id="picture-content"></span>
+      </button>
+
+      <div id="choices" class="choices"></div>
+
+      <div id="feedback" class="feedback hidden"></div>
+    </section>
+
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
