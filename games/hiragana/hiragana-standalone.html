@@ -150,7 +150,7 @@
       { word: 'ひこうき',       answer: 'ひ', emoji: '✈️', category: 'vehicle' },
       { word: 'ふね',           answer: 'ふ', emoji: '🚢', category: 'vehicle' },
       { word: 'たくしー',       answer: 'た', emoji: '🚕', category: 'vehicle' },
-      { word: 'ぱとかー',       answer: 'ぱ', emoji: '🚓', category: 'vehicle' },
+      { word: 'ぱとかー',       answer: 'ぱ', emoji: '🚓', category: 'vehicle', say: 'パトカー' },
       { word: 'ろけっと',       answer: 'ろ', emoji: '🚀', category: 'vehicle' },
       // --- どうぶつ ---
       { word: 'いぬ',           answer: 'い', emoji: '🐶', category: 'animal' },
@@ -164,7 +164,7 @@
       { word: 'うま',           answer: 'う', emoji: '🐴', category: 'animal' },
       { word: 'ぶた',           answer: 'ぶ', emoji: '🐷', category: 'animal' },
       { word: 'かめ',           answer: 'か', emoji: '🐢', category: 'animal' },
-      { word: 'とり',           answer: 'と', emoji: '🐦', category: 'animal' },
+      { word: 'とり',           answer: 'と', emoji: '🐦', category: 'animal', say: 'トリ' },
       { word: 'くま',           answer: 'く', emoji: '🐻', category: 'animal' },
       { word: 'ぺんぎん',       answer: 'ぺ', emoji: '🐧', category: 'animal' },
     ];
@@ -281,7 +281,8 @@
           btn.addEventListener('click', () => onChoice(btn, ch));
           choicesEl.appendChild(btn);
         }
-        setTimeout(() => speak(current.word), 350);
+        // say があればそれを優先（カタカナ表記でアクセントを自然にするため）
+        setTimeout(() => speak(current.say || current.word), 350);
       }
 
       function onChoice(btn, value) {
@@ -333,7 +334,7 @@
         });
       });
       homeBtn.addEventListener('click', goHome);
-      pictureBtn.addEventListener('click', () => { if (current) speak(current.word); });
+      pictureBtn.addEventListener('click', () => { if (current) speak(current.say || current.word); });
     })();
   </script>
 </body>

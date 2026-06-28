@@ -6,6 +6,8 @@
 //   emoji    : いますぐ使う絵（絵文字）
 //   image    : あとで差し替える画像パス（null のうちは emoji を表示する）
 //   category : 'vehicle'（はたらくくるま） / 'animal'（どうぶつ）
+//   say      : （任意）読み上げ専用テキスト。指定すると word の代わりにこれを読み上げる。
+//              カタカナ表記にするとアクセントが自然になりやすい（例: 'パトカー'）。
 //
 // ▼ 絵を本物の画像に差し替えたいとき
 //   1) games/hiragana/assets/images/ に画像ファイル（png/svg など）を置く
@@ -25,7 +27,7 @@ const ITEMS = [
   { word: 'ひこうき',       answer: 'ひ', emoji: '✈️', image: null, category: 'vehicle' },
   { word: 'ふね',           answer: 'ふ', emoji: '🚢', image: null, category: 'vehicle' },
   { word: 'たくしー',       answer: 'た', emoji: '🚕', image: null, category: 'vehicle' },
-  { word: 'ぱとかー',       answer: 'ぱ', emoji: '🚓', image: null, category: 'vehicle' },
+  { word: 'ぱとかー',       answer: 'ぱ', emoji: '🚓', image: null, category: 'vehicle', say: 'パトカー' },
   { word: 'ろけっと',       answer: 'ろ', emoji: '🚀', image: null, category: 'vehicle' },
 
   // --- どうぶつ ---
@@ -40,7 +42,7 @@ const ITEMS = [
   { word: 'うま',           answer: 'う', emoji: '🐴', image: null, category: 'animal' },
   { word: 'ぶた',           answer: 'ぶ', emoji: '🐷', image: null, category: 'animal' },
   { word: 'かめ',           answer: 'か', emoji: '🐢', image: null, category: 'animal' },
-  { word: 'とり',           answer: 'と', emoji: '🐦', image: null, category: 'animal' },
+  { word: 'とり',           answer: 'と', emoji: '🐦', image: null, category: 'animal', say: 'トリ' },
   { word: 'くま',           answer: 'く', emoji: '🐻', image: null, category: 'animal' },
   { word: 'ぺんぎん',       answer: 'ぺ', emoji: '🐧', image: null, category: 'animal' },
 ];

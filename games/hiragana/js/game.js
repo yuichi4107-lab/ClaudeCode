@@ -133,7 +133,8 @@
     }
 
     // 少し待ってから単語を読み上げ（画面切り替えの直後を避ける）
-    setTimeout(() => speak(current.word), 350);
+    // say があればそれを優先（カタカナ表記でアクセントを自然にするため）
+    setTimeout(() => speak(current.say || current.word), 350);
   }
 
   // ----- 解答処理 -----
@@ -199,7 +200,7 @@
 
   // 絵をタップすると単語を読み上げ直す（聞き直し）
   pictureBtn.addEventListener('click', () => {
-    if (current) speak(current.word);
+    if (current) speak(current.say || current.word);
   });
 
 })();
