@@ -1,0 +1,45 @@
+name: Deploy hiragana game to GitHub Pages
+
+# ひらがなゲーム（games/hiragana/）を GitHub Pages に公開する。
+# 公開URL: https://yuichi4107-lab.github.io/ClaudeCode/
+# ※ 初回のみ、リポジトリの Settings → Pages → Source を「GitHub Actions」に設定してください。
+
+on:
+  push:
+    branches:
+      - main
+      - claude/hiragana-learning-game-km4xpy
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Pages デプロイは同時に1つだけ実行する
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload game as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # games/hiragana をサイトのルートにする → URL を開くと直接ゲームが表示される
+          path: games/hiragana
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

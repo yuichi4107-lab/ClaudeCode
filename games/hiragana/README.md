@@ -10,14 +10,34 @@
 - **ビルド不要**・外部ライブラリなし。`index.html` を開くだけで動く
 - スマホ／タブレットのタッチ操作対応
 
+## ゲームの開き方（どちらでもOK）
+
+### ① パソコンですぐ遊ぶ（ファイルを開くだけ）
+1. GitHub のこのリポジトリで **Code → Download ZIP**（または PR #3 から）でファイル一式をダウンロード
+2. ZIP を解凍する
+3. `games/hiragana/index.html` を **ダブルクリック** してブラウザ（Chrome / Edge 推奨）で開く
+4. 音が出ないときは、最初に画面を一度クリックしてください（ブラウザの自動再生制限の解除）
+
+> 補足：このゲームは通信もインストールも不要なので、ファイルを開くだけで完全に動きます。
+
+### ② URLで開く（GitHub Pages で公開）
+スマホ・タブレット・パソコンのどれでも、同じURLで遊べるようになります。
+1. リポジトリの **Settings → Pages → Build and deployment → Source** を **「GitHub Actions」** に設定（初回の一度だけ）
+2. 数分待つと、次のURLで公開されます：
+   **https://yuichi4107-lab.github.io/ClaudeCode/**
+3. このURLをブックマークすれば、いつでもワンタップで開けます
+
+> 公開は `.github/workflows/pages.yml`（GitHub Actions）が自動で行います。`main` または `claude/hiragana-learning-game-km4xpy` ブランチに変更が入るたびに更新されます。
+
+### （開発者向け）ローカルサーバーで開く
+```bash
+cd games/hiragana
+python -m http.server 8000
+# ブラウザで http://localhost:8000/ を開く
+```
+
 ## 遊び方
-1. `index.html` をブラウザで開く
-   - 音声を安定させるには簡易サーバー経由がおすすめ：
-     ```bash
-     cd games/hiragana
-     python -m http.server 8000
-     # ブラウザで http://localhost:8000/ を開く
-     ```
+1. 上記いずれかの方法でゲームを開く
 2. 「はたらく くるま」「どうぶつ」「ぜんぶ」からカテゴリを選ぶ
 3. 大きな絵が出て、名前が読み上げられる
 4. 絵の名前の **さいしょの ひらがな** のボタンを選ぶ
