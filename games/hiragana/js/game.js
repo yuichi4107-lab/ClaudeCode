@@ -25,18 +25,27 @@
   const CHOICE_COUNT = 3; // 選択肢の数
 
   // ----- 音声（Web Speech API）-----
-  function speak(text) {
-    if (!speechReady) return;
-    if (!('speechSynthesis' in window)) return;
+  function speak(text, onEnd) {
+    if (!speechReady || !('speechSynthesis' in window)) {
+      if (onEnd) setTimeout(onEnd, 0); // 音声非対応でも進行できるようフォールバック
+      return;
+    }
     try {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'ja-JP';
       u.rate = 0.9;   // 子ども向けに少しゆっくり
       u.pitch = 1.1;
+      if (onEnd) {
+        let done = false;
+        const fire = () => { if (!done) { done = true; onEnd(); } };
+        u.onend = fire;
+        u.onerror = fire;
+      }
       window.speechSynthesis.speak(u);
     } catch (e) {
       // 音声が使えない端末でも無視して続行
+      if (onEnd) onEnd();
     }
   }
 
@@ -117,9 +126,8 @@
       score += 1;
       scoreNumEl.textContent = String(score);
       showFeedback('せいかい！ 🎉', 'ok');
-      speak('せいかい！' + current.word);
-      // 少し見せてから次の問題へ
-      setTimeout(nextQuestion, 1600);
+      // 「せいかい！」を読み上げ、それが終わってから少し間を置いて次の問題へ
+      speak('せいかい！', () => setTimeout(nextQuestion, 900));
     } else {
       // 不正解：やさしく「もういちど」。正解ボタンは残して再挑戦可。
       btn.classList.add('wrong');

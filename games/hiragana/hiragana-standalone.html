@@ -188,17 +188,25 @@
       let speechReady = false;
       const CHOICE_COUNT = 3;
 
-      function speak(text) {
-        if (!speechReady) return;
-        if (!('speechSynthesis' in window)) return;
+      function speak(text, onEnd) {
+        if (!speechReady || !('speechSynthesis' in window)) {
+          if (onEnd) setTimeout(onEnd, 0); // 音声非対応でも進行できるようフォールバック
+          return;
+        }
         try {
           window.speechSynthesis.cancel();
           const u = new SpeechSynthesisUtterance(text);
           u.lang = 'ja-JP';
           u.rate = 0.9;
           u.pitch = 1.1;
+          if (onEnd) {
+            let done = false;
+            const fire = () => { if (!done) { done = true; onEnd(); } };
+            u.onend = fire;
+            u.onerror = fire;
+          }
           window.speechSynthesis.speak(u);
-        } catch (e) { /* 音声が使えない端末でも続行 */ }
+        } catch (e) { if (onEnd) onEnd(); /* 音声が使えない端末でも続行 */ }
       }
 
       function shuffle(arr) {
@@ -264,8 +272,8 @@
           score += 1;
           scoreNumEl.textContent = String(score);
           showFeedback('せいかい！ 🎉', 'ok');
-          speak('せいかい！' + current.word);
-          setTimeout(nextQuestion, 1600);
+          // 「せいかい！」を読み上げ、それが終わってから少し間を置いて次の問題へ
+          speak('せいかい！', () => setTimeout(nextQuestion, 900));
         } else {
           btn.classList.add('wrong');
           btn.disabled = true;
