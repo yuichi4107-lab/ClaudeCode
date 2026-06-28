@@ -25,6 +25,25 @@
   const CHOICE_COUNT = 3; // 選択肢の数
 
   // ----- 音声（Web Speech API）-----
+  // できるだけ自然な日本語ボイスを選ぶ（端末にある音声から優先順で選択）
+  let jaVoice = null;
+  function pickVoice() {
+    if (!('speechSynthesis' in window)) return;
+    const vs = window.speechSynthesis.getVoices();
+    if (!vs || !vs.length) return;
+    const ja = vs.filter((v) => /ja[-_]?JP/i.test(v.lang) || v.lang === 'ja');
+    const prefer = ['Google 日本語', 'Microsoft Nanami', 'Microsoft Ayumi', 'Microsoft Haruka', 'Kyoko', 'O-ren', 'Otoya', 'Hattori'];
+    for (const n of prefer) {
+      const m = ja.find((v) => v.name.indexOf(n) !== -1);
+      if (m) { jaVoice = m; return; }
+    }
+    if (ja.length) jaVoice = ja[0];
+  }
+  if ('speechSynthesis' in window) {
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice; // 音声リストは非同期で届くため
+  }
+
   function speak(text, onEnd) {
     if (!speechReady || !('speechSynthesis' in window)) {
       if (onEnd) setTimeout(onEnd, 0); // 音声非対応でも進行できるようフォールバック
@@ -34,8 +53,9 @@
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'ja-JP';
-      u.rate = 0.9;   // 子ども向けに少しゆっくり
-      u.pitch = 1.1;
+      if (jaVoice) u.voice = jaVoice; // 自然な日本語ボイスを使う
+      u.rate = 0.95;  // 子ども向けに少しゆっくり、かつ滑らかに
+      u.pitch = 1.05;
       if (onEnd) {
         let done = false;
         const fire = () => { if (!done) { done = true; onEnd(); } };

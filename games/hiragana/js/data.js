@@ -25,7 +25,7 @@ const ITEMS = [
   { word: 'ひこうき',       answer: 'ひ', emoji: '✈️', image: null, category: 'vehicle' },
   { word: 'ふね',           answer: 'ふ', emoji: '🚢', image: null, category: 'vehicle' },
   { word: 'たくしー',       answer: 'た', emoji: '🚕', image: null, category: 'vehicle' },
-  { word: 'けいさつしゃ',   answer: 'け', emoji: '🚓', image: null, category: 'vehicle' },
+  { word: 'ぱとかー',       answer: 'ぱ', emoji: '🚓', image: null, category: 'vehicle' },
   { word: 'ろけっと',       answer: 'ろ', emoji: '🚀', image: null, category: 'vehicle' },
 
   // --- どうぶつ ---
