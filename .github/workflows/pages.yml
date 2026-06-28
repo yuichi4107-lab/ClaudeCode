@@ -33,6 +33,10 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          # Pages を自動で有効化する（Settings での手動設定が不要になる）。
+          # 失敗する場合は Settings → Pages → Source を「GitHub Actions」に設定。
+          enablement: true
 
       - name: Upload game as Pages artifact
         uses: actions/upload-pages-artifact@v3

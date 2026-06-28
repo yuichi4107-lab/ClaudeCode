@@ -22,12 +22,13 @@
 
 ### ② URLで開く（GitHub Pages で公開）
 スマホ・タブレット・パソコンのどれでも、同じURLで遊べるようになります。
-1. リポジトリの **Settings → Pages → Build and deployment → Source** を **「GitHub Actions」** に設定（初回の一度だけ）
-2. 数分待つと、次のURLで公開されます：
-   **https://yuichi4107-lab.github.io/ClaudeCode/**
-3. このURLをブックマークすれば、いつでもワンタップで開けます
+変更が push されると `.github/workflows/pages.yml`（GitHub Actions）が自動で公開します（Pages の有効化も自動で試みます）。
 
-> 公開は `.github/workflows/pages.yml`（GitHub Actions）が自動で行います。`main` または `claude/hiragana-learning-game-km4xpy` ブランチに変更が入るたびに更新されます。
+数分待つと、次のURLで公開されます：
+**https://yuichi4107-lab.github.io/ClaudeCode/**
+（このURLをブックマークすれば、いつでもワンタップで開けます）
+
+> もし公開に失敗する場合は、一度だけ **Settings → Pages → Build and deployment → Source** を **「GitHub Actions」** に設定してから、ワークフローを再実行してください。
 
 ### （開発者向け）ローカルサーバーで開く
 ```bash
