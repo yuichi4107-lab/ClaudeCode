@@ -19,14 +19,14 @@ const ITEMS = [
   // --- はたらく くるま ---
   { word: 'しょうぼうしゃ', answer: 'し', emoji: '🚒', image: null, category: 'vehicle' },
   { word: 'とれーらー',     answer: 'と', emoji: '🚛', image: null, category: 'vehicle' },
-  { word: 'しょべるかー',   answer: 'し', emoji: '🏗️', image: null, category: 'vehicle' },
+  { word: 'しょべるかー',   answer: 'し', emoji: '🏗️', image: null, category: 'vehicle', say: 'ショベルカー' },
   { word: 'だんぷかー',     answer: 'だ', emoji: '🚜', image: null, category: 'vehicle' },
   { word: 'くるま',         answer: 'く', emoji: '🚗', image: null, category: 'vehicle' },
   { word: 'でんしゃ',       answer: 'で', emoji: '🚃', image: null, category: 'vehicle' },
   { word: 'ばす',           answer: 'ば', emoji: '🚌', image: null, category: 'vehicle' },
   { word: 'ひこうき',       answer: 'ひ', emoji: '✈️', image: null, category: 'vehicle' },
   { word: 'ふね',           answer: 'ふ', emoji: '🚢', image: null, category: 'vehicle' },
-  { word: 'たくしー',       answer: 'た', emoji: '🚕', image: null, category: 'vehicle' },
+  { word: 'たくしー',       answer: 'た', emoji: '🚕', image: null, category: 'vehicle', say: 'タクシー' },
   { word: 'ぱとかー',       answer: 'ぱ', emoji: '🚓', image: null, category: 'vehicle', say: 'パトカー' },
   { word: 'ろけっと',       answer: 'ろ', emoji: '🚀', image: null, category: 'vehicle' },
 
@@ -42,7 +42,7 @@ const ITEMS = [
   { word: 'うま',           answer: 'う', emoji: '🐴', image: null, category: 'animal' },
   { word: 'ぶた',           answer: 'ぶ', emoji: '🐷', image: null, category: 'animal' },
   { word: 'かめ',           answer: 'か', emoji: '🐢', image: null, category: 'animal' },
-  { word: 'とり',           answer: 'と', emoji: '🐦', image: null, category: 'animal', say: 'トリ' },
+  { word: 'とり',           answer: 'と', emoji: '🐦', image: null, category: 'animal', say: '鳥' },
   { word: 'くま',           answer: 'く', emoji: '🐻', image: null, category: 'animal' },
   { word: 'ぺんぎん',       answer: 'ぺ', emoji: '🐧', image: null, category: 'animal' },
 ];
