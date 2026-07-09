@@ -1,0 +1,69 @@
+# 電子書籍テーマ調査の定期実行（隔週: 毎月1日・15日 09:00 JST）
+#
+# 必要なセットアップ（どちらか一方のシークレットをリポジトリに登録すること）:
+#   - CLAUDE_CODE_OAUTH_TOKEN: Claude Code CLI で `claude setup-token` を実行して取得
+#   - ANTHROPIC_API_KEY: Anthropic Console の API キー（下のコメント行に切り替え）
+#
+# モデルは claude_args の --model で変更できる（既定: claude-sonnet-5）。
+# 手動実行は Actions タブ → このワークフロー → Run workflow から。
+name: Ebook Theme Research
+
+on:
+  schedule:
+    - cron: '0 0 1,15 * *' # 00:00 UTC = 09:00 JST
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run theme research with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            .claude/skills/ebook-theme-research/SKILL.md を読み、その手順に従って
+            日本の電子書籍市場（Kindle/KDP）のテーマ調査を実行してください。
+
+            ただし手順のうち git 操作（コミット・プッシュ）はこのワークフローの
+            後続ステップが行うため実行不要です。あなたの仕事は:
+            1. SKILL.md の Step 1〜5 を実行してテーマ10個のレポートを作成する
+            2. docs/ebook-theme-reports/ の過去レポートを読み、新規テーマ・順位変動を
+               「今回の注目シグナル」セクションに反映する
+            3. レポートを docs/ebook-theme-reports/YYYY-MM-DD.md（今日の日付）に保存する
+          claude_args: |
+            --model claude-sonnet-5
+            --allowedTools "WebSearch,WebFetch,Read,Write,Glob,Grep,Bash(date:*),Bash(ls:*)"
+
+      - name: Commit report
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/ebook-theme-reports/
+          if git diff --cached --quiet; then
+            echo "no report generated" && echo "report=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          REPORT=$(git diff --cached --name-only -- docs/ebook-theme-reports/ | head -1)
+          git commit -m "Add ebook theme research report $(date -u +%F)"
+          git push
+          echo "report=$REPORT" >> "$GITHUB_OUTPUT"
+
+      - name: Open issue with report
+        if: steps.commit.outputs.report != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "電子書籍テーマ調査レポート $(date -u +%F)" \
+            --body-file "${{ steps.commit.outputs.report }}" \
+            --repo "${{ github.repository }}"
