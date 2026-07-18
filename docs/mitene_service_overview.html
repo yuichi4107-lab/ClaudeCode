@@ -6,34 +6,51 @@
 <title>「家族アルバム みてね」サービス解説</title>
 <style>
   :root{
-    --paper:#FAF9F5;
+    --paper:#FBFAF6;
     --surface:#FFFFFF;
-    --ink:#23282F;
-    --ink-soft:#5A6170;
-    --accent:#2E4E9E;
-    --accent-soft:#EAEEF8;
-    --amber:#B97B1F;
-    --amber-soft:#F7EEDD;
-    --line:#E3E0D8;
-    --good:#2E7D4F;
-    --warn:#A4541B;
+    --ink:#2A2D33;
+    --ink-soft:#5C6270;
+    --line:#E6E2D9;
+
+    --pink:#C2447C;      --pink-soft:#FBEDF4;
+    --blue:#2E5FB7;      --blue-soft:#EBF1FB;
+    --green:#22834F;     --green-soft:#E9F5EE;
+    --purple:#7C4DBC;    --purple-soft:#F3EDFB;
+    --orange:#D9622B;    --orange-soft:#FCEFE6;
+    --teal:#0E8A8A;      --teal-soft:#E6F5F5;
+    --amber:#B97B1F;     --amber-soft:#FAF1DF;
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --paper:#14171E; --surface:#1C212B; --ink:#E8E6E0; --ink-soft:#9AA1AE;
-      --accent:#8AA5E8; --accent-soft:#232C42; --amber:#D9A54F; --amber-soft:#33291A;
-      --line:#2E3440; --good:#6CBF8E; --warn:#D98D53;
+      --paper:#14171E; --surface:#1D222C; --ink:#E9E7E1; --ink-soft:#A0A7B4; --line:#2F3542;
+      --pink:#E585B0;   --pink-soft:#3A2230;
+      --blue:#85A8EA;   --blue-soft:#1F2A44;
+      --green:#6FC694;  --green-soft:#1B3227;
+      --purple:#B393E6; --purple-soft:#2E2440;
+      --orange:#EB9A66; --orange-soft:#3A2718;
+      --teal:#5FC4C4;   --teal-soft:#15302F;
+      --amber:#DBA84F;  --amber-soft:#362A16;
     }
   }
   :root[data-theme="dark"]{
-    --paper:#14171E; --surface:#1C212B; --ink:#E8E6E0; --ink-soft:#9AA1AE;
-    --accent:#8AA5E8; --accent-soft:#232C42; --amber:#D9A54F; --amber-soft:#33291A;
-    --line:#2E3440; --good:#6CBF8E; --warn:#D98D53;
+    --paper:#14171E; --surface:#1D222C; --ink:#E9E7E1; --ink-soft:#A0A7B4; --line:#2F3542;
+    --pink:#E585B0;   --pink-soft:#3A2230;
+    --blue:#85A8EA;   --blue-soft:#1F2A44;
+    --green:#6FC694;  --green-soft:#1B3227;
+    --purple:#B393E6; --purple-soft:#2E2440;
+    --orange:#EB9A66; --orange-soft:#3A2718;
+    --teal:#5FC4C4;   --teal-soft:#15302F;
+    --amber:#DBA84F;  --amber-soft:#362A16;
   }
   :root[data-theme="light"]{
-    --paper:#FAF9F5; --surface:#FFFFFF; --ink:#23282F; --ink-soft:#5A6170;
-    --accent:#2E4E9E; --accent-soft:#EAEEF8; --amber:#B97B1F; --amber-soft:#F7EEDD;
-    --line:#E3E0D8; --good:#2E7D4F; --warn:#A4541B;
+    --paper:#FBFAF6; --surface:#FFFFFF; --ink:#2A2D33; --ink-soft:#5C6270; --line:#E6E2D9;
+    --pink:#C2447C;   --pink-soft:#FBEDF4;
+    --blue:#2E5FB7;   --blue-soft:#EBF1FB;
+    --green:#22834F;  --green-soft:#E9F5EE;
+    --purple:#7C4DBC; --purple-soft:#F3EDFB;
+    --orange:#D9622B; --orange-soft:#FCEFE6;
+    --teal:#0E8A8A;   --teal-soft:#E6F5F5;
+    --amber:#B97B1F;  --amber-soft:#FAF1DF;
   }
   html{background:var(--paper);}
   body{
@@ -42,90 +59,161 @@
     line-height:1.85; margin:0; font-size:15.5px;
     font-feature-settings:"palt";
   }
-  .wrap{max-width:900px; margin:0 auto; padding:0 24px 96px;}
+  .wrap{max-width:920px; margin:0 auto; padding:0 24px 96px;}
   h1,h2,h3{
     font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
     font-weight:600; text-wrap:balance; line-height:1.4;
   }
-  header{padding:72px 0 40px; border-bottom:1px solid var(--line);}
-  .eyebrow{font-size:12px; letter-spacing:.18em; color:var(--accent); font-weight:700; margin-bottom:14px;}
-  h1{font-size:32px; margin:0 0 18px;}
-  .lede{font-size:17px; color:var(--ink-soft); max-width:40em; margin:0;}
-  .hero-stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:32px;}
-  .stat{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:14px 18px; min-width:150px; flex:1;}
-  .stat b{display:block; font-size:22px; font-variant-numeric:tabular-nums; color:var(--accent);}
+  /* ヘッダー */
+  header{
+    padding:64px 28px 40px; margin:0 -4px;
+    border-bottom:none; position:relative;
+  }
+  .hero-band{
+    background:linear-gradient(135deg, var(--pink-soft), var(--blue-soft) 55%, var(--teal-soft));
+    border:1px solid var(--line); border-radius:14px;
+    padding:40px 32px 32px; margin-top:28px;
+  }
+  .eyebrow{
+    display:inline-block; font-size:12px; letter-spacing:.16em; font-weight:700;
+    color:var(--pink); background:var(--pink-soft);
+    border-radius:99px; padding:4px 14px; margin-bottom:0;
+  }
+  h1{font-size:32px; margin:18px 0 14px;}
+  .lede{font-size:16.5px; color:var(--ink-soft); max-width:40em; margin:0;}
+  .hero-stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:28px;}
+  .stat{
+    background:var(--surface); border-radius:10px; padding:14px 18px;
+    min-width:150px; flex:1; border-top:4px solid var(--line);
+  }
+  .stat b{display:block; font-size:23px; font-variant-numeric:tabular-nums;}
   .stat span{font-size:12.5px; color:var(--ink-soft);}
-  section{margin-top:64px;}
-  .sec-label{font-size:12px; letter-spacing:.18em; color:var(--amber); font-weight:700; margin-bottom:8px;}
-  h2{font-size:24px; margin:0 0 8px; padding-bottom:12px; border-bottom:1px solid var(--line);}
+  .stat:nth-child(1){border-top-color:var(--pink);}   .stat:nth-child(1) b{color:var(--pink);}
+  .stat:nth-child(2){border-top-color:var(--green);}  .stat:nth-child(2) b{color:var(--green);}
+  .stat:nth-child(3){border-top-color:var(--blue);}   .stat:nth-child(3) b{color:var(--blue);}
+  .stat:nth-child(4){border-top-color:var(--amber);}  .stat:nth-child(4) b{color:var(--amber);}
+  /* セクション */
+  section{margin-top:64px; padding:0 4px;}
+  .sec-label{
+    display:inline-block; font-size:12px; letter-spacing:.16em; font-weight:700;
+    border-radius:99px; padding:3px 14px; margin-bottom:10px;
+  }
+  section.s-flow  .sec-label{color:var(--blue);   background:var(--blue-soft);}
+  section.s-price .sec-label{color:var(--green);  background:var(--green-soft);}
+  section.s-goods .sec-label{color:var(--orange); background:var(--orange-soft);}
+  section.s-hist  .sec-label{color:var(--teal);   background:var(--teal-soft);}
+  section.s-eval  .sec-label{color:var(--purple); background:var(--purple-soft);}
+  section.s-sum   .sec-label{color:var(--pink);   background:var(--pink-soft);}
+  h2{font-size:24px; margin:0 0 8px; padding-bottom:12px; border-bottom:2px solid var(--line);}
+  section.s-flow  h2{border-bottom-color:var(--blue);}
+  section.s-price h2{border-bottom-color:var(--green);}
+  section.s-goods h2{border-bottom-color:var(--orange);}
+  section.s-hist  h2{border-bottom-color:var(--teal);}
+  section.s-eval  h2{border-bottom-color:var(--purple);}
+  section.s-sum   h2{border-bottom-color:var(--pink);}
   .sec-note{color:var(--ink-soft); font-size:14px; margin:10px 0 24px; max-width:42em;}
-  h3{font-size:17px; margin:0 0 6px;}
+  h3{font-size:16.5px; margin:0 0 6px;}
   p{margin:0 0 14px;}
-  /* 流れ（ステップ） */
+  /* ステップ */
   .steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px;}
-  .step{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:18px 20px;}
+  .step{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:18px 20px; border-top:4px solid var(--blue);}
   .step .n{
-    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
-    font-size:24px; color:var(--amber); display:block; margin-bottom:6px;
+    display:inline-flex; align-items:center; justify-content:center;
+    width:32px; height:32px; border-radius:50%;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:16px;
+    margin-bottom:8px; color:#fff;
   }
+  .step:nth-child(1){border-top-color:var(--blue);}   .step:nth-child(1) .n{background:var(--blue);}
+  .step:nth-child(2){border-top-color:var(--teal);}   .step:nth-child(2) .n{background:var(--teal);}
+  .step:nth-child(3){border-top-color:var(--green);}  .step:nth-child(3) .n{background:var(--green);}
+  .step:nth-child(4){border-top-color:var(--pink);}   .step:nth-child(4) .n{background:var(--pink);}
   .step p{font-size:13.5px; color:var(--ink-soft); margin:6px 0 0;}
-  /* cards */
-  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px;}
-  .card{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:20px 22px;}
-  .card p{font-size:13.5px; color:var(--ink-soft); margin:0;}
-  /* tables */
-  .tbl{overflow-x:auto; border:1px solid var(--line); border-radius:8px; background:var(--surface);}
-  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:560px;}
+  /* 料金テーブル */
+  .tbl{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface);}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:600px;}
   th{
-    text-align:left; font-size:12px; letter-spacing:.06em; color:var(--ink-soft);
-    background:color-mix(in srgb, var(--line) 35%, var(--surface));
-    padding:10px 16px; border-bottom:1px solid var(--line); white-space:nowrap;
+    text-align:left; font-size:12.5px; letter-spacing:.04em; color:var(--ink);
+    padding:12px 16px; border-bottom:2px solid var(--line); white-space:nowrap; vertical-align:top;
   }
+  th.col-free{background:color-mix(in srgb, var(--line) 30%, var(--surface));}
+  th.col-prem{background:var(--green-soft); color:var(--green);}
+  th.col-pro{background:var(--purple-soft); color:var(--purple);}
   td{padding:11px 16px; border-bottom:1px solid var(--line); vertical-align:top;}
   tr:last-child td{border-bottom:none;}
-  td b{font-variant-numeric:tabular-nums;}
-  .ok{color:var(--good); font-weight:700;}
+  td.cell-prem{background:color-mix(in srgb, var(--green-soft) 45%, var(--surface));}
+  td.cell-pro{background:color-mix(in srgb, var(--purple-soft) 45%, var(--surface));}
+  .ok{color:var(--green); font-weight:700;}
   .no{color:var(--ink-soft);}
-  .price{font-size:15px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .price{font-size:15px; font-weight:700; font-variant-numeric:tabular-nums;}
+  th.col-prem .price{color:var(--green);}
+  th.col-pro .price{color:var(--purple);}
+  /* サービスカード */
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px;}
+  .goods .card{border-left:5px solid var(--orange);}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:20px 22px;}
+  .card p{font-size:13.5px; color:var(--ink-soft); margin:0;}
+  .goods .card:nth-child(1){border-left-color:var(--pink);}   .goods .card:nth-child(1) h3{color:var(--pink);}
+  .goods .card:nth-child(2){border-left-color:var(--orange);} .goods .card:nth-child(2) h3{color:var(--orange);}
+  .goods .card:nth-child(3){border-left-color:var(--amber);}  .goods .card:nth-child(3) h3{color:var(--amber);}
+  .goods .card:nth-child(4){border-left-color:var(--blue);}   .goods .card:nth-child(4) h3{color:var(--blue);}
+  .goods .card:nth-child(5){border-left-color:var(--teal);}   .goods .card:nth-child(5) h3{color:var(--teal);}
+  .goods .card:nth-child(6){border-left-color:var(--purple);} .goods .card:nth-child(6) h3{color:var(--purple);}
   /* 年表 */
-  .timeline{border-left:2px solid var(--line); margin-left:6px; padding-left:22px;}
-  .tl-item{position:relative; padding-bottom:18px;}
+  .timeline{border-left:3px solid var(--teal); margin-left:6px; padding-left:24px;}
+  .tl-item{position:relative; padding-bottom:20px;}
   .tl-item::before{
-    content:""; position:absolute; left:-27.5px; top:9px;
-    width:9px; height:9px; border-radius:50%;
-    background:var(--accent); border:2px solid var(--paper);
+    content:""; position:absolute; left:-31px; top:8px;
+    width:11px; height:11px; border-radius:50%;
+    background:var(--teal); border:2.5px solid var(--paper);
   }
-  .tl-item .y{font-size:12.5px; font-weight:700; color:var(--accent); letter-spacing:.04em;}
-  .tl-item p{font-size:14px; color:var(--ink-soft); margin:2px 0 0;}
+  .tl-item:last-child::before{background:var(--pink); width:13px; height:13px; left:-32px;}
+  .tl-item .y{
+    display:inline-block; font-size:12.5px; font-weight:700; letter-spacing:.04em;
+    color:var(--teal); background:var(--teal-soft); border-radius:5px; padding:1px 10px;
+  }
+  .tl-item:last-child .y{color:var(--pink); background:var(--pink-soft);}
+  .tl-item p{font-size:14px; color:var(--ink-soft); margin:6px 0 0;}
   /* 強み弱み */
   .duo{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px;}
+  .duo .card{border:none;}
+  .duo .plus{background:var(--green-soft); border-top:4px solid var(--green);}
+  .duo .minus{background:var(--orange-soft); border-top:4px solid var(--orange);}
   .duo .card h3{padding-bottom:8px; border-bottom:1px dashed var(--line); margin-bottom:10px;}
-  .duo ul{margin:0; padding-left:1.2em; font-size:13.5px; color:var(--ink-soft);}
-  .duo li{margin-bottom:6px;}
-  .duo .plus h3{color:var(--good);}
-  .duo .minus h3{color:var(--warn);}
+  .duo .plus h3{color:var(--green);}
+  .duo .minus h3{color:var(--orange);}
+  .duo ul{margin:0; padding-left:1.2em; font-size:13.5px; color:var(--ink);}
+  .duo li{margin-bottom:7px;}
+  /* まとめ */
+  .summary{
+    background:var(--pink-soft); border-left:5px solid var(--pink);
+    border-radius:0 10px 10px 0; padding:22px 26px;
+  }
+  .summary p{margin:0; font-size:15.5px;}
+  .summary b{color:var(--pink);}
   footer{margin-top:72px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-soft);}
-  footer a{color:var(--accent);}
-  @media (max-width:600px){ h1{font-size:26px;} }
+  footer a{color:var(--blue);}
+  @media (max-width:600px){ h1{font-size:26px;} .hero-band{padding:28px 20px 24px;} }
 </style>
 </head>
 <body>
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">競合サービス解説 ｜ 2026.07時点</div>
-  <h1>「家族アルバム みてね」とは何か</h1>
-  <p class="lede">MIXIが2015年4月から提供する、子供の写真・動画を家族だけで共有・整理するアプリ。日本で生まれた赤ちゃんの家庭の過半数が使う、家族アルバムの事実上の標準サービス。</p>
-  <div class="hero-stats">
-    <div class="stat"><b>3,000万人</b><span>世界累計利用者数（2026年5月）</span></div>
-    <div class="stat"><b>65%以上</b><span>日本のママ・パパの利用率</span></div>
-    <div class="stat"><b>175か国</b><span>7言語で展開・海外利用者が4割</span></div>
-    <div class="stat"><b>11年目</b><span>2015年4月サービス開始</span></div>
+  <div class="hero-band">
+    <span class="eyebrow">競合サービス解説 ｜ 2026.07時点</span>
+    <h1>「家族アルバム みてね」とは何か</h1>
+    <p class="lede">MIXIが2015年4月から提供する、子供の写真・動画を家族だけで共有・整理するアプリ。日本で生まれた赤ちゃんの家庭の過半数が使う、家族アルバムの事実上の標準サービス。</p>
+    <div class="hero-stats">
+      <div class="stat"><b>3,000万人</b><span>世界累計利用者数（2026年5月）</span></div>
+      <div class="stat"><b>65%以上</b><span>日本のママ・パパの利用率</span></div>
+      <div class="stat"><b>175か国</b><span>7言語で展開・海外利用者が4割</span></div>
+      <div class="stat"><b>11年目</b><span>2015年4月サービス開始</span></div>
+    </div>
   </div>
 </header>
 
-<section>
-  <div class="sec-label">基本の仕組み</div>
+<section class="s-flow">
+  <span class="sec-label">基本の仕組み</span>
   <h2>使い方は4ステップ</h2>
   <p class="sec-note">親がアプリで写真を上げ、招待された家族だけが見る「閉じたアルバム」。SNSのような公開機能はなく、これが安心感の源泉になっている。</p>
   <div class="steps">
@@ -136,33 +224,33 @@
   </div>
 </section>
 
-<section>
-  <div class="sec-label">料金</div>
+<section class="s-price">
+  <span class="sec-label">料金</span>
   <h2>無料・プレミアム・Proの3段階</h2>
   <div class="tbl">
     <table>
       <tr>
         <th>できること</th>
-        <th>無料</th>
-        <th>プレミアム<br><span class="price">月590円</span>（年5,900円）</th>
-        <th>プレミアムPro<br><span class="price">月1,090円</span>（年10,900円）</th>
+        <th class="col-free">無料</th>
+        <th class="col-prem">プレミアム<br><span class="price">月590円</span>（年5,900円）</th>
+        <th class="col-pro">プレミアムPro<br><span class="price">月1,090円</span>（年10,900円）</th>
       </tr>
-      <tr><td>写真・動画のアップロード</td><td class="ok">無制限・無料</td><td class="ok">無制限</td><td class="ok">無制限</td></tr>
-      <tr><td>月ごとの自動整理・家族招待</td><td class="ok">○</td><td class="ok">○</td><td class="ok">○</td></tr>
-      <tr><td>1秒動画（思い出ダイジェスト）</td><td class="no">3ヶ月に1本</td><td class="ok">毎月1本＋1年のまとめ</td><td class="ok">毎月1本＋編集機能</td></tr>
-      <tr><td>長い動画のアップロード</td><td class="no">短い動画のみ</td><td class="ok">2分以上もOK</td><td class="ok">2分以上もOK</td></tr>
-      <tr><td>公開範囲の細かい設定（両家分けなど）</td><td class="no">—</td><td class="ok">○</td><td class="ok">○</td></tr>
-      <tr><td>商品送料</td><td class="no">有料</td><td class="ok">無料（一部除く）</td><td class="ok">無料（一部除く）</td></tr>
-      <tr><td>フルHD画質での保存・閲覧</td><td class="no">—</td><td class="no">—</td><td class="ok">○</td></tr>
-      <tr><td>テレビで見る（Chromecast）</td><td class="no">—</td><td class="no">—</td><td class="ok">○</td></tr>
-      <tr><td>写真・動画のまとめてダウンロード</td><td class="no">—</td><td class="no">—</td><td class="ok">○</td></tr>
+      <tr><td>写真・動画のアップロード</td><td class="ok">無制限・無料</td><td class="cell-prem ok">無制限</td><td class="cell-pro ok">無制限</td></tr>
+      <tr><td>月ごとの自動整理・家族招待</td><td class="ok">○</td><td class="cell-prem ok">○</td><td class="cell-pro ok">○</td></tr>
+      <tr><td>1秒動画（思い出ダイジェスト）</td><td class="no">3ヶ月に1本</td><td class="cell-prem ok">毎月1本＋1年のまとめ</td><td class="cell-pro ok">毎月1本＋編集機能</td></tr>
+      <tr><td>長い動画のアップロード</td><td class="no">短い動画のみ</td><td class="cell-prem ok">2分以上もOK</td><td class="cell-pro ok">2分以上もOK</td></tr>
+      <tr><td>公開範囲の細かい設定（両家分けなど）</td><td class="no">—</td><td class="cell-prem ok">○</td><td class="cell-pro ok">○</td></tr>
+      <tr><td>商品送料</td><td class="no">有料</td><td class="cell-prem ok">無料（一部除く）</td><td class="cell-pro ok">無料（一部除く）</td></tr>
+      <tr><td>フルHD画質での保存・閲覧</td><td class="no">—</td><td class="cell-prem no">—</td><td class="cell-pro ok">○</td></tr>
+      <tr><td>テレビで見る（Chromecast）</td><td class="no">—</td><td class="cell-prem no">—</td><td class="cell-pro ok">○</td></tr>
+      <tr><td>写真・動画のまとめてダウンロード</td><td class="no">—</td><td class="cell-prem no">—</td><td class="cell-pro ok">○</td></tr>
     </table>
   </div>
   <p class="sec-note">ポイントは「保存だけなら一生無料」であること。課金は画質・動画の長さ・共有の細かさ・商品送料といった“快適さ”に対して発生する設計。</p>
 </section>
 
-<section>
-  <div class="sec-label">周辺サービス</div>
+<section class="s-goods goods">
+  <span class="sec-label">周辺サービス</span>
   <h2>写真を起点に広がる商品群</h2>
   <p class="sec-note">アプリ内の写真をそのまま使える物販・サービスで収益化している。「無料アプリで集めて、思い出の形で売る」構造。</p>
   <div class="grid">
@@ -175,8 +263,8 @@
   </div>
 </section>
 
-<section>
-  <div class="sec-label">歩み</div>
+<section class="s-hist">
+  <span class="sec-label">歩み</span>
   <h2>普及の年表</h2>
   <div class="timeline">
     <div class="tl-item"><span class="y">2015年4月</span><p>サービス開始（ミクシィ）。「子供の写真を祖父母に見せたい」に特化してスタート。</p></div>
@@ -188,8 +276,8 @@
   </div>
 </section>
 
-<section>
-  <div class="sec-label">評価</div>
+<section class="s-eval">
+  <span class="sec-label">評価</span>
   <h2>強みと、ユーザーが感じている不満</h2>
   <div class="duo">
     <div class="card plus">
@@ -216,10 +304,12 @@
   </div>
 </section>
 
-<section>
-  <div class="sec-label">まとめ</div>
+<section class="s-sum">
+  <span class="sec-label">まとめ</span>
   <h2>ひとことで言うと</h2>
-  <p>みてねは<b>「出産した日から始まる、家族だけの無料アルバム」</b>。無料・無制限で写真を集め、プリント・フォトブック・GPS・医療と「子育て家庭の生活全体」へ広がることで収益化している。一方で、<b>出産時に始めなかった家庭を後から取り込む導線</b>と、<b>子供以外の思い出（夫婦・恋人・シニア）</b>、<b>アプリを入れたくない層</b>は手薄であり、そこが新規参入者の狙いどころになる。</p>
+  <div class="summary">
+    <p>みてねは<b>「出産した日から始まる、家族だけの無料アルバム」</b>。無料・無制限で写真を集め、プリント・フォトブック・GPS・医療と「子育て家庭の生活全体」へ広がることで収益化している。一方で、<b>出産時に始めなかった家庭を後から取り込む導線</b>と、<b>子供以外の思い出（夫婦・恋人・シニア）</b>、<b>アプリを入れたくない層</b>は手薄であり、そこが新規参入者の狙いどころになる。</p>
+  </div>
 </section>
 
 <footer>
