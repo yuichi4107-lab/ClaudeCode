@@ -136,9 +136,9 @@ def get_entries_with_race(
     to_date: str,
     venue: str | None = None,
 ) -> list[sqlite3.Row]:
-    """race_entries と races を JOIN し、race_date/venue/track_status/distance/meeting_id を含めて返す。"""
+    """race_entries と races を JOIN し、race_no/race_date/venue/track_status/distance/meeting_id を含めて返す。"""
     sql = """
-    SELECT e.*, r.race_date, r.venue, r.track_status, r.distance, r.meeting_id
+    SELECT e.*, r.race_no, r.race_date, r.venue, r.track_status, r.distance, r.meeting_id
     FROM race_entries e
     JOIN races r ON e.race_id = r.race_id
     WHERE r.race_date BETWEEN ? AND ?

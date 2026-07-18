@@ -52,11 +52,53 @@ def run_scrape(args) -> None:
 
 
 def run_evaluate(args) -> None:
-    # TODO: metrics 実装後、選手能力評価ロジックに差し替える
-    from autorace_evaluator.storage import database, repository  # noqa: F401
+    import pandas as pd
 
-    print("evaluate: not implemented yet")
-    sys.exit(1)
+    from autorace_evaluator.config import settings
+    from autorace_evaluator.metrics import report as report_mod
+    from autorace_evaluator.metrics.meeting import update_meeting_ids
+    from autorace_evaluator.storage import database, repository
+
+    db_path = Path(settings.DB_PATH)
+    if not db_path.exists():
+        print(
+            f"evaluate: DBファイルが見つかりません ({settings.DB_PATH})。"
+            "先に scrape または parse-html --save を実行してください"
+        )
+        sys.exit(1)
+        return
+
+    from_date = _parse_date(args.from_date)
+    to_date = _parse_date(args.to_date)
+    venue = None if args.venue == "all" else args.venue
+
+    conn = database.get_connection(settings.DB_PATH)
+    try:
+        update_meeting_ids(conn)
+        rows = repository.get_entries_with_race(conn, from_date, to_date, venue)
+    finally:
+        conn.close()
+
+    if not rows:
+        print(
+            "evaluate: 対象期間にデータがありません "
+            f"(from={from_date} to={to_date} venue={venue or 'all'})"
+        )
+        return
+
+    entries_df = pd.DataFrame([dict(row) for row in rows])
+    rep = report_mod.build_report(entries_df, include_retrial=args.include_retrial)
+    report_mod.print_report(rep, top_n=args.top, player_no=args.player)
+
+    csv_path = args.csv
+    if not csv_path:
+        suffix = f"_{venue}" if venue else ""
+        csv_path = str(
+            Path(settings.REPORT_DIR)
+            / f"autorace_eval_{from_date}_{to_date}{suffix}.csv"
+        )
+    report_mod.to_csv(rep, csv_path)
+    print(f"\nCSVを保存しました: {csv_path}")
 
 
 _FILENAME_META_RE = re.compile(
