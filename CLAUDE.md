@@ -80,26 +80,27 @@ autorace.jp を対象としたオートレース選手の能力評価システ�
 詳細は `autorace_evaluator/README.md` を参照。
 
 ```bash
-# データ収集（probe方式: 期間×5場×R1-12 を直接叩き、404は scrape_log で再訪防止）
+# データ収集（カレンダーAPIで開催日を絞り、レースごとにJSON APIを2本叩く）
 python -m autorace_evaluator.cli.main scrape --from-date 2025-07-01 --to-date 2026-07-01
 
 # 選手能力評価（整備力・スタート力・突っ込み度 + 総合ランキング、CSV出力）
 python -m autorace_evaluator.cli.main evaluate --from-date 2025-07-01 --to-date 2026-07-01
 
-# 保存済みHTMLの単体パース（パーサ修正サイクルのデバッグ手段）
-python -m autorace_evaluator.cli.main parse-html FILE --json [--save]
+# dump済みAPI応答JSONの単体パース（パーサ修正サイクルのデバッグ手段）
+python -m autorace_evaluator.cli.main parse-json FILE.result.json --json [--save]
 ```
 
 ### 3指標
-- **整備力**: 同一節・前日当日とも良走路のときの試走タイム差(前日−当日)。改善率・平均差・スコア
-- **スタート力**: ST統計 + ダッシュ力(競走T−上がりT の序盤ロスをレース内センタリング+Ridgeで説明した残差)
+- **整備力**: 同一節・前日当日とも良走路(試走時)のときの試走タイム差(前日−当日)。改善率・平均差・スコア
+- **スタート力**: ST統計 + ダッシュ力(競走T−上がりT の序盤ロス残差。※APIに上がりタイムが無いため実データではST成分のみ)
 - **突っ込み度**: 混戦時の期待着順残差(STは説明変数に入れない) + 重ハン時追い抜き量 `passed = 前にいた車数 − 先着された車数`
 
 ### 設計上の注意
-- **実HTML未検証**: 開発環境から autorace.jp に接続できないため、パーサは想定DOMベース。
-  実HTMLとの差異は `autorace_evaluator/parsers/selectors.py` の定数修正のみで吸収する設計
-- **TIME_FORMAT**: 競走タイム・上がりタイムの掲載単位が総時間だった場合は
-  `config/settings.py` の `TIME_FORMAT` を `"total"` に変更(metrics は to_per100m() 経由で追随)
+- **データ源はJSON API**(実サイト検証済み・2026-07): HTMLはJS描画のシェルでデータを含まない。
+  `POST /race_info/RaceResult` と `POST /race_info/OtherRaceInfo`(CSRFトークン必須)、
+  開催日一覧は `GET /race_info/XML/Calendar?date=YYYY-MM`。Failureコード 4101=データなし/4200=中止。
+  API仕様変更は `autorace_evaluator/parsers/selectors.py` の対応表修正で吸収する設計
+- **TIME_FORMAT**: 実データで per-100m 換算掲載を確認済み(raceTime=3.852 等)。`"per100m"` のままでよい
 - **縮約**: 少数出走選手は経験ベイズ縮約 n/(n+k) (k=10) で0(またはST全体平均)に寄せる。
   min_races=10 / min_pairs=5 未満はスコアNaN(参考行)
 - DB は `data/autorace.db`、キャッシュは `data/autorace_cache/`(nankan と分離)

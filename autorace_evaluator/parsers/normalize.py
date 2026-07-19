@@ -1,7 +1,7 @@
-"""autorace.jp のセル文字列を正規化する純関数群。
+"""autorace.jp API のフィールド値を正規化する純関数群。
 
 すべて None 安全(None を渡すとエラーにせず None/デフォルト値を返す)。
-result_parser.py はここの関数を経由してのみ DOM テキストを値に変換する。
+result_parser.py はここの関数を経由してのみ API の値を変換する。
 """
 
 import re
@@ -11,9 +11,6 @@ from . import selectors
 
 # 数値(整数)を先頭から抜き出す正規表現。ハンデ欄の "10m" 等から使う。
 _INT_RE = re.compile(r"-?\d+")
-
-# 数値(小数可)を先頭から抜き出す正規表現。気温欄の "32.5°C" 等から使う。
-_FLOAT_RE = re.compile(r"-?\d+(?:\.\d+)?")
 
 # 空白文字(半角・全角とも)を除去するための正規表現。
 _WHITESPACE_RE = re.compile(r"\s+")
@@ -34,8 +31,10 @@ def zen_to_han(s: str | None) -> str | None:
     return t
 
 
-def parse_float(s: str | None) -> float | None:
-    """"3.31" -> 3.31。"−" や空文字・None は None。"""
+def parse_float(s) -> float | None:
+    """"3.31" / 3.31 -> 3.31。"−" や空文字・None は None。"""
+    if isinstance(s, (int, float)):
+        return float(s)
     t = zen_to_han(s)
     if not t:
         return None
@@ -45,8 +44,14 @@ def parse_float(s: str | None) -> float | None:
         return None
 
 
-def parse_handicap(s: str | None) -> int | None:
-    """"0m" / "10ｍ" / "0" -> int。None安全。"""
+def parse_int(s) -> int | None:
+    """"10" / "10m" / 10 -> int。None安全。"""
+    if isinstance(s, bool):
+        return None
+    if isinstance(s, int):
+        return s
+    if isinstance(s, float):
+        return int(s)
     t = zen_to_han(s)
     if not t:
         return None
@@ -56,77 +61,62 @@ def parse_handicap(s: str | None) -> int | None:
     return int(m.group())
 
 
-def parse_trial_time(s: str | None) -> tuple[float | None, int]:
-    """試走タイム欄をパースする。
+def track_status_from_code(code) -> str | None:
+    """走路状況コード(situationCode)を正規化ラベルに変換する。不明は None。"""
+    c = parse_int(code)
+    if c is None:
+        return None
+    return selectors.SITUATION_TRACK_MAP.get(c)
 
-    selectors.RETRIAL_MARKS のいずれかを含めば (value, is_retrial=1)。
-    "欠" 等の非数値は (None, 0)。返り値は (value, is_retrial)。
+
+def finish_from_api(order, accident_name) -> tuple[int | None, str, str | None]:
+    """API の order / accidentName から (finish_pos, status, violation_note) を返す。
+
+    - order が 1..8 なら finished(事故名があっても「故障完走」等は完走扱いで
+      accidentName を violation_note に残す)。
+    - order が無い/9以上なら accidentName を ACCIDENT_STATUS_MAP で status に解決。
+    - どちらも無ければ (None, "dnf", None)。
     """
-    t = zen_to_han(s)
-    if not t:
-        return (None, 0)
-    is_retrial = 1 if any(mark in t for mark in selectors.RETRIAL_MARKS) else 0
-    cleaned = t
-    for mark in selectors.RETRIAL_MARKS:
-        cleaned = cleaned.replace(mark, "")
-    value = parse_float(cleaned)
-    return (value, is_retrial)
+    pos = parse_int(order)
+    name = accident_name if isinstance(accident_name, str) and accident_name.strip() else None
+
+    if pos is not None and 1 <= pos <= 8:
+        return (pos, "finished", name)
+
+    if name:
+        t = zen_to_han(name) or ""
+        for mark, status in selectors.ACCIDENT_STATUS_MAP.items():
+            if mark in t:
+                return (None, status, name)
+        return (None, "dnf", name)
+
+    return (None, "dnf", None)
 
 
-def parse_st(s: str | None) -> tuple[float | None, int]:
-    """ST(スタートタイミング)欄をパースする。
+def st_from_api(st, foul_code) -> tuple[float | None, int]:
+    """API の st / foulCode から (st, is_flying) を返す。
 
-    selectors.ST_FLYING_MARKS -> (None, is_flying=1)。
-    selectors.ST_MISSING_MARKS -> (None, 0)。
-    "0.12" -> (0.12, 0)。
+    foulCode "F" はフライング。ST値自体は掲載されていれば保持する。
     """
-    t = zen_to_han(s)
-    if t is None:
-        t = ""
-    if t in selectors.ST_FLYING_MARKS:
-        return (None, 1)
-    if t in selectors.ST_MISSING_MARKS:
-        return (None, 0)
-    return (parse_float(t), 0)
+    is_flying = 0
+    if isinstance(foul_code, str) and zen_to_han(foul_code) in [
+        zen_to_han(c) for c in selectors.FOUL_FLYING_CODES
+    ]:
+        is_flying = 1
+    return (parse_float(st), is_flying)
 
 
-def parse_finish(s: str | None) -> tuple[int | None, str, str | None]:
-    """着順欄をパースする。
-
-    "1" -> (1, "finished", None)。
-    selectors.ABNORMAL_STATUS_MAP に部分一致 -> (None, status, 原文)。
-    判別不能 -> (None, "dnf", 原文)。
-    返り値は (finish_pos, status, violation_note)。
-    """
-    original = s.strip() if isinstance(s, str) else s
-    t = zen_to_han(s)
-    if not t:
-        return (None, "dnf", original)
-    if t.isdigit():
-        return (int(t), "finished", None)
-    for mark, status in selectors.ABNORMAL_STATUS_MAP.items():
-        if mark in t:
-            return (None, status, original)
-    return (None, "dnf", original)
+def trial_from_api(trial_time, retry_code) -> tuple[float | None, int]:
+    """API の traialTime / traialRetryCode から (trial_time, is_retrial) を返す。"""
+    is_retrial = 1 if parse_int(retry_code) in selectors.RETRIAL_CODES else 0
+    return (parse_float(trial_time), is_retrial)
 
 
-def parse_track_status(s: str | None) -> str | None:
-    """走路状態を selectors.TRACK_STATUS_MAP で正規化する。不明は None。"""
-    t = zen_to_han(s)
+def foul_note(foul_code) -> str | None:
+    """foulCode を可読ラベルに変換する。未知コードは原文のまま返す。"""
+    if foul_code is None:
+        return None
+    t = zen_to_han(str(foul_code))
     if not t:
         return None
-    for key, normalized in selectors.TRACK_STATUS_MAP.items():
-        if key in t:
-            return normalized
-    return None
-
-
-def parse_temperature(s: str | None) -> float | None:
-    """"32.5℃" -> 32.5。"""
-    t = zen_to_han(s)
-    if not t:
-        return None
-    m = _FLOAT_RE.search(t)
-    if not m:
-        return None
-    return float(m.group())
+    return selectors.FOUL_NOTE_MAP.get(t, t)

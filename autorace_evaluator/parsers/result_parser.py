@@ -1,32 +1,29 @@
-"""autorace.jp レース結果ページのパーサ。
+"""autorace.jp レース結果 JSON API のパーサ。
 
-DOM 構造は parsers/selectors.py の定数経由でのみ参照する。実HTML未確認の
-ため、セレクタ不一致・見出し不明・セル欠損はすべて例外にせず None +
-warnings で続行する「防御的パーサ」として実装している。
+API仕様は parsers/selectors.py のモジュールドキュメント参照。フィールド欠損・
+未知コードはすべて例外にせず None + warnings で続行する「防御的パーサ」。
 """
-
-import re
-
-from bs4 import BeautifulSoup
 
 from autorace_evaluator.config import settings
 
 from . import normalize, selectors
 
-# 選手名セル内の <a href> から登録番号を取り出す(例: ".../PlayerInfo/12345/")
-_PLAYER_NO_HREF_RE = re.compile(r"/(\d{4,5})/?$")
 
-# レースヘッダテキストから距離(m)を取り出す
-_DISTANCE_RE = re.compile(r"(\d{3,4})\s*m", re.IGNORECASE)
+def parse_api_race_result(
+    result_json: dict,
+    other_json: dict | None,
+    url_meta: dict,
+) -> dict:
+    """RaceResult / OtherRaceInfo API 応答をパースして dict を返す。
 
-
-def parse_race_result(html: str, url_meta: dict) -> dict:
-    """レース結果HTMLをパースして dict を返す。
-
+    result_json / other_json は API 応答の全体
+    ({"result": ..., "errors": [...], "body": ...})。other_json は None 可
+    (距離・天候・走路状況・節情報が欠けるだけで entries は解析できる)。
     url_meta = {"venue": ..., "date": "YYYY-MM-DD", "race_no": int}
 
     返り値: {"race": {...}, "entries": [...], "payouts": [...], "warnings": [...]}
-    必須フィールド car_no が解決できない場合のみ {"error": ..., "warnings": [...]}。
+    失敗時のみ {"error": ..., "error_code": ..., "warnings": [...]}。
+    error_code は API の Failure コード(4101=データなし, 4200=中止)。
     """
     warnings: list[str] = []
     venue = url_meta.get("venue")
@@ -34,143 +31,102 @@ def parse_race_result(html: str, url_meta: dict) -> dict:
     race_no = url_meta.get("race_no")
     race_id = f"{venue}_{date}_{race_no}"
 
-    soup = BeautifulSoup(html, "lxml")
+    if not isinstance(result_json, dict):
+        return {"error": "result API応答がdictではありません", "warnings": warnings}
 
-    table = soup.select_one(selectors.SELECTORS["result_table"])
-    if table is None:
-        warnings.append("結果テーブルが見つかりません")
-        return {"error": "result table not found", "warnings": warnings}
+    if result_json.get("result") != "Success":
+        code = _first_error_code(result_json)
+        message = _first_error_message(result_json)
+        return {
+            "error": f"result API Failure (code={code}: {message})",
+            "error_code": code,
+            "warnings": warnings,
+        }
 
-    rows = table.find_all("tr")
-    if not rows:
-        warnings.append("結果テーブルに行がありません")
-        return {"error": "result table has no rows", "warnings": warnings}
+    body = result_json.get("body")
+    if not isinstance(body, dict):
+        return {"error": "result API bodyがdictではありません", "warnings": warnings}
 
-    col_index_map = _build_header_map(rows[0], warnings)
-
-    if "car_no" not in col_index_map.values():
-        warnings.append("car_no 列を解決できません")
-        return {"error": "car_no column not resolved", "warnings": warnings}
+    race_result = body.get("raceResult")
+    if not isinstance(race_result, list) or not race_result:
+        return {"error": "raceResult が空です", "warnings": warnings}
 
     entries = []
-    for row_idx, tr in enumerate(rows[1:]):
-        entry = _parse_entry_row(tr, row_idx, col_index_map, race_id, warnings)
+    for row_idx, row in enumerate(race_result):
+        entry = _parse_entry(row, row_idx, race_id, warnings)
         if entry is not None:
             entries.append(entry)
 
+    if not entries:
+        return {"error": "有効な出走行がありません", "warnings": warnings}
+
     field_size = sum(1 for e in entries if e["status"] != settings.STATUS_SCRATCHED)
 
-    header_el = soup.select_one(selectors.SELECTORS["race_header"])
-    if header_el is None:
-        warnings.append("レースヘッダが見つかりません")
-        header_text = ""
-    else:
-        header_text = header_el.get_text(" ", strip=True)
-    race_name = header_text or None
-    distance = _extract_distance(header_text)
+    other_body = _other_body(other_json, warnings)
+    race = _build_race(other_body, venue, date, race_no, race_id, field_size, url_meta)
 
-    weather_el = soup.select_one(selectors.SELECTORS["weather_block"])
-    weather_info = _extract_weather(weather_el, warnings)
-
-    payouts = _extract_payouts(soup)
-
-    race = {
-        "race_id": race_id,
-        "venue": venue,
-        "race_date": date,
-        "race_no": race_no,
-        "race_name": race_name,
-        "distance": distance,
-        "weather": weather_info["weather"],
-        "track_status": weather_info["track_status"],
-        "temperature": weather_info["temperature"],
-        "track_temp": weather_info["track_temp"],
-        "meeting_id": None,
-        "field_size": field_size,
-        "source_url": url_meta.get("source_url"),
-    }
+    payouts = _parse_payouts(body.get("refundInfo"), warnings)
 
     return {"race": race, "entries": entries, "payouts": payouts, "warnings": warnings}
 
 
-# ------------------------------------------------------------ header map
-
-def _build_header_map(header_row, warnings: list[str]) -> dict[int, str]:
-    """テーブルヘッダ行のセルを HEADER_FIELD_MAP で列index→フィールド名に対応づける。"""
-    col_index_map: dict[int, str] = {}
-    header_cells = header_row.find_all(["th", "td"])
-    for idx, cell in enumerate(header_cells):
-        header_text = normalize.zen_to_han(cell.get_text(strip=True))
-        field = _match_field(header_text, selectors.HEADER_FIELD_MAP)
-        if field:
-            col_index_map[idx] = field
-        else:
-            warnings.append(f"見出し不明(列{idx}): {header_text!r}")
-    return col_index_map
+def _first_error_code(api_json: dict) -> str | None:
+    errors = api_json.get("errors")
+    if isinstance(errors, list) and errors and isinstance(errors[0], dict):
+        code = errors[0].get("code")
+        return str(code) if code is not None else None
+    return None
 
 
-def _match_field(label: str, field_map: dict) -> str | None:
-    """label を field_map の同義語リストに照合してフィールド名を返す。
+def _first_error_message(api_json: dict) -> str | None:
+    errors = api_json.get("errors")
+    if isinstance(errors, list) and errors and isinstance(errors[0], dict):
+        return errors[0].get("message")
+    return None
 
-    完全一致を優先し、なければ最長の部分一致を採用する。
-    """
-    if not label:
+
+# ----------------------------------------------------------------- entries
+
+def _parse_entry(row, row_idx: int, race_id: str, warnings: list[str]) -> dict | None:
+    if not isinstance(row, dict):
+        warnings.append(f"行{row_idx}: dictではないためスキップしました")
         return None
-    for field, synonyms in field_map.items():
-        if label in synonyms:
-            return field
-    best_field, best_len = None, 0
-    for field, synonyms in field_map.items():
-        for syn in synonyms:
-            if syn and syn in label and len(syn) > best_len:
-                best_field, best_len = field, len(syn)
-    return best_field
 
-
-# ----------------------------------------------------------------- rows
-
-def _parse_entry_row(
-    tr, row_idx: int, col_index_map: dict[int, str], race_id: str, warnings: list[str]
-) -> dict | None:
-    cells = tr.find_all(["td", "th"])
-    cell_map = {}
-    for idx, field in col_index_map.items():
-        cell_map[field] = cells[idx] if idx < len(cells) else None
-
-    def _text(field: str) -> str | None:
-        cell = cell_map.get(field)
-        return cell.get_text(strip=True) if cell is not None else None
-
-    car_no = normalize.parse_handicap(_text("car_no"))
+    car_no = normalize.parse_int(row.get("carNo"))
     if car_no is None:
-        warnings.append(f"行{row_idx}: car_no を解決できずスキップしました")
+        warnings.append(f"行{row_idx}: carNo を解決できずスキップしました")
         return None
 
-    finish_pos, status, violation_from_finish = normalize.parse_finish(_text("finish_pos"))
-    handicap = normalize.parse_handicap(_text("handicap"))
-    trial_time, is_retrial = normalize.parse_trial_time(_text("trial_time"))
-    race_time = normalize.parse_float(_text("race_time"))
-    last_lap_time = normalize.parse_float(_text("last_lap_time"))
-    st, is_flying = normalize.parse_st(_text("st"))
+    finish_pos, status, note_from_accident = normalize.finish_from_api(
+        row.get("order"), row.get("accidentName")
+    )
+    trial_time, is_retrial = normalize.trial_from_api(
+        row.get("traialTime"), row.get("traialRetryCode")
+    )
+    st, is_flying = normalize.st_from_api(row.get("st"), row.get("foulCode"))
 
-    violation_col_text = _text("violation_note")
-    violation_note = violation_col_text if violation_col_text else violation_from_finish
+    notes = [n for n in (note_from_accident, normalize.foul_note(row.get("foulCode")))
+             if n]
+    violation_note = " ".join(notes) if notes else None
 
-    player_name_cell = cell_map.get("player_name")
-    player_name = player_name_cell.get_text(strip=True) if player_name_cell is not None else None
+    player_no = normalize.parse_int(row.get("playerCode"))
+    if player_no is None:
+        warnings.append(f"行{row_idx}: playerCode を解決できません")
 
-    player_no = _extract_player_no(cell_map.get("player_no"), player_name_cell, row_idx, warnings)
+    player_name = row.get("playerName")
+    if isinstance(player_name, str):
+        player_name = player_name.strip() or None
 
     return {
         "race_id": race_id,
         "car_no": car_no,
         "player_no": player_no,
         "player_name": player_name,
-        "handicap": handicap,
+        "handicap": normalize.parse_int(row.get("handicap")),
         "trial_time": trial_time,
         "is_retrial": is_retrial,
-        "race_time": race_time,
-        "last_lap_time": last_lap_time,
+        "race_time": normalize.parse_float(row.get("raceTime")),
+        "last_lap_time": None,  # APIに上がりタイムは掲載されない
         "st": st,
         "is_flying": is_flying,
         "finish_pos": finish_pos,
@@ -179,122 +135,90 @@ def _parse_entry_row(
     }
 
 
-def _extract_player_no(player_no_cell, player_name_cell, row_idx: int, warnings: list[str]):
-    """選手登録番号を抽出する。
+# -------------------------------------------------------------------- race
 
-    1. (もしあれば)登録番号専用セルの数字
-    2. 選手名セル内の a[href] から /(\\d{4,5})/? パターン
-    3. 選手名セル内のテキストに含まれる数字
-    4. どれも取れなければ None(warnings追記)
-    """
-    if player_no_cell is not None:
-        digits = re.search(r"\d+", normalize.zen_to_han(player_no_cell.get_text(strip=True)) or "")
-        if digits:
-            return int(digits.group())
-
-    if player_name_cell is not None:
-        anchor = player_name_cell.find("a", href=True)
-        if anchor is not None:
-            m = _PLAYER_NO_HREF_RE.search(anchor["href"])
-            if m:
-                return int(m.group(1))
-        digits = re.search(r"\d{3,5}", normalize.zen_to_han(player_name_cell.get_text(strip=True)) or "")
-        if digits:
-            return int(digits.group())
-
-    warnings.append(f"行{row_idx}: 選手登録番号を解決できません")
-    return None
+def _other_body(other_json, warnings: list[str]) -> dict:
+    if other_json is None:
+        warnings.append("OtherRaceInfo 応答がありません(距離・天候・走路状況は欠損)")
+        return {}
+    if not isinstance(other_json, dict) or other_json.get("result") != "Success":
+        warnings.append("OtherRaceInfo 応答が Success ではありません")
+        return {}
+    body = other_json.get("body")
+    if not isinstance(body, dict):
+        warnings.append("OtherRaceInfo body がdictではありません")
+        return {}
+    return body
 
 
-# ------------------------------------------------------------- distance
+def _build_race(other_body: dict, venue, date, race_no, race_id: str,
+                field_size: int, url_meta: dict) -> dict:
+    # 走路状況: race* が競走時、無印が試走時。track_status には競走時を採用し、
+    # 試走時は trial_track_status に別途保持する(整備力指標が参照)。
+    track_status = normalize.track_status_from_code(other_body.get("raceSituationCode"))
+    trial_track_status = normalize.track_status_from_code(other_body.get("situationCode"))
+    if track_status is None:
+        track_status = trial_track_status
 
-def _extract_distance(header_text: str) -> int | None:
-    if not header_text:
-        return None
-    normalized = normalize.zen_to_han(header_text)
-    m = _DISTANCE_RE.search(normalized)
-    if not m:
-        return None
-    return int(m.group(1))
+    title = other_body.get("title")
+    race_name = other_body.get("raceName")
+    name_parts = [p for p in (title, race_name) if isinstance(p, str) and p.strip()]
 
-
-# -------------------------------------------------------------- weather
-
-def _extract_weather(weather_el, warnings: list[str]) -> dict:
-    raw = {"weather": None, "track_status": None, "temperature": None, "track_temp": None}
-
-    if weather_el is None:
-        warnings.append("気象ブロックが見つかりません")
-        return {"weather": None, "track_status": None, "temperature": None, "track_temp": None}
-
-    pairs: list[tuple[str, str | None]] = []
-    dt_list = weather_el.find_all("dt")
-    if dt_list:
-        for dt in dt_list:
-            dd = dt.find_next_sibling("dd")
-            label = normalize.zen_to_han(dt.get_text(strip=True))
-            value = dd.get_text(strip=True) if dd is not None else None
-            pairs.append((label, value))
-    else:
-        text = weather_el.get_text(" ", strip=True)
-        for token in text.split():
-            norm_token = normalize.zen_to_han(token).replace("：", ":")
-            if ":" in norm_token:
-                label, _, value = norm_token.partition(":")
-                pairs.append((label, value))
-
-    matched_any = False
-    for label, value in pairs:
-        field = _match_field(label, selectors.WEATHER_FIELD_MAP)
-        if field is None:
-            warnings.append(f"気象ラベル不明: {label!r}")
-            continue
-        raw[field] = value
-        matched_any = True
-
-    if not matched_any:
-        warnings.append("気象ブロックの値を抽出できません")
+    meeting_id = None
+    period_start = other_body.get("periodStartDate")
+    if isinstance(period_start, str) and period_start:
+        meeting_id = f"{venue}_{period_start}"
 
     return {
-        "weather": raw["weather"],
-        "track_status": normalize.parse_track_status(raw["track_status"]),
-        "temperature": normalize.parse_temperature(raw["temperature"]),
-        "track_temp": normalize.parse_temperature(raw["track_temp"]),
+        "race_id": race_id,
+        "venue": venue,
+        "race_date": date,
+        "race_no": race_no,
+        "race_name": " ".join(name_parts) if name_parts else None,
+        "distance": normalize.parse_int(other_body.get("distance")),
+        "weather": other_body.get("raceWeather") or other_body.get("weather"),
+        "track_status": track_status,
+        "trial_track_status": trial_track_status,
+        "temperature": normalize.parse_float(
+            other_body.get("raceTemp") or other_body.get("temp")),
+        "track_temp": normalize.parse_float(
+            other_body.get("raceRoadtemp") or other_body.get("roadtemp")),
+        "meeting_id": meeting_id,
+        "field_size": field_size,
+        "source_url": url_meta.get("source_url") or url_meta.get("url"),
     }
 
 
-# -------------------------------------------------------------- payouts
+# ----------------------------------------------------------------- payouts
 
-def _extract_payouts(soup) -> list[dict]:
-    table = soup.select_one(selectors.SELECTORS["payout_table"])
-    if table is None:
+def _parse_payouts(refund_info, warnings: list[str]) -> list[dict]:
+    if not isinstance(refund_info, dict):
         return []
 
     payouts = []
-    for tr in table.find_all("tr"):
-        cells = tr.find_all(["td", "th"])
-        if len(cells) < 3:
+    for key, bet_type in selectors.REFUND_BET_TYPES.items():
+        block = refund_info.get(key)
+        if not isinstance(block, dict):
             continue
-        if tr.find("td") is None:
-            # 全セルが th のヘッダ行はスキップ
-            continue
-        bet_type = cells[0].get_text(strip=True)
-        combination = cells[1].get_text(strip=True)
-        payout = _parse_payout_amount(cells[2].get_text(strip=True))
-        if not bet_type or not combination:
-            continue
-        payouts.append({"bet_type": bet_type, "combination": combination, "payout": payout})
+        if normalize.parse_int(block.get("typeCode")) != selectors.REFUND_TYPE_NORMAL:
+            continue  # 特払い・全返還・無投票等は保存しない
+        for item in block.get("list") or []:
+            if not isinstance(item, dict):
+                continue
+            combo = _combination(item)
+            payout = normalize.parse_float(item.get("refund"))
+            if combo is None or payout is None or payout <= 0:
+                continue
+            payouts.append(
+                {"bet_type": bet_type, "combination": combo, "payout": payout}
+            )
     return payouts
 
 
-def _parse_payout_amount(text: str | None) -> float | None:
-    if text is None:
-        return None
-    t = normalize.zen_to_han(text)
-    t = re.sub(r"[^\d.]", "", t or "")
-    if not t:
-        return None
-    try:
-        return float(t)
-    except ValueError:
-        return None
+def _combination(item: dict) -> str | None:
+    cars = []
+    for k in ("1thCarNo", "2thCarNo", "3thCarNo"):
+        v = normalize.parse_int(item.get(k))
+        if v is not None and v > 0:
+            cars.append(str(v))
+    return "-".join(cars) if cars else None

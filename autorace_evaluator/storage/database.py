@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS races (
     distance       INTEGER,
     weather        TEXT,
     track_status   TEXT,
+    trial_track_status TEXT,
     temperature    REAL,
     track_temp     REAL,
     meeting_id     TEXT,

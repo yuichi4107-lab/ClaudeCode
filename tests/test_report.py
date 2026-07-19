@@ -1,6 +1,7 @@
 """autorace_evaluator.metrics.report と cli.main.run_evaluate の結線テスト。"""
 
 import argparse
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -14,7 +15,8 @@ from autorace_evaluator.storage import database, repository
 from tests.conftest import synthetic_league
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "autorace"
-SYNTHETIC_HTML_PATH = FIXTURES_DIR / "synthetic_result.html"
+SYNTHETIC_RESULT_PATH = FIXTURES_DIR / "synthetic_result_api.json"
+SYNTHETIC_OTHER_PATH = FIXTURES_DIR / "synthetic_other_api.json"
 
 
 # ------------------------------------------------------------- build_report
@@ -96,9 +98,10 @@ def test_to_csv_creates_directory(tmp_path):
 # --------------------------------------------------------- run_evaluate (E2E)
 
 def _insert_result_html(conn, venue, date, race_no):
-    html = SYNTHETIC_HTML_PATH.read_text(encoding="utf-8")
+    result_json = json.loads(SYNTHETIC_RESULT_PATH.read_text(encoding="utf-8"))
+    other_json = json.loads(SYNTHETIC_OTHER_PATH.read_text(encoding="utf-8"))
     url_meta = {"venue": venue, "date": date, "race_no": race_no}
-    result = result_parser.parse_race_result(html, url_meta)
+    result = result_parser.parse_api_race_result(result_json, other_json, url_meta)
     assert "error" not in result
     for entry in result["entries"]:
         if entry.get("player_no") is not None and entry.get("player_name"):
@@ -169,7 +172,7 @@ def test_run_evaluate_missing_db_exits(tmp_path, monkeypatch, capsys):
     with pytest.raises(SystemExit):
         cli_main.run_evaluate(_base_args())
     out = capsys.readouterr().out
-    assert "先に scrape または parse-html --save" in out
+    assert "先に scrape または parse-json --save" in out
 
 
 def test_run_evaluate_no_rows_in_range(tmp_path, monkeypatch, capsys):

@@ -35,8 +35,16 @@ def derive_meeting_ids(races_df: pd.DataFrame) -> dict:
 
 
 def update_meeting_ids(conn) -> int:
-    """DB の races 全行に meeting_id を再計算して書き込む。更新行数を返す。"""
-    races = pd.read_sql_query("SELECT race_id, venue, race_date FROM races", conn)
+    """meeting_id 未設定の races 行に日付連続性から導出したIDを書き込む。
+
+    スクレイパーが API の periodStartDate から meeting_id を保存済みの行は
+    そのまま(公式の節情報を優先)。返り値は導出対象になった行数。
+    """
+    races = pd.read_sql_query(
+        "SELECT race_id, venue, race_date FROM races "
+        "WHERE meeting_id IS NULL OR meeting_id = ''",
+        conn,
+    )
     mapping = derive_meeting_ids(races)
     cur = conn.cursor()
     cur.executemany(

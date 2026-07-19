@@ -1,10 +1,16 @@
 """オートレース選手能力評価システムの設定。
 
 会場スラッグ・URL・DB/キャッシュパス・指標計算の閾値定数を一元管理する。
+
+データ取得は autorace.jp の JSON API を使う(実HTMLは JS 描画のシェルのみで
+レース結果データを含まないことを 2026-07 に実ページで確認済み)。
 """
 
 # autorace.jp のURLパスに使われる会場スラッグ
 VENUE_SLUGS = ["kawaguchi", "isesaki", "hamamatsu", "sanyou", "iizuka"]
+
+# 川口の1日2回開催(2開催目)。カレンダーに現れた場合のみ収集対象に加える。
+TWICE_VENUE_SLUG = "kawaguchi2"
 
 VENUE_NAMES_JA = {
     "kawaguchi": "川口",
@@ -12,20 +18,40 @@ VENUE_NAMES_JA = {
     "hamamatsu": "浜松",
     "sanyou": "山陽",
     "iizuka": "飯塚",
+    "kawaguchi2": "川口(2回目)",
+}
+
+# API の placeCode (web_app/js/race.js 内 config.placeCodeList より)
+PLACE_CODES = {
+    "kawaguchi": 2,
+    "isesaki": 3,
+    "hamamatsu": 4,
+    "iizuka": 5,
+    "sanyou": 6,
+    "kawaguchi2": 12,
 }
 
 BASE_URLS = {
-    # レース結果: 日付は YYYY-MM-DD、race_no は 1..12
-    "race_result": "https://autorace.jp/race_info/RaceResult/{venue}/{date}_{race_no}",
-    # 開催カレンダー(レース一覧探索の第一候補。解析不能時は probe 方式に切替)
+    # 結果ページ(HTMLシェル)。CSRFトークン取得と scrape_log のキーに使う
+    "race_result_page": "https://autorace.jp/race_info/RaceResult/{venue}/{date}_{race_no}",
+    # レース結果 JSON API (POST {placeCode, raceDate: "YYYY-MM-DD", raceNo})
+    "api_race_result": "https://autorace.jp/race_info/RaceResult",
+    # レース補足情報 JSON API (POST 同上): 距離・天候・走路状況・節開始日など
+    "api_other_race_info": "https://autorace.jp/race_info/OtherRaceInfo",
+    # 開催カレンダー JSON API (GET ?date=YYYY-MM)
+    "api_calendar": "https://autorace.jp/race_info/XML/Calendar",
+    # CSRFトークン取得用ページ
     "race_info_top": "https://autorace.jp/race_info/",
-    "recent": "https://autorace.jp/race_info/Recent/{venue}",
 }
+
+# API 応答の result="Failure" 時のエラーコード
+API_CODE_NO_DATA = "4101"   # レスポンス0件(未開催・存在しないレース番号・未確定)
+API_CODE_CANCELLED = "4200"  # 開催中止
 
 RATE_LIMIT_SECONDS = 3.0
 REQUEST_TIMEOUT = 30
 MAX_RETRIES = 3
-MAX_RACE_NO = 12  # probe 方式で試すレース番号の上限
+MAX_RACE_NO = 12  # カレンダーから最終レース番号が取れない場合の探索上限
 
 DB_PATH = "data/autorace.db"
 CACHE_DIR = "data/autorace_cache"
@@ -35,7 +61,7 @@ USE_CACHE = True
 # 競走タイム・上がりタイムの掲載単位。
 #   "per100m": 100mあたり換算タイム(例 3.36)としてそのまま扱う
 #   "total":   総所要時間として距離で割って per-100m に換算する
-# 実HTMLで確認後に確定させること(metrics は to_per100m() 経由でのみ参照)。
+# 実API応答 (raceTime="3.852", distance=3100) で per-100m 換算掲載と確認済み。
 TIME_FORMAT = "per100m"
 
 # --- 指標計算の定数 ---
@@ -51,7 +77,7 @@ TRACK_WET = "湿走路"
 
 # race_entries.status の取りうる値
 STATUS_FINISHED = "finished"    # 完走
-STATUS_SCRATCHED = "scratched"  # 欠車・出走取消
+STATUS_SCRATCHED = "scratched"  # 欠車・出走取消・除外
 STATUS_ACCIDENT = "accident"    # 落車・転倒・事故
 STATUS_VIOLATION = "violation"  # 反則・妨害による失格
-STATUS_DNF = "dnf"              # その他未完走
+STATUS_DNF = "dnf"              # その他未完走(停止・故障等)

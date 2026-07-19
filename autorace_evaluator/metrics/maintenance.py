@@ -27,7 +27,13 @@ def build_daily_trials(entries_df: pd.DataFrame, include_retrial: bool = False) 
     """
     df = entries_df.copy()
     df = df[df["status"] != settings.STATUS_SCRATCHED]
-    df = df[df["track_status"] == settings.TRACK_GOOD]
+    # 試走は競走より前に行われるため、試走時の走路状況(trial_track_status)を
+    # 優先して「良走路」判定する。無ければ競走時の track_status で代用。
+    if "trial_track_status" in df.columns:
+        trial_track = df["trial_track_status"].fillna(df["track_status"])
+    else:
+        trial_track = df["track_status"]
+    df = df[trial_track == settings.TRACK_GOOD]
     df = df[df["trial_time"].notna()]
     df = df[df["player_no"].notna()]
     if not include_retrial:

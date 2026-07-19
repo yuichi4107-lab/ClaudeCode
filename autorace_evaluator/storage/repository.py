@@ -23,19 +23,19 @@ def upsert_race(conn: sqlite3.Connection, race: dict) -> None:
     defaults = {
         "venue": None, "race_date": None, "race_no": None, "race_name": None,
         "distance": None, "weather": None, "track_status": None,
-        "temperature": None, "track_temp": None, "meeting_id": None,
-        "field_size": None, "source_url": None,
+        "trial_track_status": None, "temperature": None, "track_temp": None,
+        "meeting_id": None, "field_size": None, "source_url": None,
     }
     data = {**defaults, **race, "scraped_at": datetime.now().isoformat()}
     conn.execute(
         """INSERT OR REPLACE INTO races
             (race_id, venue, race_date, race_no, race_name, distance, weather,
-             track_status, temperature, track_temp, meeting_id, field_size,
-             source_url, scraped_at)
+             track_status, trial_track_status, temperature, track_temp,
+             meeting_id, field_size, source_url, scraped_at)
            VALUES
             (:race_id, :venue, :race_date, :race_no, :race_name, :distance, :weather,
-             :track_status, :temperature, :track_temp, :meeting_id, :field_size,
-             :source_url, :scraped_at)""",
+             :track_status, :trial_track_status, :temperature, :track_temp,
+             :meeting_id, :field_size, :source_url, :scraped_at)""",
         data,
     )
     conn.commit()
@@ -136,9 +136,10 @@ def get_entries_with_race(
     to_date: str,
     venue: str | None = None,
 ) -> list[sqlite3.Row]:
-    """race_entries と races を JOIN し、race_no/race_date/venue/track_status/distance/meeting_id を含めて返す。"""
+    """race_entries と races を JOIN し、race_no/race_date/venue/track_status/trial_track_status/distance/meeting_id を含めて返す。"""
     sql = """
-    SELECT e.*, r.race_no, r.race_date, r.venue, r.track_status, r.distance, r.meeting_id
+    SELECT e.*, r.race_no, r.race_date, r.venue, r.track_status,
+           r.trial_track_status, r.distance, r.meeting_id
     FROM race_entries e
     JOIN races r ON e.race_id = r.race_id
     WHERE r.race_date BETWEEN ? AND ?

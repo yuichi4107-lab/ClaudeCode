@@ -1,268 +1,252 @@
 """scraper/race_list.py・scraper/race_result.py のテスト。
 
-requests を一切呼ばない: BaseScraper.get を monkeypatch し、
-parsers.result_parser はまだ存在しない可能性があるため
-race_result._parse_race_result をスタブに差し替えて検証する。
+requests を一切呼ばない: BaseScraper 互換の FakeScraper を注入し、
+カレンダーAPI・RaceResult/OtherRaceInfo API の応答を辞書で差し替える。
 """
+
+import json
+from pathlib import Path
 
 import pytest
 
 from autorace_evaluator.config import settings
-from autorace_evaluator.scraper import race_list, race_result
-from autorace_evaluator.scraper.base import BaseScraper
+from autorace_evaluator.scraper import race_list
+from autorace_evaluator.scraper.race_result import scrape_races
 from autorace_evaluator.storage import database, repository
 
-
-# ---------------------------------------------------------- iter_race_urls
-
-def test_iter_race_urls_generates_all_combinations(monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 3)
-    urls = list(
-        race_list.iter_race_urls(
-            "2026-01-01", "2026-01-02", ["kawaguchi", "isesaki"]
-        )
-    )
-    # 2 dates * 2 venues * 3 race_no
-    assert len(urls) == 12
-
-    url, meta = urls[0]
-    assert meta == {
-        "venue": "kawaguchi",
-        "date": "2026-01-01",
-        "race_no": 1,
-        "url": url,
-    }
-    assert url == settings.BASE_URLS["race_result"].format(
-        venue="kawaguchi", date="2026-01-01", race_no=1
-    )
+FIXTURES_DIR = Path(__file__).parent / "fixtures" / "autorace"
 
 
-def test_iter_race_urls_date_range_inclusive(monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 1)
-    urls = list(
-        race_list.iter_race_urls("2026-01-01", "2026-01-01", ["kawaguchi"])
-    )
-    assert len(urls) == 1
+def _load_fixture(name):
+    return json.loads((FIXTURES_DIR / name).read_text(encoding="utf-8"))
 
 
-def test_iter_race_urls_skips_was_scraped(monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 2)
-    conn = database.get_connection(":memory:")
-    database.init_db(conn)
-
-    url1 = settings.BASE_URLS["race_result"].format(
-        venue="kawaguchi", date="2026-01-01", race_no=1
-    )
-    repository.log_scrape(conn, url1, status_code=200)
-
-    stats = {}
-    urls = list(
-        race_list.iter_race_urls(
-            "2026-01-01", "2026-01-01", ["kawaguchi"], conn=conn, stats=stats
-        )
-    )
-
-    assert [m["race_no"] for _, m in urls] == [2]
-    assert stats["skipped"] == 1
+def _calendar_json(entries):
+    """entries = [(place_code, place_key, date, final_race_no), ...]"""
+    blocks: dict[int, dict] = {}
+    for place_code, place_key, date, final_no in entries:
+        block = blocks.setdefault(place_code, {
+            "placeCode": place_code, "placeKey": place_key, "calendar": [],
+        })
+        block["calendar"].append({
+            "date": date,
+            "race": {"finalRaceNo": final_no, "title": "テスト開催"},
+        })
+    return {"result": "Success", "errors": [], "body": list(blocks.values())}
 
 
-def test_iter_race_urls_cached_404_on_race1_skips_rest(monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 3)
-    conn = database.get_connection(":memory:")
-    database.init_db(conn)
-
-    url1 = settings.BASE_URLS["race_result"].format(
-        venue="kawaguchi", date="2026-01-01", race_no=1
-    )
-    repository.log_scrape(conn, url1, status_code=404)
-
-    urls = list(
-        race_list.iter_race_urls(
-            "2026-01-01", "2026-01-01", ["kawaguchi"], conn=conn
-        )
-    )
-    assert urls == []  # race_no=1 が404済み → 2,3 は probe しない
+_NO_DATA = {"result": "Failure",
+            "errors": [{"code": "4101", "message": "レスポンス件数0件"}],
+            "body": []}
+_CANCELLED = {"result": "Failure",
+              "errors": [{"code": "4200", "message": "開催中止"}],
+              "body": []}
 
 
-def test_iter_race_urls_send_skip_rest_stops_day(monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 5)
-    gen = race_list.iter_race_urls("2026-01-01", "2026-01-01", ["kawaguchi"])
-    url, meta = next(gen)
-    assert meta["race_no"] == 1
-    with pytest.raises(StopIteration):
-        gen.send(True)  # 残りをスキップ → この日この会場ではもう出ない
+class FakeScraper:
+    """BaseScraper 互換のスタブ。(placeCode, raceDate, raceNo) で応答を引く。"""
+
+    def __init__(self, calendar=None, results=None, others=None):
+        self.calendar = calendar
+        self.results = results or {}
+        self.others = others or {}
+        self.get_json_calls = []
+        self.post_json_calls = []
+
+    def get_json(self, url, params=None, dump_name=None):
+        self.get_json_calls.append((url, params))
+        if self.calendar is None:
+            raise RuntimeError("calendar unavailable")
+        return self.calendar
+
+    def post_json(self, url, payload, dump_name=None):
+        self.post_json_calls.append((url, dict(payload)))
+        key = (payload["placeCode"], payload["raceDate"], payload["raceNo"])
+        if url == settings.BASE_URLS["api_race_result"]:
+            return self.results.get(key, _NO_DATA)
+        if url == settings.BASE_URLS["api_other_race_info"]:
+            return self.others.get(key, _NO_DATA)
+        raise AssertionError(f"unexpected url: {url}")
 
 
-def test_iter_race_urls_no_probe_ignores_send(monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 3)
-    gen = race_list.iter_race_urls(
-        "2026-01-01", "2026-01-01", ["kawaguchi"], probe=False
-    )
-    seen = []
-    url, meta = next(gen)
-    seen.append(meta["race_no"])
-    try:
-        while True:
-            url, meta = gen.send(True)  # probe=False なので無視される
-            seen.append(meta["race_no"])
-    except StopIteration:
-        pass
-    assert seen == [1, 2, 3]
+# --------------------------------------------------------- iter_meeting_days
+
+def test_iter_meeting_days_from_calendar():
+    cal = _calendar_json([
+        (2, "kawaguchi", "2026-01-01", 12),
+        (2, "kawaguchi", "2026-01-02", 12),
+        (3, "isesaki", "2026-01-01", 8),
+        (3, "isesaki", "2026-01-05", 8),  # 期間外
+    ])
+    scraper = FakeScraper(calendar=cal)
+    days = race_list.iter_meeting_days(
+        "2026-01-01", "2026-01-03", ["kawaguchi", "isesaki"], scraper)
+    assert days == [
+        ("isesaki", "2026-01-01", 8),
+        ("kawaguchi", "2026-01-01", 12),
+        ("kawaguchi", "2026-01-02", 12),
+    ]
+
+
+def test_iter_meeting_days_unknown_final_race_no():
+    cal = _calendar_json([(2, "kawaguchi", "2026-01-01", "")])
+    scraper = FakeScraper(calendar=cal)
+    days = race_list.iter_meeting_days(
+        "2026-01-01", "2026-01-01", ["kawaguchi"], scraper)
+    assert days == [("kawaguchi", "2026-01-01", None)]
+
+
+def test_iter_meeting_days_detects_kawaguchi2():
+    # placeCode=12 は placeKey が "kawaguchi" でも kawaguchi2 として扱う
+    cal = _calendar_json([(12, "kawaguchi", "2026-01-01", 8)])
+    scraper = FakeScraper(calendar=cal)
+    days = race_list.iter_meeting_days(
+        "2026-01-01", "2026-01-01", ["kawaguchi"], scraper)
+    assert days == [("kawaguchi2", "2026-01-01", 8)]
+
+
+def test_iter_meeting_days_fallback_when_calendar_unavailable():
+    scraper = FakeScraper(calendar=None)  # get_json が例外
+    days = race_list.iter_meeting_days(
+        "2026-01-01", "2026-01-02", ["kawaguchi"], scraper)
+    assert days == [
+        ("kawaguchi", "2026-01-01", None),
+        ("kawaguchi", "2026-01-02", None),
+    ]
+
+
+def test_month_range_spans_years():
+    months = list(race_list._month_range("2025-11-15", "2026-02-01"))
+    assert months == ["2025-11", "2025-12", "2026-01", "2026-02"]
 
 
 # ------------------------------------------------------------ scrape_races
 
-def test_scrape_races_r1_404_skips_rest_of_day(tmp_path, monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 5)
-    calls = []
+def _fake_for_one_day(final_no=2, date="2026-01-01"):
+    result_fx = _load_fixture("synthetic_result_api.json")
+    other_fx = _load_fixture("synthetic_other_api.json")
+    cal = _calendar_json([(2, "kawaguchi", date, final_no)])
+    results = {(2, date, no): result_fx for no in range(1, (final_no or 2) + 1)}
+    others = {(2, date, no): other_fx for no in range(1, (final_no or 2) + 1)}
+    return FakeScraper(calendar=cal, results=results, others=others)
 
-    def fake_get(self, url, params=None, dump_name=None):
-        calls.append(url)
-        return None
 
-    monkeypatch.setattr(BaseScraper, "get", fake_get)
-
+def test_scrape_races_fetches_and_saves(tmp_path):
     db_path = str(tmp_path / "test.db")
-    stats = race_result.scrape_races(
-        "2026-01-01", "2026-01-01", ["kawaguchi", "isesaki"],
-        db_path=db_path, progress=False,
-    )
+    scraper = _fake_for_one_day(final_no=2)
 
-    assert len(calls) == 2  # 各会場でレース1のみ試行
-    assert stats == {"fetched": 0, "not_found": 2, "skipped": 0, "errors": 0}
-
-
-def test_scrape_races_no_probe_tries_all_race_numbers(tmp_path, monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 3)
-    calls = []
-
-    def fake_get(self, url, params=None, dump_name=None):
-        calls.append(url)
-        return None
-
-    monkeypatch.setattr(BaseScraper, "get", fake_get)
-
-    db_path = str(tmp_path / "test.db")
-    stats = race_result.scrape_races(
+    stats = scrape_races(
         "2026-01-01", "2026-01-01", ["kawaguchi"],
-        db_path=db_path, progress=False, probe=False,
+        db_path=db_path, progress=False, scraper=scraper,
     )
-
-    assert len(calls) == 3
-    assert stats["not_found"] == 3
-
-
-def test_scrape_races_404_logged_and_skipped_on_rerun(tmp_path, monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 1)
-    calls = []
-
-    def fake_get(self, url, params=None, dump_name=None):
-        calls.append(url)
-        return None
-
-    monkeypatch.setattr(BaseScraper, "get", fake_get)
-
-    db_path = str(tmp_path / "test.db")
-    stats1 = race_result.scrape_races(
-        "2026-01-01", "2026-01-01", ["kawaguchi"], db_path=db_path, progress=False
-    )
-    assert stats1["not_found"] == 1
-    assert len(calls) == 1
-
-    stats2 = race_result.scrape_races(
-        "2026-01-01", "2026-01-01", ["kawaguchi"], db_path=db_path, progress=False
-    )
-    assert stats2["skipped"] == 1
-    assert stats2["not_found"] == 0
-    assert len(calls) == 1  # 二回目はHTTPを叩かない
-
-
-def test_scrape_races_success_upserts_to_db(tmp_path, monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 1)
-
-    def fake_get(self, url, params=None, dump_name=None):
-        return "<html>fake</html>"
-
-    def fake_parse(html, url_meta):
-        race_id = f"{url_meta['venue']}_{url_meta['date']}_{url_meta['race_no']}"
-        return {
-            "race": {
-                "race_id": race_id,
-                "venue": url_meta["venue"],
-                "race_date": url_meta["date"],
-                "race_no": url_meta["race_no"],
-            },
-            "entries": [
-                {"car_no": 1, "player_no": 111, "player_name": "山田太郎", "finish_pos": 1},
-                {"car_no": 2, "player_no": None, "player_name": None, "finish_pos": 2},
-            ],
-            "payouts": [{"bet_type": "単勝", "combination": "1", "payout": 150}],
-        }
-
-    monkeypatch.setattr(BaseScraper, "get", fake_get)
-    monkeypatch.setattr(race_result, "_parse_race_result", fake_parse)
-
-    db_path = str(tmp_path / "test.db")
-    stats = race_result.scrape_races(
-        "2026-01-01", "2026-01-01", ["kawaguchi"], db_path=db_path, progress=False
-    )
-
-    assert stats == {"fetched": 1, "not_found": 0, "skipped": 0, "errors": 0}
+    assert stats["fetched"] == 2
+    assert stats["errors"] == 0
 
     conn = database.get_connection(db_path)
-    race_id = "kawaguchi_2026-01-01_1"
+    try:
+        races = conn.execute("SELECT * FROM races ORDER BY race_no").fetchall()
+        assert [r["race_no"] for r in races] == [1, 2]
+        assert races[0]["track_status"] == "良走路"
+        assert races[0]["trial_track_status"] == "良走路"
+        assert races[0]["meeting_id"] == "kawaguchi_2026-07-16"
+        assert races[0]["distance"] == 3100
 
-    race_row = conn.execute(
-        "SELECT * FROM races WHERE race_id = ?", (race_id,)
-    ).fetchone()
-    assert race_row is not None
-    assert race_row["venue"] == "kawaguchi"
+        entries = conn.execute(
+            "SELECT * FROM race_entries WHERE race_id = 'kawaguchi_2026-01-01_1' "
+            "ORDER BY car_no").fetchall()
+        assert len(entries) == 7
+        winner = next(e for e in entries if e["finish_pos"] == 1)
+        assert winner["trial_time"] == 3.31
+        assert winner["st"] == 0.05
+        assert winner["handicap"] == 10
 
-    entries = conn.execute(
-        "SELECT * FROM race_entries WHERE race_id = ? ORDER BY car_no", (race_id,)
-    ).fetchall()
-    assert len(entries) == 2
-    assert entries[0]["player_no"] == 111
-    assert entries[1]["player_no"] is None
-
-    player = conn.execute(
-        "SELECT * FROM players WHERE player_no = 111"
-    ).fetchone()
-    assert player is not None
-    assert player["player_name"] == "山田太郎"
-
-    payouts = conn.execute(
-        "SELECT * FROM payouts WHERE race_id = ?", (race_id,)
-    ).fetchall()
-    assert len(payouts) == 1
-
-    log_rows = conn.execute("SELECT status_code FROM scrape_log").fetchall()
-    assert [r["status_code"] for r in log_rows] == [200]
-    conn.close()
+        payouts = conn.execute(
+            "SELECT COUNT(*) AS n FROM payouts "
+            "WHERE race_id = 'kawaguchi_2026-01-01_1'").fetchone()
+        assert payouts["n"] > 0
+    finally:
+        conn.close()
 
 
-def test_scrape_races_parse_error_recorded(tmp_path, monkeypatch):
-    monkeypatch.setattr(settings, "MAX_RACE_NO", 1)
-
-    def fake_get(self, url, params=None, dump_name=None):
-        return "<html>broken</html>"
-
-    def fake_parse(html, url_meta):
-        return {"error": "could not find result table"}
-
-    monkeypatch.setattr(BaseScraper, "get", fake_get)
-    monkeypatch.setattr(race_result, "_parse_race_result", fake_parse)
-
+def test_scrape_races_second_run_skips(tmp_path):
     db_path = str(tmp_path / "test.db")
-    stats = race_result.scrape_races(
-        "2026-01-01", "2026-01-01", ["kawaguchi"], db_path=db_path, progress=False
-    )
-    assert stats == {"fetched": 0, "not_found": 0, "skipped": 0, "errors": 1}
+    scraper = _fake_for_one_day(final_no=2)
+    scrape_races("2026-01-01", "2026-01-01", ["kawaguchi"],
+                 db_path=db_path, progress=False, scraper=scraper)
+
+    scraper2 = _fake_for_one_day(final_no=2)
+    stats = scrape_races("2026-01-01", "2026-01-01", ["kawaguchi"],
+                         db_path=db_path, progress=False, scraper=scraper2)
+    assert stats["skipped"] == 2
+    assert stats["fetched"] == 0
+    assert scraper2.post_json_calls == []  # API は一切呼ばれない
+
+
+def test_scrape_races_probing_stops_on_no_data(tmp_path):
+    """最終レース番号不明時、4101 応答で残りレース番号を打ち切る。"""
+    db_path = str(tmp_path / "test.db")
+    result_fx = _load_fixture("synthetic_result_api.json")
+    other_fx = _load_fixture("synthetic_other_api.json")
+    cal = _calendar_json([(2, "kawaguchi", "2026-01-01", "")])  # final 不明
+    results = {(2, "2026-01-01", no): result_fx for no in (1, 2, 3)}
+    others = {(2, "2026-01-01", no): other_fx for no in (1, 2, 3)}
+    scraper = FakeScraper(calendar=cal, results=results, others=others)
+
+    stats = scrape_races("2026-01-01", "2026-01-01", ["kawaguchi"],
+                         db_path=db_path, progress=False, scraper=scraper)
+    assert stats["fetched"] == 3
+    assert stats["not_found"] == 1  # 4R で 4101 → 5R 以降は試さない
+    race_result_calls = [
+        p["raceNo"] for u, p in scraper.post_json_calls
+        if u == settings.BASE_URLS["api_race_result"]
+    ]
+    assert race_result_calls == [1, 2, 3, 4]
+
+
+def test_scrape_races_cancelled_race_continues_day(tmp_path):
+    """4200(中止)は cancelled に数え、同日の残りレースは試し続ける。"""
+    db_path = str(tmp_path / "test.db")
+    result_fx = _load_fixture("synthetic_result_api.json")
+    other_fx = _load_fixture("synthetic_other_api.json")
+    cal = _calendar_json([(2, "kawaguchi", "2026-01-01", 3)])
+    results = {
+        (2, "2026-01-01", 1): result_fx,
+        (2, "2026-01-01", 2): _CANCELLED,
+        (2, "2026-01-01", 3): result_fx,
+    }
+    others = {(2, "2026-01-01", no): other_fx for no in (1, 3)}
+    scraper = FakeScraper(calendar=cal, results=results, others=others)
+
+    stats = scrape_races("2026-01-01", "2026-01-01", ["kawaguchi"],
+                         db_path=db_path, progress=False, scraper=scraper)
+    assert stats["fetched"] == 2
+    assert stats["cancelled"] == 1
+
+
+def test_scrape_races_logs_scrape_urls(tmp_path):
+    db_path = str(tmp_path / "test.db")
+    scraper = _fake_for_one_day(final_no=1)
+    scrape_races("2026-01-01", "2026-01-01", ["kawaguchi"],
+                 db_path=db_path, progress=False, scraper=scraper)
 
     conn = database.get_connection(db_path)
-    log_rows = conn.execute(
-        "SELECT status_code, error_msg FROM scrape_log"
-    ).fetchall()
-    assert log_rows[0]["status_code"] == 0
-    assert "could not find result table" in log_rows[0]["error_msg"]
-    conn.close()
+    try:
+        row = conn.execute("SELECT * FROM scrape_log").fetchone()
+        expected_url = settings.BASE_URLS["race_result_page"].format(
+            venue="kawaguchi", date="2026-01-01", race_no=1)
+        assert row["url"] == expected_url
+        assert row["status_code"] == 200
+    finally:
+        conn.close()
+
+
+def test_was_scraped_semantics(tmp_path):
+    conn = database.get_connection(":memory:")
+    database.init_db(conn)
+    repository.log_scrape(conn, "u200", status_code=200)
+    repository.log_scrape(conn, "u404", status_code=404)
+    repository.log_scrape(conn, "u0", status_code=0, error_msg="boom")
+    assert repository.was_scraped(conn, "u200")
+    assert repository.was_scraped(conn, "u404")
+    assert not repository.was_scraped(conn, "u0")  # エラーは再試行対象
+    assert not repository.was_scraped(conn, "unknown")

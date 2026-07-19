@@ -1,26 +1,25 @@
-"""レース開催探索(URL列挙)。
+"""レース開催探索(開催日・レース数の列挙)。
 
-現状は probe 方式のみを実装する。期間内の全日付 × 全会場 × レース番号
-1..settings.MAX_RACE_NO の組み合わせで race_result URL を機械的に列挙し、
-実際に取得(404判定)するかどうかは呼び出し側(scraper/race_result.py)に委ねる。
+開催カレンダー API (GET /race_info/XML/Calendar?date=YYYY-MM) を月単位で
+取得し、期間内の (venue, date, final_race_no) を列挙する。カレンダーが
+最終レース番号を返さない日(直近の開催など)は final_race_no=None とし、
+呼び出し側が 1..settings.MAX_RACE_NO を「データなし応答が出るまで」試す。
 
-TODO(将来拡張): settings.BASE_URLS["race_info_top"] / "recent" のカレンダー
-ページを解析し、開催日・開催会場を事前に絞り込むことで無駄な probe を
-減らす。現状は未実装(HTML構造が確認できていないため)。probe 方式が
-既定であり、当面はこれで十分。
+カレンダー取得自体に失敗した月は、全日付 × 全会場を final_race_no=None で
+列挙するフォールバックに切り替える(APIの 4101 応答で自然に絞られる)。
 """
 
 from __future__ import annotations
 
-import sqlite3
-from datetime import datetime, timedelta
-from typing import Iterator
+import logging
+from datetime import date, datetime, timedelta
 
 from autorace_evaluator.config import settings
-from autorace_evaluator.storage import repository
+
+logger = logging.getLogger(__name__)
 
 
-def _date_range(from_date: str, to_date: str) -> Iterator[str]:
+def _date_range(from_date: str, to_date: str):
     """'YYYY-MM-DD' の開始日から終了日まで(両端含む)を日単位でyieldする。"""
     start = datetime.strptime(from_date, "%Y-%m-%d")
     end = datetime.strptime(to_date, "%Y-%m-%d")
@@ -32,64 +31,107 @@ def _date_range(from_date: str, to_date: str) -> Iterator[str]:
         d += timedelta(days=1)
 
 
-def _is_404(conn: sqlite3.Connection, url: str) -> bool:
-    row = conn.execute(
-        "SELECT status_code FROM scrape_log WHERE url = ?", (url,)
-    ).fetchone()
-    return row is not None and row["status_code"] == 404
+def _month_range(from_date: str, to_date: str):
+    """期間がまたぐ月 'YYYY-MM' を順にyieldする。"""
+    start = date.fromisoformat(from_date).replace(day=1)
+    end = date.fromisoformat(to_date).replace(day=1)
+    cur = start
+    while cur <= end:
+        yield cur.strftime("%Y-%m")
+        if cur.month == 12:
+            cur = cur.replace(year=cur.year + 1, month=1)
+        else:
+            cur = cur.replace(month=cur.month + 1)
 
 
-def iter_race_urls(
+def _parse_final_race_no(value) -> int | None:
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    return n if 1 <= n <= settings.MAX_RACE_NO else None
+
+
+def _extract_days_from_calendar(cal_json: dict, venues: list[str]) -> list[tuple]:
+    """カレンダーAPI応答から (venue, date, final_race_no|None) を抽出する。"""
+    days = []
+    body = cal_json.get("body") if isinstance(cal_json, dict) else None
+    if not isinstance(body, list):
+        raise ValueError("calendar body is not a list")
+
+    code_to_slug = {v: k for k, v in settings.PLACE_CODES.items()}
+    wanted = set(venues)
+
+    for block in body:
+        if not isinstance(block, dict):
+            continue
+        slug = block.get("placeKey") or code_to_slug.get(block.get("placeCode"))
+        # kawaguchi2 (placeCode=12) は placeKey が "kawaguchi" になるため
+        # placeCode 側を優先して判定する
+        if block.get("placeCode") == settings.PLACE_CODES[settings.TWICE_VENUE_SLUG]:
+            slug = settings.TWICE_VENUE_SLUG
+        if slug not in wanted:
+            continue
+        for day in block.get("calendar") or []:
+            if not isinstance(day, dict):
+                continue
+            race = day.get("race")
+            if not isinstance(race, dict) or not race:
+                continue
+            ds = day.get("date")
+            if not ds:
+                continue
+            days.append((slug, ds, _parse_final_race_no(race.get("finalRaceNo"))))
+    return days
+
+
+def iter_meeting_days(
     from_date: str,
     to_date: str,
     venues: list[str],
-    conn: sqlite3.Connection | None = None,
-    stats: dict | None = None,
-    probe: bool = True,
-) -> Iterator[tuple[str, dict]]:
-    """期間内の (race_result URL, url_meta) を probe 方式で列挙する。
+    scraper,
+    include_twice: bool = True,
+) -> list[tuple]:
+    """期間内の開催日リスト [(venue, "YYYY-MM-DD", final_race_no|None), ...] を返す。
 
-    - 日付は from_date/to_date(共に 'YYYY-MM-DD')の範囲を両端含めて走査する。
-    - venues 内の各会場について race_no を 1..settings.MAX_RACE_NO まで試す。
-    - conn が与えられ、そのURLが repository.was_scraped(conn, url) で
-      True(scrape_log に 200 or 404 の記録あり)の場合はyieldせずスキップする。
-      stats が与えられていれば stats["skipped"] をインクリメントする。
-      さらに race_no==1 のURLがキャッシュ上 404 だったと分かる場合は、
-      その日その会場の開催なしとみなし race_no 2 以降は probe 自体しない
-      (probe=True の場合のみ。過去実行分にも最適化を効かせるための処置)。
-    - 呼び出し側は yield された (url, meta) を処理した後、
-      generator.send(skip_rest) で次を取得できる。skip_rest に真値を
-      送ると、その日その会場の残りの race_no は probe せず次の会場/日付に
-      進む(典型的には race_no==1 が実際に404だった場合に使う)。
-      probe=False の場合はこの送信値を無視し、全 race_no を必ず試す
-      (CLI の --no-probe に対応)。
-
-    url_meta は {"venue", "date", "race_no", "url"} を持つ dict。
+    venue の並びは (日付, 会場) 順。カレンダーが取得・解析できない月は
+    その月の全日付 × 全会場を final_race_no=None で返す(probe フォールバック)。
     """
-    for date_str in _date_range(from_date, to_date):
-        for venue in venues:
-            skip_venue = False
-            for race_no in range(1, settings.MAX_RACE_NO + 1):
-                if skip_venue:
-                    break
+    wanted = list(venues)
+    if include_twice and settings.TWICE_VENUE_SLUG not in wanted:
+        wanted.append(settings.TWICE_VENUE_SLUG)
 
-                url = settings.BASE_URLS["race_result"].format(
-                    venue=venue, date=date_str, race_no=race_no
-                )
+    found: dict[tuple, int | None] = {}
+    fallback_months: list[str] = []
 
-                if conn is not None and repository.was_scraped(conn, url):
-                    if stats is not None:
-                        stats["skipped"] = stats.get("skipped", 0) + 1
-                    if probe and race_no == 1 and _is_404(conn, url):
-                        skip_venue = True
-                    continue
+    for month in _month_range(from_date, to_date):
+        try:
+            cal = scraper.get_json(
+                settings.BASE_URLS["api_calendar"], params={"date": month}
+            )
+            if cal is None:
+                raise ValueError("calendar API returned 404")
+            days = _extract_days_from_calendar(cal, wanted)
+        except Exception as exc:  # noqa: BLE001 - フォールバックに切替して続行
+            logger.warning("Calendar %s の取得/解析に失敗: %s → probe方式", month, exc)
+            fallback_months.append(month)
+            continue
+        for venue, ds, final_no in days:
+            if from_date <= ds <= to_date:
+                key = (venue, ds)
+                # 隣接月のカレンダーに同じ日が重複して現れる。final_race_no が
+                # 取れている方を優先する
+                if key not in found or found[key] is None:
+                    found[key] = final_no
 
-                meta = {
-                    "venue": venue,
-                    "date": date_str,
-                    "race_no": race_no,
-                    "url": url,
-                }
-                sent = yield url, meta
-                if probe and sent:
-                    skip_venue = True
+    for month in fallback_months:
+        for ds in _date_range(from_date, to_date):
+            if ds[:7] != month:
+                continue
+            for venue in venues:  # フォールバックでは kawaguchi2 は試さない
+                found.setdefault((venue, ds), None)
+
+    return [
+        (venue, ds, final_no)
+        for (venue, ds), final_no in sorted(found.items(), key=lambda kv: (kv[0][1], kv[0][0]))
+    ]

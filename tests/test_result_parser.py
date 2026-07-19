@@ -1,31 +1,46 @@
 """autorace_evaluator.parsers.result_parser の単体テスト。
 
-実HTMLは入手できない環境のため、tests/fixtures/autorace/synthetic_result.html
-(selectors.py の想定DOMに準拠した合成データ)を主な検証対象にする。
-tests/fixtures/autorace/real/ に実HTMLが置かれていれば、それも glob して
-「例外なくパースできる」ことだけ追加検証する(なければ skip)。
+主対象は合成API応答(tests/fixtures/autorace/synthetic_result_api.json)。
+tests/fixtures/autorace/real/ には実サイトから取得した API 応答を置いてあり、
+実データが仕様通りパースできること(警告ゼロ)も検証する。
 """
 
+import json
+import re
 from pathlib import Path
 
 import pytest
 
-from autorace_evaluator.parsers import result_parser
+from autorace_evaluator.parsers import result_parser, selectors
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "autorace"
-SYNTHETIC_HTML_PATH = FIXTURES_DIR / "synthetic_result.html"
+REAL_DIR = FIXTURES_DIR / "real"
 
 URL_META = {"venue": "kawaguchi", "date": "2026-07-18", "race_no": 3}
 
 
-@pytest.fixture
-def synthetic_html() -> str:
-    return SYNTHETIC_HTML_PATH.read_text(encoding="utf-8")
+def _load(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 @pytest.fixture
-def parsed(synthetic_html) -> dict:
-    return result_parser.parse_race_result(synthetic_html, URL_META)
+def synthetic_result() -> dict:
+    return _load(FIXTURES_DIR / "synthetic_result_api.json")
+
+
+@pytest.fixture
+def synthetic_other() -> dict:
+    return _load(FIXTURES_DIR / "synthetic_other_api.json")
+
+
+@pytest.fixture
+def parsed(synthetic_result, synthetic_other) -> dict:
+    return result_parser.parse_api_race_result(
+        synthetic_result, synthetic_other, URL_META)
+
+
+def _entry(parsed, car_no):
+    return next(e for e in parsed["entries"] if e["car_no"] == car_no)
 
 
 # -------------------------------------------------------------------- race
@@ -39,153 +54,219 @@ def test_race_id_and_meta(parsed):
     assert race["race_no"] == 3
 
 
-def test_race_distance_from_header(parsed):
-    assert parsed["race"]["distance"] == 3100
-
-
-def test_race_weather_block(parsed):
+def test_race_info_from_other_api(parsed):
     race = parsed["race"]
+    assert race["distance"] == 3100
     assert race["weather"] == "晴"
     assert race["track_status"] == "良走路"
+    assert race["trial_track_status"] == "良走路"
     assert race["temperature"] == 32.5
-    assert race["track_temp"] == 41.0
+    assert race["track_temp"] == 36.0
+    assert race["race_name"] == "テスト杯 予選"
+    assert race["meeting_id"] == "kawaguchi_2026-07-16"
 
 
-def test_field_size_excludes_only_scratched(parsed):
-    # 8車すべて出走(欠車はいない)。落車・失格も出走扱いで数える。
-    assert parsed["race"]["field_size"] == 8
+def test_field_size_excludes_scratched(parsed):
+    # 7行中1行が欠車
+    assert parsed["race"]["field_size"] == 6
+
+
+def test_missing_other_api_degrades_gracefully(synthetic_result):
+    result = result_parser.parse_api_race_result(synthetic_result, None, URL_META)
+    assert "error" not in result
+    race = result["race"]
+    assert race["distance"] is None
+    assert race["track_status"] is None
+    assert race["meeting_id"] is None
+    assert any("OtherRaceInfo" in w for w in result["warnings"])
 
 
 # ----------------------------------------------------------------- entries
 
-def test_entry_count(parsed):
-    assert len(parsed["entries"]) == 8
-
-
-def _entry(parsed, car_no):
-    return next(e for e in parsed["entries"] if e["car_no"] == car_no)
-
-
 def test_normal_finisher(parsed):
-    e = _entry(parsed, 1)
+    e = _entry(parsed, 5)
     assert e["finish_pos"] == 1
     assert e["status"] == "finished"
-    assert e["handicap"] == 0
+    assert e["player_no"] == 3110
+    assert e["player_name"] == "テスト　一郎"
+    assert e["handicap"] == 10
     assert e["trial_time"] == 3.31
     assert e["is_retrial"] == 0
+    assert e["race_time"] == 3.365
     assert e["st"] == 0.05
     assert e["is_flying"] == 0
     assert e["violation_note"] is None
 
 
-def test_retrial_mark(parsed):
-    e = _entry(parsed, 2)
-    assert e["trial_time"] == 3.32
+def test_retrial_flag(parsed):
+    e = _entry(parsed, 1)
+    assert e["trial_time"] == 3.40
     assert e["is_retrial"] == 1
-    assert e["handicap"] == 10
 
 
-def test_flying_start(parsed):
+def test_foul_code_recorded_as_note(parsed):
+    e = _entry(parsed, 2)
+    assert e["status"] == "finished"
+    assert e["violation_note"] == "出残り"
+
+
+def test_finished_with_trouble_keeps_order(parsed):
+    # 「故障完走」は着順があるので finished、事故名は備考に残す
+    e = _entry(parsed, 6)
+    assert e["finish_pos"] == 4
+    assert e["status"] == "finished"
+    assert "故障完走" in e["violation_note"]
+
+
+def test_accident_row(parsed):
     e = _entry(parsed, 3)
-    assert e["st"] is None
-    assert e["is_flying"] == 1
-
-
-def test_accident_car(parsed):
-    e = _entry(parsed, 4)
     assert e["finish_pos"] is None
     assert e["status"] == "accident"
-    assert e["violation_note"] == "落"
+    assert "落車" in e["violation_note"]
 
 
-def test_violation_car(parsed):
-    e = _entry(parsed, 5)
+def test_scratched_row(parsed):
+    e = _entry(parsed, 4)
+    assert e["finish_pos"] is None
+    assert e["status"] == "scratched"
+    assert e["trial_time"] is None
+    assert e["st"] is None
+
+
+def test_violation_with_flying(parsed):
+    # order=9(着外表示)+反則妨害+フライング
+    e = _entry(parsed, 7)
     assert e["finish_pos"] is None
     assert e["status"] == "violation"
-    assert e["violation_note"] == "妨害失格"
+    assert e["is_flying"] == 1
+    assert "反則妨害" in e["violation_note"]
+    assert "フライング" in e["violation_note"]
 
 
-def test_player_no_extracted_from_href(parsed):
-    e = _entry(parsed, 1)
-    assert e["player_no"] == 12345
-    assert e["player_name"] == "田中 一郎"
-
-
-def test_all_player_no_resolved(parsed):
-    for e in parsed["entries"]:
-        assert e["player_no"] is not None
+def test_last_lap_time_is_always_none(parsed):
+    assert all(e["last_lap_time"] is None for e in parsed["entries"])
 
 
 # ----------------------------------------------------------------- payouts
 
-def test_payouts(parsed):
+def test_payouts_normal_types_only(parsed):
     payouts = parsed["payouts"]
-    assert len(payouts) == 2
-    trifecta = next(p for p in payouts if p["bet_type"] == "3連単")
-    assert trifecta["combination"] == "1-2-3"
-    assert trifecta["payout"] == 12340.0
+    by_type = {}
+    for p in payouts:
+        by_type.setdefault(p["bet_type"], []).append(p)
 
-    trio = next(p for p in payouts if p["bet_type"] == "3連複")
-    assert trio["combination"] == "1-2-3"
-    assert trio["payout"] == 3210.0
+    assert by_type["2連単"][0]["combination"] == "5-1"
+    assert by_type["2連単"][0]["payout"] == 1520
+    assert by_type["3連単"][0]["combination"] == "5-1-2"
+    assert len(by_type["ワイド"]) == 2
+    assert by_type["単勝"][0]["combination"] == "5"
+    # 無投票(typeCode=4)・全返還(typeCode=3)は保存しない
+    assert "3連複" not in by_type
+    assert "複勝" not in by_type
 
 
-# ------------------------------------------------------------------ errors
+# ---------------------------------------------------------------- failures
 
-def test_missing_result_table_returns_error():
-    html = "<html><body><p>結果テーブルはありません</p></body></html>"
-    result = result_parser.parse_race_result(html, URL_META)
+def _failure(code, message):
+    return {"result": "Failure",
+            "errors": [{"code": code, "message": message}], "body": []}
+
+
+def test_failure_no_data():
+    result = result_parser.parse_api_race_result(
+        _failure("4101", "レスポンス件数0件"), None, URL_META)
     assert "error" in result
-    assert result["warnings"]
+    assert result["error_code"] == "4101"
 
 
-def test_unresolvable_headers_warns_and_continues(synthetic_html):
-    # 見出しの一部を HEADER_FIELD_MAP のどの同義語にもマッチしない文字列に差し替える。
-    mangled = synthetic_html.replace("<th>ハンデ</th>", "<th>謎ラベル</th>")
-    assert mangled != synthetic_html  # 置換が実際に行われたことを確認
+def test_failure_cancelled():
+    result = result_parser.parse_api_race_result(
+        _failure("4200", "開催中止"), None, URL_META)
+    assert "error" in result
+    assert result["error_code"] == "4200"
 
-    result = result_parser.parse_race_result(mangled, URL_META)
 
+def test_empty_race_result_is_error(synthetic_other):
+    empty = {"result": "Success", "errors": [], "body": {"raceResult": []}}
+    result = result_parser.parse_api_race_result(empty, synthetic_other, URL_META)
+    assert "error" in result
+
+
+def test_non_dict_input_is_error():
+    result = result_parser.parse_api_race_result("html", None, URL_META)
+    assert "error" in result
+
+
+# ------------------------------------------------------------ real fixtures
+
+_REAL_STEMS = sorted(
+    p.name.replace(".result.json", "")
+    for p in REAL_DIR.glob("*.result.json")
+)
+
+
+@pytest.mark.parametrize("stem", _REAL_STEMS)
+def test_real_fixtures_parse_without_warnings(stem):
+    venue, date, race_no = stem.rsplit("_", 2)
+    meta = {"venue": venue, "date": date, "race_no": int(race_no)}
+    result_json = _load(REAL_DIR / f"{stem}.result.json")
+    other_json = _load(REAL_DIR / f"{stem}.other.json")
+
+    result = result_parser.parse_api_race_result(result_json, other_json, meta)
     assert "error" not in result
-    assert any("見出し不明" in w for w in result["warnings"])
-    # car_no は解決できているので通常どおりパースは継続する
-    assert len(result["entries"]) == 8
-    # ハンデ列が解決できなくなった分、handicap は None になる
-    assert all(e["handicap"] is None for e in result["entries"])
+    assert result["warnings"] == []
+    assert len(result["entries"]) >= 6
+
+    # 主要フィールドが全行で取れている(完走行)
+    for e in result["entries"]:
+        assert e["car_no"] is not None
+        assert e["player_no"] is not None
+        if e["status"] == "finished":
+            assert e["finish_pos"] is not None
+            assert e["trial_time"] is not None
+            assert e["st"] is not None
+            assert e["handicap"] is not None
+            assert e["race_time"] is not None
 
 
-# --------------------------------------------------------- real fixtures
-
-REAL_FIXTURES_DIR = FIXTURES_DIR / "real"
-
-
-def _real_fixture_paths():
-    if not REAL_FIXTURES_DIR.exists():
-        return []
-    return sorted(REAL_FIXTURES_DIR.glob("*.html"))
-
-
-@pytest.mark.parametrize("html_path", _real_fixture_paths(), ids=lambda p: p.name)
-def test_real_fixtures_parse_without_error(html_path):
-    html = html_path.read_text(encoding="utf-8")
-    # ファイル名 {venue}_{YYYY-MM-DD}_{race_no}.html からメタ情報を推定する
-    import re
-
-    m = re.search(
-        r"(kawaguchi|isesaki|hamamatsu|sanyou|iizuka)_(\d{4}-\d{2}-\d{2})_(\d+)",
-        html_path.stem,
+def test_real_kawaguchi_g1_values():
+    """実データのスポットチェック(2026-07-17 川口1R = GIキューポラ杯)。"""
+    result = result_parser.parse_api_race_result(
+        _load(REAL_DIR / "kawaguchi_2026-07-17_1.result.json"),
+        _load(REAL_DIR / "kawaguchi_2026-07-17_1.other.json"),
+        {"venue": "kawaguchi", "date": "2026-07-17", "race_no": 1},
     )
-    if m:
-        venue, date, race_no = m.groups()
-        url_meta = {"venue": venue, "date": date, "race_no": int(race_no)}
-    else:
-        url_meta = {"venue": "unknown", "date": "1970-01-01", "race_no": 0}
+    race = result["race"]
+    assert race["distance"] == 3100
+    assert race["meeting_id"] == "kawaguchi_2026-07-16"
+    # situationCode=5(斑) → 湿走路(保守的), raceSituationCode=1 → 湿走路
+    assert race["trial_track_status"] == "湿走路"
+    assert race["track_status"] == "湿走路"
 
-    result = result_parser.parse_race_result(html, url_meta)
-    assert "error" not in result, result.get("error")
+    winner = next(e for e in result["entries"] if e["finish_pos"] == 1)
+    assert winner["car_no"] == 5
+    assert winner["player_no"] == 3110
+    assert winner["trial_time"] == 3.84
+    assert winner["race_time"] == 3.852
+    assert winner["st"] == 0.10
+    assert winner["handicap"] == 10
 
 
-def test_real_fixtures_skip_if_none_present():
-    if _real_fixture_paths():
-        pytest.skip("real fixtures present; covered by test_real_fixtures_parse_without_error")
-    pytest.skip("tests/fixtures/autorace/real/ に実HTMLが無いためスキップ")
+def test_real_sanyou_good_track_and_payout():
+    result = result_parser.parse_api_race_result(
+        _load(REAL_DIR / "sanyou_2026-07-17_8.result.json"),
+        _load(REAL_DIR / "sanyou_2026-07-17_8.other.json"),
+        {"venue": "sanyou", "date": "2026-07-17", "race_no": 8},
+    )
+    assert result["race"]["track_status"] == "良走路"
+    rtw = [p for p in result["payouts"] if p["bet_type"] == "2連単"]
+    assert rtw and rtw[0]["combination"] == "2-6" and rtw[0]["payout"] == 2310
+
+
+def test_real_html_shell_has_csrf_token_but_no_result_rows():
+    """実HTMLはJS描画のシェルで、結果データを含まない代わりに
+    CSRFトークン(APIのPOSTに必要)を含むことを検証する。"""
+    html = (REAL_DIR / "kawaguchi_2026-07-18_1.page.html").read_text(encoding="utf-8")
+    assert re.search(selectors.CSRF_TOKEN_PATTERN, html)
+    # 選手行のデータテーブルは存在しない(結果はAPIから取得する設計の根拠)
+    assert "raceResult" not in html

@@ -41,13 +41,13 @@ def run_scrape(args) -> None:
         use_cache=not args.no_cache,
         dump_dir=args.dump_html,
         progress=True,
-        probe=not args.no_probe,
     )
 
     print(
         "scrape done: "
         f"fetched={stats['fetched']} not_found={stats['not_found']} "
-        f"skipped={stats['skipped']} errors={stats['errors']}"
+        f"cancelled={stats['cancelled']} skipped={stats['skipped']} "
+        f"errors={stats['errors']}"
     )
 
 
@@ -63,7 +63,7 @@ def run_evaluate(args) -> None:
     if not db_path.exists():
         print(
             f"evaluate: DBファイルが見つかりません ({settings.DB_PATH})。"
-            "先に scrape または parse-html --save を実行してください"
+            "先に scrape または parse-json --save を実行してください"
         )
         sys.exit(1)
         return
@@ -102,7 +102,7 @@ def run_evaluate(args) -> None:
 
 
 _FILENAME_META_RE = re.compile(
-    r"(kawaguchi|isesaki|hamamatsu|sanyou|iizuka)_(\d{4}-\d{2}-\d{2})_(\d+)"
+    r"(kawaguchi2|kawaguchi|isesaki|hamamatsu|sanyou|iizuka)_(\d{4}-\d{2}-\d{2})_(\d+)"
 )
 
 
@@ -151,7 +151,8 @@ def _print_human_readable(result: dict) -> None:
     print("=== レース情報 ===")
     for key in (
         "race_id", "venue", "race_date", "race_no", "race_name", "distance",
-        "weather", "track_status", "temperature", "track_temp", "field_size",
+        "weather", "track_status", "trial_track_status", "temperature",
+        "track_temp", "meeting_id", "field_size",
     ):
         print(f"  {key}: {race.get(key)}")
 
@@ -160,12 +161,12 @@ def _print_human_readable(result: dict) -> None:
         print(
             "  車{car_no} 着{finish} [{status}] "
             "選手{player_no} {player_name} ハンデ{handicap} "
-            "試走{trial}(再{retrial}) 競走{race_time} 上り{last_lap} "
+            "試走{trial}(再{retrial}) 競走{race_time} "
             "ST{st}(F{flying}) {note}".format(
                 car_no=e["car_no"], finish=e["finish_pos"], status=e["status"],
                 player_no=e["player_no"], player_name=e["player_name"] or "-",
                 handicap=e["handicap"], trial=e["trial_time"], retrial=e["is_retrial"],
-                race_time=e["race_time"], last_lap=e["last_lap_time"], st=e["st"],
+                race_time=e["race_time"], st=e["st"],
                 flying=e["is_flying"], note=e["violation_note"] or "",
             )
         )
@@ -182,21 +183,34 @@ def _print_human_readable(result: dict) -> None:
         print("\n警告なし")
 
 
-def run_parse_html(args) -> None:
+def _load_json(path: Path) -> dict | None:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def run_parse_json(args) -> None:
+    """dump された RaceResult API 応答(*.result.json)をパースして確認する。
+
+    同じディレクトリに {stem}.other.json があれば OtherRaceInfo として読む。
+    """
     from autorace_evaluator.parsers import result_parser
     from autorace_evaluator.storage import database, repository
 
     path = Path(args.file)
-    try:
-        html = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        print(f"ファイル読み込みエラー: {exc}")
+    result_json = _load_json(path)
+    if result_json is None:
+        print(f"ファイル読み込みエラー: {path}")
         sys.exit(1)
         return
 
+    other_path = Path(str(path).replace(".result.json", ".other.json"))
+    other_json = _load_json(other_path) if other_path != path else None
+
     url_meta, meta_warning = _resolve_url_meta(args.url_meta, path.name)
 
-    result = result_parser.parse_race_result(html, url_meta)
+    result = result_parser.parse_api_race_result(result_json, other_json, url_meta)
     if meta_warning:
         result.setdefault("warnings", []).insert(0, meta_warning)
 
@@ -245,11 +259,7 @@ def main():
     p_scrape.add_argument("--no-cache", action="store_true", dest="no_cache")
     p_scrape.add_argument(
         "--dump-html", dest="dump_html", metavar="DIR",
-        help="取得HTMLを可読名で保存するディレクトリ",
-    )
-    p_scrape.add_argument(
-        "--no-probe", action="store_true", dest="no_probe",
-        help="レース番号総当たりのprobe方式を無効化する",
+        help="取得したAPI応答JSONを可読名で保存するディレクトリ",
     )
 
     # evaluate
@@ -272,9 +282,10 @@ def main():
         help="再試走レコードを集計に含める",
     )
 
-    # parse-html
-    p_parse = sub.add_parser("parse-html", help="ローカルHTMLファイルをパースして確認する")
-    p_parse.add_argument("file", help="パース対象のHTMLファイルパス")
+    # parse-json
+    p_parse = sub.add_parser(
+        "parse-json", help="dumpされたAPI応答JSONをパースして確認する")
+    p_parse.add_argument("file", help="RaceResult API応答(*.result.json)のパス")
     p_parse.add_argument(
         "--url-meta", dest="url_meta", metavar="VENUE,DATE,RACE_NO",
         help="URLから得られるはずのメタ情報(会場,日付,レース番号)を手動指定",
@@ -288,8 +299,8 @@ def main():
         run_scrape(args)
     elif args.command == "evaluate":
         run_evaluate(args)
-    elif args.command == "parse-html":
-        run_parse_html(args)
+    elif args.command == "parse-json":
+        run_parse_json(args)
 
 
 if __name__ == "__main__":
