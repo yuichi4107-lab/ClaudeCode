@@ -57,6 +57,10 @@ colorama は既存の requirements.txt に含まれる)。
 autorace scrape --from-date 2026-01-01 --to-date 2026-07-01
 autorace scrape --date 20260212 --venue kawaguchi
 
+# 出走表(車級・期別・級班・年齢・連対率)を収集して race_entries に付与
+# ※結果収集が先。races テーブルに保存済みのレースだけが対象になる
+autorace scrape-program --from-date 2026-01-01 --to-date 2026-07-01
+
 # 選手能力評価(整備力・スタート力・突っ込み度の統合レポート)
 autorace evaluate --from-date 2026-01-01 --to-date 2026-07-01
 autorace evaluate --from-date 2026-01-01 --to-date 2026-07-01 --venue kawaguchi --top 30
@@ -123,3 +127,61 @@ API仕様が変わった場合は `parsers/selectors.py` の対応表を修正�
   順位(rank)・百分位(pct)が表示される。
 - `--include-retrial` を付けると、再試走マーク付きの試走タイムも整備力の集計対象に含める
   (既定では除外)。
+
+## 湿走路(雨)適性 wet_score(参考列)
+
+湿走路レースだけで学習した期待着順モデル(試走タイム+ハンデ、レース内センタリング+Ridge)
+に対する残差の選手平均(縮約k=5)を標準化したものが `wet_score`。`wet_gap` は良走路での
+同じ推定値との差で、正なら「良走路の自分より雨で走る」雨巧者を意味する(推定誤差の差で
+ノイジーなため生値のまま)。`n_wet`(湿走路出走数)が `MIN_WET_RACES`(既定5)未満は NaN。
+**総合スコア(3指標平均)には含めない**: 湿走路は全体の約2割で欠損選手が多く、含めると
+選手ごとに total_score の意味(何指標の平均か)が変わること、突っ込み度と同じ残差構成で
+二重計上になること、雨適性は当日の走路状態に依存する条件付き情報であることが理由。
+
+## 新人(2級車)成績レポート(別CSV)
+
+`scrape-program` で車級・期別を収集済みの場合、`evaluate` が
+`autorace_rookie_{from}_{to}.csv` を自動出力する。2級車出走行(全選手が2級車で
+デビューし昇級で1級車へ移る)を新人期間の操作的定義とし、期別がデータ内最新
+`ROOKIE_RECENT_TERMS`(既定2)期以内、またはDB内初出走から `ROOKIE_MAX_RACES`
+(既定30)走以内の選手をロースターとする(判定根拠は `definition` 列)。
+指標: 全選手・良走路で学習済みの期待着順残差を新人×2級車行に絞って縮約した
+`rookie_attack`(少数サンプルでモデルを学習し直さない)、2級車行の平均ST
+(`st_gap_vs_field` = 全体平均との差)、試走タイム推移の傾き `trial_trend`
+(負=機材・乗り手が仕上がってきている)、勝率・3着内率。`rookie_score` は
+新人母集団内での標準化平均。
+
+## 週次自動更新(GitHub Actions)
+
+`.github/workflows/autorace-weekly.yml` が毎週月曜 06:00 JST に実行される
+(手動実行は Actions タブの workflow_dispatch)。処理は
+`scripts/autorace_weekly_update.py`(LLM不使用の純Python):
+
+1. orphan branch `autorace-data` から `autorace.db.gz` を復元
+2. 収集窓 = 前回最終収集日−2日 〜 昨日。`clear_recent_not_found` で
+   「結果未確定のうちにデータなし応答を踏んだレース」を再チェック対象に戻す
+3. `scrape` → `scrape-program` を差分実行(HTTPキャッシュは使わず scrape_log で差分判定)
+4. 直近365日ローリングで evaluate し、`data/reports/autorace_eval_latest.csv` と
+   `autorace_rookie_latest.csv` を main に差分コミット
+5. DBを gzip して autorace-data ブランチへ単一コミット force-push(履歴が太らない)
+
+初回は手元のDBを一度だけ種蒔きする:
+
+```bash
+gzip -9 -c data/autorace.db > /tmp/autorace.db.gz
+BLOB=$(git hash-object -w /tmp/autorace.db.gz)
+TREE=$(printf '100644 blob %s\tautorace.db.gz\n' "$BLOB" | git mktree)
+git push -f origin "$(git commit-tree "$TREE" -m 'initial db snapshot')":refs/heads/autorace-data
+```
+
+## 予想機能ロードマップ(未実装)
+
+各選手×レースの特徴量として、本システムの4指標(整備力・スタート力・突っ込み度・
+雨適性 — 当日の走路状態で wet_score / mean_st_wet を切り替え)+出走表由来の属性
+(級班・期別・rate2/3・年齢)+直近フォーム(直近10走の期待着順残差移動平均・
+当該会場成績)を組み、LightGBM のランキング学習(lambdarank, group=race_id)で
+着順確率を推定する。レース内で正規化した確率を Harville 近似
+P(i→1着)×P(j→2着|i除外) で2連単の組合せ確率に合成し、収集済み payouts テーブルと
+突き合わせて「予測確率×払戻 > 閾値」の期待値ベット戦略を時系列ウォークフォワード
+(学習=過去9か月、検証=直近3か月)で ROI バックテストする。データは既に
+races / race_entries / payouts に揃っており、新規収集は不要。

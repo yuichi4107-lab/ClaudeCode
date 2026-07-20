@@ -1,4 +1,7 @@
-data/
+data/*
+!data/reports/
+data/reports/*
+!data/reports/*_latest.csv
 __pycache__/
 *.pyc
 *.egg-info/
