@@ -68,6 +68,13 @@ FOUL_NOTE_MAP = {
 # race.js の描画コード上 1 のとき「再」を表示する
 RETRIAL_CODES = [1]
 
+# --- 出走表(Program)API の車級(bikeClass) ---
+# race.js は p.bikeClass + '級' と表示する(値は 1 / 2)。文字列で来ても吸収する。
+BIKE_CLASS_MAP = {
+    1: "1級車",
+    2: "2級車",
+}
+
 # --- 払戻(refundInfo)の券種キー → 表示名 ---
 # 組み合わせは list[] 内の 1thCarNo/2thCarNo/3thCarNo を "-" 連結で表現する
 REFUND_BET_TYPES = {

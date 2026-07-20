@@ -112,6 +112,21 @@ def trial_from_api(trial_time, retry_code) -> tuple[float | None, int]:
     return (parse_float(trial_time), is_retrial)
 
 
+def bike_class_from_code(code) -> str | None:
+    """出走表API の bikeClass を正規化ラベルに変換する。
+
+    1/2(数値・文字列とも)は selectors.BIKE_CLASS_MAP のラベル、
+    未知の値は zen_to_han した原文をそのまま返す(foul_note と同方針)。
+    """
+    if code is None:
+        return None
+    c = parse_int(code)
+    if c is not None and c in selectors.BIKE_CLASS_MAP:
+        return selectors.BIKE_CLASS_MAP[c]
+    t = zen_to_han(str(code))
+    return t or None
+
+
 def foul_note(foul_code) -> str | None:
     """foulCode を可読ラベルに変換する。未知コードは原文のまま返す。"""
     if foul_code is None:

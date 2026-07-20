@@ -51,6 +51,12 @@ def set_meeting_id(conn: sqlite3.Connection, race_id: str, meeting_id: str) -> N
 # --------------------------------------------------------------- entries
 
 def upsert_entries(conn: sqlite3.Connection, race_id: str, entries: list[dict]) -> None:
+    """結果API由来の列をUPSERTする。
+
+    INSERT OR REPLACE(行の削除+再挿入)にすると、結果を再取得したとき
+    Program API 由来の列(bike_class 等)が消えるため、ON CONFLICT DO UPDATE で
+    結果由来の列だけを更新する。
+    """
     defaults = {
         "player_no": None, "player_name": None, "handicap": None,
         "trial_time": None, "is_retrial": 0, "race_time": None,
@@ -60,17 +66,61 @@ def upsert_entries(conn: sqlite3.Connection, race_id: str, entries: list[dict]) 
     for entry in entries:
         data = {**defaults, **entry, "race_id": race_id}
         conn.execute(
-            """INSERT OR REPLACE INTO race_entries
+            """INSERT INTO race_entries
                 (race_id, car_no, player_no, player_name, handicap, trial_time,
                  is_retrial, race_time, last_lap_time, st, is_flying, finish_pos,
                  status, violation_note)
                VALUES
                 (:race_id, :car_no, :player_no, :player_name, :handicap, :trial_time,
                  :is_retrial, :race_time, :last_lap_time, :st, :is_flying, :finish_pos,
-                 :status, :violation_note)""",
+                 :status, :violation_note)
+               ON CONFLICT(race_id, car_no) DO UPDATE SET
+                 player_no = excluded.player_no,
+                 player_name = excluded.player_name,
+                 handicap = excluded.handicap,
+                 trial_time = excluded.trial_time,
+                 is_retrial = excluded.is_retrial,
+                 race_time = excluded.race_time,
+                 last_lap_time = excluded.last_lap_time,
+                 st = excluded.st,
+                 is_flying = excluded.is_flying,
+                 finish_pos = excluded.finish_pos,
+                 status = excluded.status,
+                 violation_note = excluded.violation_note""",
             data,
         )
     conn.commit()
+
+
+def update_entry_program_fields(
+    conn: sqlite3.Connection, race_id: str, entries: list[dict]
+) -> int:
+    """出走表(Program)API由来の列のみ更新する。
+
+    結果収集が先行している前提(存在しない race_id×car_no は0行更新)。
+    更新できた行数を返す。
+    """
+    defaults = {
+        "bike_class": None, "graduation_code": None, "player_rank": None,
+        "age": None, "rate2": None, "rate3": None,
+    }
+    updated = 0
+    for entry in entries:
+        data = {**defaults, **entry, "race_id": race_id}
+        cur = conn.execute(
+            """UPDATE race_entries SET
+                 bike_class = :bike_class,
+                 graduation_code = :graduation_code,
+                 player_rank = :player_rank,
+                 age = :age,
+                 rate2 = :rate2,
+                 rate3 = :rate3
+               WHERE race_id = :race_id AND car_no = :car_no""",
+            data,
+        )
+        updated += cur.rowcount
+    conn.commit()
+    return updated
 
 
 # --------------------------------------------------------------- payouts
@@ -103,6 +153,36 @@ def log_scrape(
         (url, datetime.now().isoformat(), status_code, error_msg),
     )
     conn.commit()
+
+
+def clear_recent_not_found(
+    conn: sqlite3.Connection, from_date: str, to_date: str
+) -> int:
+    """期間内日付をURLに含む「データなし」記録を削除して再チェック対象に戻す。
+
+    結果未確定のうちに 4101 を踏んだレースは status_code=404 で記録され、
+    was_scraped が完了扱いにして永久にスキップされてしまう。週次更新の
+    直前に直近期間分を消して再チェックさせる。開催中止(4200)の記録は残す。
+    更新行数を返す。
+    """
+    from datetime import date, timedelta
+
+    start = date.fromisoformat(from_date)
+    end = date.fromisoformat(to_date)
+    deleted = 0
+    d = start
+    while d <= end:
+        cur = conn.execute(
+            r"""DELETE FROM scrape_log
+                WHERE status_code = 404
+                  AND (error_msg IS NULL OR error_msg NOT LIKE '%4200%')
+                  AND url LIKE '%/' || ? || '\_%' ESCAPE '\'""",
+            (d.isoformat(),),
+        )
+        deleted += cur.rowcount
+        d += timedelta(days=1)
+    conn.commit()
+    return deleted
 
 
 def was_scraped(conn: sqlite3.Connection, url: str) -> bool:

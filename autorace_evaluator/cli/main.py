@@ -51,6 +51,39 @@ def run_scrape(args) -> None:
     )
 
 
+def run_scrape_program(args) -> None:
+    from autorace_evaluator.config import settings
+    from autorace_evaluator.scraper.race_program import scrape_programs
+
+    if args.date:
+        from_date = to_date = _parse_date(args.date)
+    elif args.from_date and args.to_date:
+        from_date = _parse_date(args.from_date)
+        to_date = _parse_date(args.to_date)
+    else:
+        print("scrape-program: --date または --from-date/--to-date の両方を指定してください")
+        sys.exit(1)
+        return
+
+    venues = settings.VENUE_SLUGS if args.venue == "all" else [args.venue]
+
+    stats = scrape_programs(
+        from_date=from_date,
+        to_date=to_date,
+        venues=venues,
+        use_cache=not args.no_cache,
+        dump_dir=args.dump_html,
+        progress=True,
+    )
+
+    print(
+        "scrape-program done: "
+        f"fetched={stats['fetched']} not_found={stats['not_found']} "
+        f"skipped={stats['skipped']} errors={stats['errors']} "
+        f"rows_updated={stats['rows_updated']}"
+    )
+
+
 def run_evaluate(args) -> None:
     import pandas as pd
 
@@ -262,6 +295,23 @@ def main():
         help="取得したAPI応答JSONを可読名で保存するディレクトリ",
     )
 
+    # scrape-program
+    p_prog = sub.add_parser(
+        "scrape-program", help="保存済みレースの出走表(車級・期別等)を収集する")
+    p_prog.add_argument("--from-date", dest="from_date", help="開始日")
+    p_prog.add_argument("--to-date", dest="to_date", help="終了日")
+    p_prog.add_argument("--date", help="特定日付 YYYYMMDD または YYYY-MM-DD")
+    p_prog.add_argument(
+        "--venue",
+        choices=["all", "kawaguchi", "isesaki", "hamamatsu", "sanyou", "iizuka"],
+        default="all",
+    )
+    p_prog.add_argument("--no-cache", action="store_true", dest="no_cache")
+    p_prog.add_argument(
+        "--dump-html", dest="dump_html", metavar="DIR",
+        help="取得したAPI応答JSONを可読名で保存するディレクトリ",
+    )
+
     # evaluate
     p_eval = sub.add_parser("evaluate", help="選手能力評価指標を算出する")
     p_eval.add_argument("--from-date", required=True, dest="from_date")
@@ -297,6 +347,8 @@ def main():
 
     if args.command == "scrape":
         run_scrape(args)
+    elif args.command == "scrape-program":
+        run_scrape_program(args)
     elif args.command == "evaluate":
         run_evaluate(args)
     elif args.command == "parse-json":

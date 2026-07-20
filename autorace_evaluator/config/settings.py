@@ -38,6 +38,10 @@ BASE_URLS = {
     "api_race_result": "https://autorace.jp/race_info/RaceResult",
     # レース補足情報 JSON API (POST 同上): 距離・天候・走路状況・節開始日など
     "api_other_race_info": "https://autorace.jp/race_info/OtherRaceInfo",
+    # 出走表 JSON API (POST 同上): 車級・期別・級班・年齢・連対率など
+    "api_program": "https://autorace.jp/race_info/Program",
+    # 出走表の scrape_log キー用疑似URL(一意で安定していればよい)
+    "race_program_page": "https://autorace.jp/race_info/RaceProgram/{venue}/{date}_{race_no}",
     # 開催カレンダー JSON API (GET ?date=YYYY-MM)
     "api_calendar": "https://autorace.jp/race_info/XML/Calendar",
     # CSRFトークン取得用ページ
@@ -70,6 +74,16 @@ MIN_RACES = 10          # スタート力・突っ込み度スコアの最小出
 MIN_PAIRS = 5           # 整備力スコアの最小前日ペア数(未満は参考行)
 RIDGE_ALPHA = 1.0       # 残差モデルの Ridge 正則化係数
 TRIAL_TIME_DECIMALS = 2  # 試走タイム差の丸め桁(0.01秒刻み)
+
+# --- 湿走路適性の定数 ---
+MIN_WET_RACES = 5       # wet_score の最小湿走路出走数(未満は参考行)
+SHRINKAGE_K_WET = 5     # 湿走路残差の縮約k(母数が小さいため既定10より弱める)
+
+# --- 新人(2級車)指標の定数 ---
+ROOKIE_RECENT_TERMS = 2   # データ内最大期別からこの期数以内を新人とみなす
+ROOKIE_MAX_RACES = 30     # DB内初出走からこの走数以内も新人とみなす
+ROOKIE_MIN_RACES = 5      # rookie_score の最小2級車出走数(未満は参考行)
+ROOKIE_SHRINKAGE_K = 3    # 新人残差の縮約k
 
 # 走路状態の正規化後ラベル
 TRACK_GOOD = "良走路"

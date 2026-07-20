@@ -43,6 +43,12 @@ CREATE TABLE IF NOT EXISTS race_entries (
     finish_pos     INTEGER,
     status         TEXT NOT NULL DEFAULT 'finished',
     violation_note TEXT,
+    bike_class     TEXT,
+    graduation_code INTEGER,
+    player_rank    TEXT,
+    age            INTEGER,
+    rate2          REAL,
+    rate3          REAL,
     PRIMARY KEY (race_id, car_no)
 );
 
@@ -79,7 +85,28 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
     return conn
 
 
+# 旧スキーマDBへ追補する列(列名 -> 型)。出走表(Program)API 由来。
+# CREATE_TABLES_SQL の race_entries 定義と一致させること。
+RACE_ENTRIES_ADDED_COLUMNS = {
+    "bike_class": "TEXT",        # 車級の正規化ラベル("1級車"/"2級車"、未知はコード原文)
+    "graduation_code": "INTEGER",  # 期別
+    "player_rank": "TEXT",       # 級班(S-1/A-8 等)
+    "age": "INTEGER",
+    "rate2": "REAL",             # 2連対率(予想用に同時保存)
+    "rate3": "REAL",             # 3連対率
+}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """CREATE IF NOT EXISTS では追補されない列を ALTER TABLE で追加する(冪等)。"""
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(race_entries)")}
+    for col, typ in RACE_ENTRIES_ADDED_COLUMNS.items():
+        if col not in existing:
+            conn.execute(f"ALTER TABLE race_entries ADD COLUMN {col} {typ}")
+
+
 def init_db(conn: sqlite3.Connection) -> None:
-    """テーブル・インデックスを作成する。"""
+    """テーブル・インデックスを作成し、旧スキーマには不足列を追補する。"""
     conn.executescript(CREATE_TABLES_SQL)
+    _migrate(conn)
     conn.commit()
