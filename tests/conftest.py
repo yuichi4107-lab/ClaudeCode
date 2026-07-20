@@ -17,6 +17,7 @@ ENTRY_DEFAULTS = {
     "handicap": 0, "trial_time": 3.35, "is_retrial": 0, "race_time": None,
     "last_lap_time": None, "st": 0.10, "is_flying": 0, "finish_pos": 1,
     "status": "finished",
+    "bike_class": None, "graduation_code": None, "player_rank": None, "age": None,
 }
 
 
@@ -37,11 +38,16 @@ def make_entries_df(rows):
 
 
 def synthetic_league(seed=0, n_players=50, n_races=500, cars_per_race=8,
-                     dash_sd=0.03, attack_sd=0.5):
-    """真のダッシュ力・突っ込み力を埋め込んだレース群を生成する。
+                     dash_sd=0.03, attack_sd=0.5,
+                     wet_share=0.0, wet_sd=0.5):
+    """真のダッシュ力・突っ込み力(・雨適性)を埋め込んだレース群を生成する。
+
+    wet_share > 0 のとき各レースを確率 wet_share で湿走路にし、
+    湿走路レースの着順に真の雨適性 true_wet を効かせる。
+    既定 wet_share=0.0 では従来と同一の出力(後方互換)。
 
     Returns:
-        entries_df, truth(DataFrame: player_no, true_dash, true_attack)
+        entries_df, truth(DataFrame: player_no, true_dash, true_attack, true_wet)
     """
     rng = np.random.default_rng(seed)
     players = np.arange(1, n_players + 1)
@@ -49,12 +55,15 @@ def synthetic_league(seed=0, n_players=50, n_races=500, cars_per_race=8,
     true_attack = rng.normal(0, attack_sd, n_players)  # 着順を押し上げる力
     machine = rng.normal(3.35, 0.03, n_players)        # 機材速度(試走タイムの中心)
     st_mean = rng.normal(0.10, 0.03, n_players)
+    # 雨適性(湿走路でのみ着順を押し上げる力)。wet_share=0 なら未使用
+    true_wet = rng.normal(0, wet_sd, n_players) if wet_share > 0 else np.zeros(n_players)
 
     rows = []
     start = date(2026, 1, 1)
     for r in range(n_races):
         day = (start + timedelta(days=r // 12)).isoformat()
         race_no = r % 12 + 1
+        is_wet = wet_share > 0 and rng.random() < wet_share
         idx = rng.choice(n_players, size=cars_per_race, replace=False)
         trial = machine[idx] + rng.normal(0, 0.02, cars_per_race)
         # 速い機材ほど重いハンデ(実戦と同じ相関構造を再現)
@@ -69,16 +78,19 @@ def synthetic_league(seed=0, n_players=50, n_races=500, cars_per_race=8,
         last_lap = trial + rng.normal(0, 0.01, cars_per_race)
         race_time = last_lap + early_loss
 
-        # 着順: 実力(試走・ハンデ) − 突っ込み力 + ノイズ の順位
+        # 着順: 実力(試走・ハンデ) − 突っ込み力 (− 湿走路では雨適性) + ノイズ の順位
         perf = (
             10 * (trial - 3.35) - 0.05 * handicap
             - true_attack[idx] + rng.normal(0, 0.5, cars_per_race)
         )
+        if is_wet:
+            perf = perf - true_wet[idx]
         finish = np.argsort(np.argsort(perf)) + 1
 
         for c in range(cars_per_race):
             rows.append({
                 "race_date": day, "race_no": race_no,
+                "track_status": "湿走路" if is_wet else "良走路",
                 "car_no": c + 1, "player_no": int(idx[c] + 1),
                 "handicap": int(handicap[c]),
                 "trial_time": round(float(trial[c]), 2),
@@ -93,6 +105,7 @@ def synthetic_league(seed=0, n_players=50, n_races=500, cars_per_race=8,
         "player_no": players,
         "true_dash": true_dash,
         "true_attack": true_attack,
+        "true_wet": true_wet,
     })
     return entries, truth
 

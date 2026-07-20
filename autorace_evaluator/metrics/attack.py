@@ -37,12 +37,16 @@ def add_front_cars(entries_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def fit_expected_finish_model(entries_df: pd.DataFrame,
-                              ridge_alpha: float = settings.RIDGE_ALPHA):
+                              ridge_alpha: float = settings.RIDGE_ALPHA,
+                              track_status: str = settings.TRACK_GOOD):
     """レース内センタリングした finish_pos ~ trial + handicap の Ridge を学習し、
-    残差列 attack_residual を付けたサンプルdfと診断dictを返す。"""
+    残差列 attack_residual を付けたサンプルdfと診断dictを返す。
+
+    track_status で対象走路を切り替えられる(湿走路適性 wet.py が再利用)。
+    """
     df = entries_df.copy()
     mask = (
-        (df["track_status"] == settings.TRACK_GOOD)
+        (df["track_status"] == track_status)
         & (df["status"] == settings.STATUS_FINISHED)
         & df["finish_pos"].notna()
         & df["trial_time"].notna() & df["handicap"].notna()
@@ -70,6 +74,7 @@ def fit_expected_finish_model(entries_df: pd.DataFrame,
     scales = np.where(scaler.scale_ == 0, 1.0, scaler.scale_)
     diagnostics = {
         "n_samples": int(len(df)),
+        "track_status": track_status,
         "betas": dict(zip(["trial_time_c", "handicap_c"],
                           (model.coef_ / scales).tolist())),
     }

@@ -15,7 +15,13 @@ from colorama import init as colorama_init
 from autorace_evaluator.metrics.attack import compute_attack
 from autorace_evaluator.metrics.maintenance import compute_maintenance
 from autorace_evaluator.metrics.start_power import compute_start_power
+from autorace_evaluator.metrics.wet import compute_wet
 
+# 総合スコアを構成する3指標。wet_score は参考列に留める:
+# 湿走路は全体の約2割で欠損選手が多く、総合に混ぜると選手間で
+# total_score の意味(何指標の平均か)が変わってしまう。また attack と
+# 同じ残差構成で相関が高く、二重計上になる。雨適性は当日の走路状態が
+# 湿のときにだけ効く条件付き情報として、予想側で使うのが筋。
 SCORE_COLS = ["maintenance_score", "start_score", "attack_score"]
 
 COLUMN_ORDER = [
@@ -23,6 +29,7 @@ COLUMN_ORDER = [
     "maintenance_score", "n_pairs", "improved_rate", "worsened_rate", "mean_diff",
     "start_score", "n_st", "mean_st", "flying_rate", "dash",
     "attack_score", "attack_a", "mean_passed", "pass_rate",
+    "wet_score", "wet_gap", "n_wet", "mean_st_wet",
     "accident_rate", "violation_rate", "n_races",
 ]
 
@@ -31,6 +38,7 @@ _MAINTENANCE_COLS = ["player_no", "maintenance_score", "n_pairs",
 _START_COLS = ["player_no", "start_score", "n_st", "mean_st", "flying_rate", "dash"]
 _ATTACK_COLS = ["player_no", "attack_score", "attack_a", "mean_passed", "pass_rate",
                 "accident_rate", "violation_rate", "n_races"]
+_WET_COLS = ["player_no", "wet_score", "wet_gap", "n_wet", "mean_st_wet"]
 
 
 def _ensure_cols(df: pd.DataFrame, cols: list) -> pd.DataFrame:
@@ -72,16 +80,19 @@ def build_report(entries_df: pd.DataFrame, include_retrial: bool = False) -> dic
         entries_df, include_retrial=include_retrial)
     s_per_player, s_diag = compute_start_power(entries_df)
     a_per_player, a_diag = compute_attack(entries_df)
+    w_per_player, w_diag = compute_wet(entries_df)
 
     players = _players_master(entries_df)
     m = _ensure_cols(m_per_player, _MAINTENANCE_COLS)
     s = _ensure_cols(s_per_player, _START_COLS)
     a = _ensure_cols(a_per_player, _ATTACK_COLS)
+    w = _ensure_cols(w_per_player, _WET_COLS)
 
     table = (
         players.merge(m, on="player_no", how="outer")
                .merge(s, on="player_no", how="outer")
                .merge(a, on="player_no", how="outer")
+               .merge(w, on="player_no", how="outer")
     )
 
     table["n_valid_scores"] = table[SCORE_COLS].notna().sum(axis=1)
@@ -95,7 +106,7 @@ def build_report(entries_df: pd.DataFrame, include_retrial: bool = False) -> dic
     return {
         "table": table,
         "maintenance_overall": m_overall,
-        "diagnostics": {"start": s_diag, "attack": a_diag},
+        "diagnostics": {"start": s_diag, "attack": a_diag, "wet": w_diag},
     }
 
 
@@ -142,6 +153,14 @@ def _print_overall(report: dict) -> None:
     if attack_diag:
         print(f"  n_samples={attack_diag.get('n_samples')}")
         print(f"  betas={attack_diag.get('betas')}")
+    else:
+        print("  診断データなし")
+
+    wet_diag = (diag.get("wet") or {}).get("wet") or {}
+    print("\n--- 湿走路適性: 期待着順モデル診断(湿走路) ---")
+    if wet_diag:
+        print(f"  n_samples={wet_diag.get('n_samples')}")
+        print(f"  betas={wet_diag.get('betas')}")
     else:
         print("  診断データなし")
 

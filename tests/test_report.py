@@ -37,7 +37,7 @@ def test_build_report_columns_and_ordering():
         assert min(nan_positions) >= len(non_null)  # NaN は末尾
 
     assert "maintenance_overall" in report
-    assert set(report["diagnostics"]) == {"start", "attack"}
+    assert set(report["diagnostics"]) == {"start", "attack", "wet"}
 
 
 def test_n_valid_scores_counts_present_metrics():

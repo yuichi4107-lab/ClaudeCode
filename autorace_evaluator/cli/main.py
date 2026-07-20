@@ -123,15 +123,28 @@ def run_evaluate(args) -> None:
     rep = report_mod.build_report(entries_df, include_retrial=args.include_retrial)
     report_mod.print_report(rep, top_n=args.top, player_no=args.player)
 
+    suffix = f"_{venue}" if venue else ""
     csv_path = args.csv
     if not csv_path:
-        suffix = f"_{venue}" if venue else ""
         csv_path = str(
             Path(settings.REPORT_DIR)
             / f"autorace_eval_{from_date}_{to_date}{suffix}.csv"
         )
     report_mod.to_csv(rep, csv_path)
     print(f"\nCSVを保存しました: {csv_path}")
+
+    # 出走表(車級)収集済みなら新人(2級車)レポートも出力する
+    from autorace_evaluator.metrics import rookie as rookie_mod
+
+    if "bike_class" in entries_df.columns and entries_df["bike_class"].notna().any():
+        rookie_rep = rookie_mod.build_rookie_report(entries_df)
+        if not rookie_rep["table"].empty:
+            rookie_csv = getattr(args, "rookie_csv", None) or str(
+                Path(settings.REPORT_DIR)
+                / f"autorace_rookie_{from_date}_{to_date}{suffix}.csv"
+            )
+            report_mod.to_csv(rookie_rep, rookie_csv)
+            print(f"新人(2級車)レポートを保存しました: {rookie_csv}")
 
 
 _FILENAME_META_RE = re.compile(
@@ -323,6 +336,10 @@ def main():
     )
     p_eval.add_argument("--player", dest="player", type=int, help="選手登録番号で絞り込み")
     p_eval.add_argument("--csv", dest="csv", help="結果をCSV出力するパス")
+    p_eval.add_argument(
+        "--rookie-csv", dest="rookie_csv",
+        help="新人(2級車)レポートのCSV出力パス(既定は autorace_rookie_*.csv)",
+    )
     p_eval.add_argument(
         "--top", dest="top", type=int, default=20,
         help="上位N件を表示(デフォルト: 20)",
