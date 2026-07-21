@@ -2,6 +2,7 @@ data/*
 !data/reports/
 data/reports/*
 !data/reports/*_latest.csv
+!data/reports/archive/
 __pycache__/
 *.pyc
 *.egg-info/

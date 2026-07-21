@@ -5,7 +5,9 @@
 3. clear_recent_not_found: 結果未確定のうちに「データなし」を踏んだレースを再チェック対象に戻す
 4. scrape_races(結果+補足情報)→ scrape_programs(出走表: 車級・期別等)
 5. 直近365日ローリングで evaluate → data/reports/autorace_eval_latest.csv /
-   autorace_rookie_latest.csv(固定名。ワークフローが差分コミットする)
+   autorace_rookie_latest.csv(固定名 = 予想などが参照する最新版)と、
+   data/reports/archive/autorace_{eval,rookie}_{評価末日}.csv(蓄積用。
+   上書きせず毎週1本ずつ増える)の両方を出力する
 6. WALチェックポイント(DBを単一ファイルに畳む。gzip保存の前提)
 
 収集エラーは scrape_log に残り翌週の実行が拾うため、部分失敗でも exit 0。
@@ -88,12 +90,18 @@ def main() -> int:
 
         rep = report_mod.build_report(entries_df)
         report_dir = Path(settings.REPORT_DIR)
+        archive_dir = report_dir / "archive"
+        # latest = 予想などが参照する最新版(毎週更新)。
+        # archive = 評価末日付きのスナップショット(上書きせず蓄積)。
         report_mod.to_csv(rep, str(report_dir / "autorace_eval_latest.csv"))
+        report_mod.to_csv(rep, str(archive_dir / f"autorace_eval_{eval_to}.csv"))
         print(f"[weekly] eval rows: {len(rep['table'])} ({eval_from}..{eval_to})")
 
         rookie_rep = rookie_mod.build_rookie_report(entries_df)
         if not rookie_rep["table"].empty:
             report_mod.to_csv(rookie_rep, str(report_dir / "autorace_rookie_latest.csv"))
+            report_mod.to_csv(
+                rookie_rep, str(archive_dir / f"autorace_rookie_{eval_to}.csv"))
             print(f"[weekly] rookie rows: {len(rookie_rep['table'])}")
 
         # -wal を本体に畳む(この後 gzip して autorace-data ブランチへ保存するため)

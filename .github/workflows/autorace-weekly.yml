@@ -54,6 +54,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/reports/autorace_eval_latest.csv
           [ -f data/reports/autorace_rookie_latest.csv ] && git add data/reports/autorace_rookie_latest.csv || true
+          [ -d data/reports/archive ] && git add data/reports/archive || true
           if git diff --cached --quiet; then
             echo "レポートに変化なし"
           else

@@ -161,8 +161,12 @@ API仕様が変わった場合は `parsers/selectors.py` の対応表を修正�
 2. 収集窓 = 前回最終収集日−2日 〜 昨日。`clear_recent_not_found` で
    「結果未確定のうちにデータなし応答を踏んだレース」を再チェック対象に戻す
 3. `scrape` → `scrape-program` を差分実行(HTTPキャッシュは使わず scrape_log で差分判定)
-4. 直近365日ローリングで evaluate し、`data/reports/autorace_eval_latest.csv` と
-   `autorace_rookie_latest.csv` を main に差分コミット
+4. 直近365日ローリングで evaluate し、以下を main に差分コミットする:
+   - `data/reports/autorace_eval_latest.csv` / `autorace_rookie_latest.csv` —
+     **常に最新版**(予想機能はこちらを参照する)
+   - `data/reports/archive/autorace_{eval,rookie}_{評価末日}.csv` —
+     週ごとのスナップショットを**上書きせず蓄積**(指標の推移分析・
+     予想モデルの時点別バックテストに使える)
 5. DBを gzip して autorace-data ブランチへ単一コミット force-push(履歴が太らない)
 
 初回は手元のDBを一度だけ種蒔きする:
