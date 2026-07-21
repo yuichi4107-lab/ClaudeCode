@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>販売管理システム UIモックアップ</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --border: #d5dbe1;
+    --text: #1f2933; --sub: #6b7280; --accent: #2563eb; --accent-soft: #eff6ff;
+    --green: #16a34a; --orange: #ea580c; --gray: #6b7280; --blue: #2563eb; --dgreen: #166534;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+         background: var(--bg); color: var(--text); font-size: 15px; }
+  .note { max-width: 1080px; margin: 16px auto 0; padding: 10px 16px; background: #fef9c3;
+          border: 1px solid #facc15; border-radius: 8px; font-size: 13px; }
+  header.app { background: #1e3a5f; color: #fff; padding: 10px 20px; display: flex;
+               align-items: center; gap: 24px; }
+  header.app h1 { font-size: 16px; margin: 0 24px 0 0; }
+  header.app nav a { color: #cbd5e1; text-decoration: none; margin-right: 18px; font-size: 14px;
+                     padding: 6px 2px; }
+  header.app nav a.active { color: #fff; border-bottom: 2px solid #60a5fa; }
+  .screen { max-width: 1080px; margin: 24px auto; background: var(--card);
+            border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .screen-label { background: #e2e8f0; padding: 6px 16px; font-size: 12px; color: #475569;
+                  letter-spacing: .05em; }
+  .screen-body { padding: 18px 20px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .toolbar label { font-size: 13px; color: var(--sub); }
+  input, select, button { font: inherit; padding: 7px 10px; border: 1px solid var(--border);
+                          border-radius: 6px; background: #fff; }
+  input[readonly] { background: #f1f5f9; color: var(--sub); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); cursor: pointer; }
+  button.ghost { background: #fff; color: var(--accent); border-color: var(--accent); cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; white-space: nowrap; }
+  th { background: #f8fafc; font-weight: 600; font-size: 13px; color: #475569; }
+  td.num, th.num { text-align: right; }
+  tr:hover td { background: var(--accent-soft); cursor: pointer; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; color: #fff; }
+  .b-gray { background: var(--gray); } .b-blue { background: var(--blue); }
+  .b-green { background: var(--green); } .b-orange { background: var(--orange); }
+  .b-dgreen { background: var(--dgreen); }
+  .sumrow { background: #f8fafc; border-top: 2px solid var(--border); padding: 10px 12px;
+            display: flex; gap: 28px; font-size: 14px; }
+  .sumrow b { font-size: 15px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .cards { grid-template-columns: 1fr; } }
+  .card { border: 1px solid var(--border); border-radius: 8px; }
+  .card h3 { margin: 0; padding: 10px 14px; font-size: 14px; background: #f1f5f9;
+             border-bottom: 1px solid var(--border); }
+  .card .rows { padding: 10px 14px; display: grid; grid-template-columns: 96px 1fr; gap: 8px 10px;
+                align-items: center; }
+  .card .rows label { font-size: 13px; color: var(--sub); }
+  .profit { margin: 0 14px 12px; padding: 8px 12px; background: #f0fdf4; border: 1px solid #bbf7d0;
+            border-radius: 6px; font-size: 14px; }
+  .head-info { display: flex; gap: 24px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .head-info .mno { font-size: 20px; font-weight: 700; }
+  .section { margin-top: 16px; padding: 12px 14px; border: 1px dashed var(--border); border-radius: 8px;
+             display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+  .actions { margin-top: 18px; display: flex; gap: 12px; }
+</style>
+</head>
+<body>
+
+<div class="note">⚠ これは<b>画面イメージ確認用のモックアップ</b>です(動作しません)。実装時はサーバー側で同じ見た目のHTMLを生成します。</div>
+
+<!-- ========== S-02 案件一覧 ========== -->
+<div class="screen">
+  <div class="screen-label">S-02 案件一覧(ホーム画面)</div>
+  <header class="app">
+    <h1>販売管理</h1>
+    <nav>
+      <a class="active" href="#">案件一覧</a><a href="#">締め処理</a><a href="#">請求一覧</a><a href="#">マスタ</a>
+    </nav>
+  </header>
+  <div class="screen-body">
+    <div class="toolbar">
+      <label>期間</label>
+      <select><option>受注日</option><option>納品日</option></select>
+      <input type="date" value="2026-07-01"> 〜 <input type="date" value="2026-07-31">
+      <label>客先</label><select><option>すべて</option><option>ダイゴテック</option></select>
+      <label>状態</label><select><option>すべて</option><option>納品済</option></select>
+      <button class="primary">検索</button>
+      <span style="flex:1"></span>
+      <button class="primary">+ 新規受注</button>
+    </div>
+    <table>
+      <thead><tr>
+        <th>管理No.</th><th>受注日</th><th>客先</th><th>品名</th><th>型式・図番</th>
+        <th class="num">数量</th><th class="num">受注額</th><th class="num">発注額</th><th class="num">粗利</th>
+        <th>客先納期</th><th>状態</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>10102</td><td>07/15</td><td>ダイゴテック</td><td>ブラケット</td><td>B0021</td>
+            <td class="num">10</td><td class="num">55,000</td><td class="num">40,000</td><td class="num">15,000</td>
+            <td>08/10</td><td><span class="badge b-blue">発注済</span></td></tr>
+        <tr><td>10101</td><td>07/12</td><td>山本精機</td><td>プレート</td><td>P-115</td>
+            <td class="num">4</td><td class="num">32,000</td><td class="num">24,000</td><td class="num">8,000</td>
+            <td>07/25</td><td><span class="badge b-gray">受注済</span></td></tr>
+        <tr><td>10100</td><td>07/10</td><td>ダイゴテック</td><td>シャフト</td><td>A0010</td>
+            <td class="num">2</td><td class="num">20,000</td><td class="num">16,000</td><td class="num">4,000</td>
+            <td>07/31</td><td><span class="badge b-green">納品済</span></td></tr>
+      </tbody>
+    </table>
+    <div class="sumrow">
+      <span>期間合計(2026-07-01〜2026-07-31)</span>
+      <span>受注額 <b>107,000</b></span><span>発注額 <b>80,000</b></span><span>粗利 <b>27,000</b></span>
+    </div>
+  </div>
+</div>
+
+<!-- ========== S-03 案件詳細 ========== -->
+<div class="screen">
+  <div class="screen-label">S-03 案件詳細(受注・発注カード) — Excelイメージの左右レイアウトを踏襲</div>
+  <header class="app">
+    <h1>販売管理</h1>
+    <nav><a href="#">案件一覧</a><a class="active" href="#">案件詳細</a></nav>
+  </header>
+  <div class="screen-body">
+    <div class="head-info">
+      <span class="mno">管理No. 10100</span>
+      <span class="badge b-green">納品済</span>
+      <span style="flex:1"></span>
+      <button class="ghost">← 一覧へ戻る</button>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>受注(客先側)</h3>
+        <div class="rows">
+          <label>受注日</label><input type="date" value="2026-07-10">
+          <label>客先納期</label><input type="date" value="2026-07-31">
+          <label>客先</label><select><option>ダイゴテック</option></select>
+          <label>客先担当者</label><input value="山田">
+          <label>客先管理No.</label><input value="">
+          <label>品名</label><input value="シャフト">
+          <label>型式・図番</label><input value="A0010">
+          <label>数量 / 単位</label><span><input value="2" style="width:70px"> <input value="ヶ" style="width:56px"></span>
+          <label>単価</label><input value="10,000" class="num">
+          <label>小計(自動)</label><input value="20,000" readonly>
+          <label>備考</label><input value="表面処理注意">
+        </div>
+      </div>
+      <div class="card">
+        <h3>発注(仕入先側) <button class="ghost" style="float:right;font-size:12px;padding:3px 8px">+ 発注を追加</button></h3>
+        <div class="rows">
+          <label>仕入先</label><select><option>ゆーいち工業</option></select>
+          <label>発注日</label><input type="date" value="2026-07-11">
+          <label>発注納期</label><input type="date" value="2026-07-29">
+          <label>品名</label><input value="シャフト">
+          <label>型式・図番</label><input value="A0010">
+          <label>数量 / 単位</label><span><input value="2" style="width:70px"> <input value="ヶ" style="width:56px"></span>
+          <label>単価</label><input value="8,000" class="num">
+          <label>小計(自動)</label><input value="16,000" readonly>
+          <label>備考</label><input value="">
+        </div>
+        <div class="profit">粗利: <b>4,000</b>(受注 20,000 − 発注 16,000)</div>
+      </div>
+    </div>
+    <div class="section">
+      <b>納品</b> 納品日 <input type="date" value="2026-07-29">
+      <button class="primary">納品登録</button>
+      <button class="ghost">納品書発行(PDF)</button>
+    </div>
+    <div class="actions">
+      <button class="primary" style="padding:9px 28px">保存</button>
+      <button style="color:#b91c1c;border-color:#fca5a5">受注キャンセル</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
