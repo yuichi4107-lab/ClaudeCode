@@ -6,65 +6,117 @@
 <title>販売管理システム UIモックアップ</title>
 <style>
   :root {
+    --page-bg: #eef1f4; --page-text: #1f2933; --note-bg: #fef9c3; --note-border: #eab308; --note-text: #713f12;
     --bg: #f4f6f8; --card: #ffffff; --border: #d5dbe1;
     --text: #1f2933; --sub: #6b7280; --accent: #2563eb; --accent-soft: #eff6ff;
     --green: #16a34a; --orange: #ea580c; --gray: #6b7280; --blue: #2563eb; --dgreen: #166534;
   }
+  @media (prefers-color-scheme: dark) {
+    :root { --page-bg: #14181d; --page-text: #d7dce2; --note-bg: #2c2612; --note-border: #a16207; --note-text: #fde68a; }
+  }
+  :root[data-theme="dark"] { --page-bg: #14181d; --page-text: #d7dce2; --note-bg: #2c2612; --note-border: #a16207; --note-text: #fde68a; }
+  :root[data-theme="light"] { --page-bg: #eef1f4; --page-text: #1f2933; --note-bg: #fef9c3; --note-border: #eab308; --note-text: #713f12; }
+
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
-         background: var(--bg); color: var(--text); font-size: 15px; }
-  .note { max-width: 1080px; margin: 16px auto 0; padding: 10px 16px; background: #fef9c3;
-          border: 1px solid #facc15; border-radius: 8px; font-size: 13px; }
+         background: var(--page-bg); color: var(--page-text); font-size: 15px; }
+  .page-head { max-width: 1080px; margin: 28px auto 0; padding: 0 16px; }
+  .page-head h1 { font-size: 20px; margin: 0 0 6px; }
+  .page-head p { margin: 0; font-size: 13px; opacity: .75; }
+  .note { max-width: 1080px; margin: 14px auto 0; padding: 10px 16px; background: var(--note-bg);
+          border: 1px solid var(--note-border); border-radius: 8px; font-size: 13px; color: var(--note-text); }
+
+  /* 以下はアプリ画面のモック(アプリ自体はライト基調のデザインで固定) */
   header.app { background: #1e3a5f; color: #fff; padding: 10px 20px; display: flex;
                align-items: center; gap: 24px; }
-  header.app h1 { font-size: 16px; margin: 0 24px 0 0; }
+  header.app h1 { font-size: 16px; margin: 0 24px 0 0; color: #fff; }
   header.app nav a { color: #cbd5e1; text-decoration: none; margin-right: 18px; font-size: 14px;
                      padding: 6px 2px; }
   header.app nav a.active { color: #fff; border-bottom: 2px solid #60a5fa; }
-  .screen { max-width: 1080px; margin: 24px auto; background: var(--card);
-            border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .screen { max-width: 1080px; margin: 24px auto; background: var(--card); color: var(--text);
+            border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+            box-shadow: 0 2px 10px rgba(15, 30, 50, .12); }
   .screen-label { background: #e2e8f0; padding: 6px 16px; font-size: 12px; color: #475569;
                   letter-spacing: .05em; }
   .screen-body { padding: 18px 20px; }
+  .scroll-x { overflow-x: auto; }
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
   .toolbar label { font-size: 13px; color: var(--sub); }
   input, select, button { font: inherit; padding: 7px 10px; border: 1px solid var(--border);
-                          border-radius: 6px; background: #fff; }
+                          border-radius: 6px; background: #fff; color: var(--text); }
   input[readonly] { background: #f1f5f9; color: var(--sub); }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); cursor: pointer; }
   button.ghost { background: #fff; color: var(--accent); border-color: var(--accent); cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+    outline: 2px solid #60a5fa; outline-offset: 1px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th, td { border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; white-space: nowrap; }
   th { background: #f8fafc; font-weight: 600; font-size: 13px; color: #475569; }
-  td.num, th.num { text-align: right; }
-  tr:hover td { background: var(--accent-soft); cursor: pointer; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:hover td { background: var(--accent-soft); cursor: pointer; }
   .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; color: #fff; }
   .b-gray { background: var(--gray); } .b-blue { background: var(--blue); }
   .b-green { background: var(--green); } .b-orange { background: var(--orange); }
   .b-dgreen { background: var(--dgreen); }
   .sumrow { background: #f8fafc; border-top: 2px solid var(--border); padding: 10px 12px;
-            display: flex; gap: 28px; font-size: 14px; }
-  .sumrow b { font-size: 15px; }
+            display: flex; gap: 28px; font-size: 14px; flex-wrap: wrap; }
+  .sumrow b { font-size: 15px; font-variant-numeric: tabular-nums; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 760px) { .cards { grid-template-columns: 1fr; } }
-  .card { border: 1px solid var(--border); border-radius: 8px; }
+  .card { border: 1px solid var(--border); border-radius: 8px; background: #fff; }
   .card h3 { margin: 0; padding: 10px 14px; font-size: 14px; background: #f1f5f9;
-             border-bottom: 1px solid var(--border); }
+             border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .card .rows { padding: 10px 14px; display: grid; grid-template-columns: 96px 1fr; gap: 8px 10px;
                 align-items: center; }
   .card .rows label { font-size: 13px; color: var(--sub); }
   .profit { margin: 0 14px 12px; padding: 8px 12px; background: #f0fdf4; border: 1px solid #bbf7d0;
-            border-radius: 6px; font-size: 14px; }
-  .head-info { display: flex; gap: 24px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+            border-radius: 6px; font-size: 14px; color: #14532d; }
+  .head-info { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
   .head-info .mno { font-size: 20px; font-weight: 700; }
   .section { margin-top: 16px; padding: 12px 14px; border: 1px dashed var(--border); border-radius: 8px;
              display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 14px; }
-  .actions { margin-top: 18px; display: flex; gap: 12px; }
+  .actions { margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .spacer { flex: 1; }
+
+  /* ---- 納品書プレビュー(A4シート) ---- */
+  .preview-toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;
+                     font-size: 13px; color: var(--sub); }
+  .sheet { background: #fff; color: #111; max-width: 700px; margin: 0 auto; padding: 40px 36px;
+           border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(15,30,50,.15); font-size: 14px; }
+  .sheet h2 { text-align: center; font-size: 24px; letter-spacing: .9em; text-indent: .9em;
+              margin: 0 0 20px; font-weight: 700; }
+  .sheet .meta { text-align: right; font-size: 13px; margin-bottom: 8px; }
+  .sheet .parties { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+  .sheet .to { font-size: 17px; border-bottom: 1px solid #111; padding-bottom: 4px; }
+  .sheet .from { font-size: 12px; text-align: right; line-height: 1.7; }
+  .sheet .greet { margin: 10px 0 14px; }
+  .sheet table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sheet th, .sheet td { border: 1px solid #333; padding: 7px 8px; white-space: normal; }
+  .sheet th { background: #f1f5f9; text-align: center; font-weight: 600; }
+  .sheet td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .sheet tbody tr:hover td { background: transparent; cursor: default; }
+  .sheet .total td { font-weight: 700; }
+
+  /* ---- 印刷時は納品書シートのみをA4で出力 ---- */
+  @page { size: A4 portrait; margin: 20mm 15mm; }
+  @media print {
+    body { background: #fff; }
+    .page-head, .note, .screen { display: none; }
+    .screen.print-target { display: block; border: none; box-shadow: none; border-radius: 0;
+                           margin: 0; max-width: none; }
+    .print-target .screen-label, .print-target header.app, .print-target .preview-toolbar { display: none; }
+    .print-target .screen-body { padding: 0; }
+    .sheet { border: none; box-shadow: none; max-width: none; padding: 0; }
+  }
 </style>
 </head>
 <body>
 
-<div class="note">⚠ これは<b>画面イメージ確認用のモックアップ</b>です(動作しません)。実装時はサーバー側で同じ見た目のHTMLを生成します。</div>
+<div class="page-head">
+  <h1>販売管理システム UIモックアップ</h1>
+  <p>主要2画面(S-02 案件一覧 / S-03 案件詳細)の見た目イメージ。アプリ本体はライト基調のデザインです。</p>
+</div>
+<div class="note">⚠ これは<b>画面イメージ確認用のモックアップ</b>です(ボタン等は動作しません)。実装時はサーバー側で同じ見た目のHTMLを生成します。</div>
 
 <!-- ========== S-02 案件一覧 ========== -->
 <div class="screen">
@@ -83,27 +135,29 @@
       <label>客先</label><select><option>すべて</option><option>ダイゴテック</option></select>
       <label>状態</label><select><option>すべて</option><option>納品済</option></select>
       <button class="primary">検索</button>
-      <span style="flex:1"></span>
+      <span class="spacer"></span>
       <button class="primary">+ 新規受注</button>
     </div>
-    <table>
-      <thead><tr>
-        <th>管理No.</th><th>受注日</th><th>客先</th><th>品名</th><th>型式・図番</th>
-        <th class="num">数量</th><th class="num">受注額</th><th class="num">発注額</th><th class="num">粗利</th>
-        <th>客先納期</th><th>状態</th>
-      </tr></thead>
-      <tbody>
-        <tr><td>10102</td><td>07/15</td><td>ダイゴテック</td><td>ブラケット</td><td>B0021</td>
-            <td class="num">10</td><td class="num">55,000</td><td class="num">40,000</td><td class="num">15,000</td>
-            <td>08/10</td><td><span class="badge b-blue">発注済</span></td></tr>
-        <tr><td>10101</td><td>07/12</td><td>山本精機</td><td>プレート</td><td>P-115</td>
-            <td class="num">4</td><td class="num">32,000</td><td class="num">24,000</td><td class="num">8,000</td>
-            <td>07/25</td><td><span class="badge b-gray">受注済</span></td></tr>
-        <tr><td>10100</td><td>07/10</td><td>ダイゴテック</td><td>シャフト</td><td>A0010</td>
-            <td class="num">2</td><td class="num">20,000</td><td class="num">16,000</td><td class="num">4,000</td>
-            <td>07/31</td><td><span class="badge b-green">納品済</span></td></tr>
-      </tbody>
-    </table>
+    <div class="scroll-x">
+      <table>
+        <thead><tr>
+          <th>管理No.</th><th>受注日</th><th>客先</th><th>品名</th><th>型式・図番</th>
+          <th class="num">数量</th><th class="num">受注額</th><th class="num">発注額</th><th class="num">粗利</th>
+          <th>客先納期</th><th>状態</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>10102</td><td>07/15</td><td>ダイゴテック</td><td>ブラケット</td><td>B0021</td>
+              <td class="num">10</td><td class="num">55,000</td><td class="num">40,000</td><td class="num">15,000</td>
+              <td>08/10</td><td><span class="badge b-blue">発注済</span></td></tr>
+          <tr><td>10101</td><td>07/12</td><td>山本精機</td><td>プレート</td><td>P-115</td>
+              <td class="num">4</td><td class="num">32,000</td><td class="num">24,000</td><td class="num">8,000</td>
+              <td>07/25</td><td><span class="badge b-gray">受注済</span></td></tr>
+          <tr><td>10100</td><td>07/10</td><td>ダイゴテック</td><td>シャフト</td><td>A0010</td>
+              <td class="num">2</td><td class="num">20,000</td><td class="num">16,000</td><td class="num">4,000</td>
+              <td>07/31</td><td><span class="badge b-green">納品済</span></td></tr>
+        </tbody>
+      </table>
+    </div>
     <div class="sumrow">
       <span>期間合計(2026-07-01〜2026-07-31)</span>
       <span>受注額 <b>107,000</b></span><span>発注額 <b>80,000</b></span><span>粗利 <b>27,000</b></span>
@@ -122,7 +176,7 @@
     <div class="head-info">
       <span class="mno">管理No. 10100</span>
       <span class="badge b-green">納品済</span>
-      <span style="flex:1"></span>
+      <span class="spacer"></span>
       <button class="ghost">← 一覧へ戻る</button>
     </div>
     <div class="cards">
@@ -137,13 +191,13 @@
           <label>品名</label><input value="シャフト">
           <label>型式・図番</label><input value="A0010">
           <label>数量 / 単位</label><span><input value="2" style="width:70px"> <input value="ヶ" style="width:56px"></span>
-          <label>単価</label><input value="10,000" class="num">
+          <label>単価</label><input value="10,000">
           <label>小計(自動)</label><input value="20,000" readonly>
           <label>備考</label><input value="表面処理注意">
         </div>
       </div>
       <div class="card">
-        <h3>発注(仕入先側) <button class="ghost" style="float:right;font-size:12px;padding:3px 8px">+ 発注を追加</button></h3>
+        <h3><span>発注(仕入先側)</span> <button class="ghost" style="font-size:12px;padding:3px 8px">+ 発注を追加</button></h3>
         <div class="rows">
           <label>仕入先</label><select><option>ゆーいち工業</option></select>
           <label>発注日</label><input type="date" value="2026-07-11">
@@ -151,7 +205,7 @@
           <label>品名</label><input value="シャフト">
           <label>型式・図番</label><input value="A0010">
           <label>数量 / 単位</label><span><input value="2" style="width:70px"> <input value="ヶ" style="width:56px"></span>
-          <label>単価</label><input value="8,000" class="num">
+          <label>単価</label><input value="8,000">
           <label>小計(自動)</label><input value="16,000" readonly>
           <label>備考</label><input value="">
         </div>
@@ -161,7 +215,7 @@
     <div class="section">
       <b>納品</b> 納品日 <input type="date" value="2026-07-29">
       <button class="primary">納品登録</button>
-      <button class="ghost">納品書発行(PDF)</button>
+      <button class="ghost">納品書印刷</button>
     </div>
     <div class="actions">
       <button class="primary" style="padding:9px 28px">保存</button>
@@ -170,5 +224,50 @@
   </div>
 </div>
 
+<!-- ========== 納品書 印刷プレビュー ========== -->
+<div class="screen print-target">
+  <div class="screen-label">納品書 印刷プレビュー — 「🖨 印刷」を押すと帳票部分だけがA4で印刷されます(このモックでも実際に動きます)</div>
+  <header class="app">
+    <h1>販売管理</h1>
+    <nav><a href="#">案件一覧</a><a href="#">案件詳細</a><a class="active" href="#">納品書プレビュー</a></nav>
+  </header>
+  <div class="screen-body">
+    <div class="preview-toolbar">
+      <button class="primary" onclick="window.print()">🖨 印刷</button>
+      <button class="ghost">← 案件詳細へ戻る</button>
+      <span>PDFにしたい場合は、印刷ダイアログで「PDFとして保存」を選択(オプション運用)</span>
+    </div>
+    <div class="sheet">
+      <h2>納品書</h2>
+      <div class="meta">納品日: 2026年7月29日<br>管理No.: 10100</div>
+      <div class="parties">
+        <div class="to">ダイゴテック 御中</div>
+        <div class="from">
+          株式会社◯◯◯◯<br>
+          〒XXX-XXXX ◯◯県◯◯市◯◯ 1-2-3<br>
+          TEL: XX-XXXX-XXXX
+        </div>
+      </div>
+      <p class="greet">下記の通り納品いたします。</p>
+      <table>
+        <thead>
+          <tr><th>品名</th><th>型式・図番</th><th>客先管理No.</th><th>数量</th><th>単位</th><th>単価</th><th>金額</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>シャフト</td><td>A0010</td><td></td>
+            <td class="num">2</td><td style="text-align:center">ヶ</td>
+            <td class="num">10,000</td><td class="num">20,000</td>
+          </tr>
+          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr class="total">
+            <td colspan="5">備考: 表面処理注意</td>
+            <td style="text-align:center">合計</td><td class="num">¥20,000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 </body>
 </html>
