@@ -71,6 +71,9 @@
   .sumrow { background: #f8fafc; border-top: 2px solid var(--border); padding: 10px 12px;
             display: flex; gap: 28px; font-size: 14px; flex-wrap: wrap; }
   .sumrow b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .subhead { margin: 20px 0 8px; font-size: 14px; color: #475569; }
+  table.plain tbody tr:hover td { background: transparent; cursor: default; }
+  table.plain td button { padding: 4px 10px; font-size: 13px; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 760px) { .cards { grid-template-columns: 1fr; } }
   .card { border: 1px solid var(--border); border-radius: 8px; background: #fff; }
@@ -164,6 +167,7 @@
       <button class="primary">検索</button>
       <span class="spacer"></span>
       <button class="primary">+ 新規受注</button>
+      <button class="ghost" onclick="downloadCsv()">⬇ CSVダウンロード</button>
     </div>
     <div class="scroll-x">
       <table>
@@ -188,6 +192,27 @@
     <div class="sumrow">
       <span>期間合計(2026-07-01〜2026-07-31)</span>
       <span>受注額 <b>107,000</b></span><span>発注額 <b>80,000</b></span><span>粗利 <b>27,000</b></span>
+    </div>
+    <h3 class="subhead">■ 客先別集計(指定期間) — 帳票は明細単位ではなく客先単位でまとめて発行します</h3>
+    <div class="scroll-x">
+      <table class="plain">
+        <thead><tr>
+          <th>客先</th><th class="num">件数</th><th class="num">受注額</th><th class="num">発注額</th>
+          <th class="num">粗利</th><th>帳票発行(客先単位)</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td>ダイゴテック</td><td class="num">2</td><td class="num">75,000</td><td class="num">56,000</td><td class="num">19,000</td>
+            <td><button class="ghost" onclick="showScreen('pv-delivery')">納品書発行</button>
+                <button class="ghost" onclick="showScreen('pv-invoice')">請求書発行</button></td>
+          </tr>
+          <tr>
+            <td>山本精機</td><td class="num">1</td><td class="num">32,000</td><td class="num">24,000</td><td class="num">8,000</td>
+            <td><button class="ghost" onclick="showScreen('pv-delivery')">納品書発行</button>
+                <button class="ghost" onclick="showScreen('pv-invoice')">請求書発行</button></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -260,6 +285,8 @@
   </header>
   <div class="screen-body">
     <div class="preview-toolbar">
+      <label>発行単位</label>
+      <select><option>この案件のみ</option><option>客先でまとめる(複数案件を1枚に)</option></select>
       <button class="primary" onclick="printSheet('delivery')">🖨 印刷</button>
       <button class="ghost" onclick="showScreen('scr-detail')">← 案件詳細へ戻る</button>
       <span>PDFにしたい場合は、印刷ダイアログで「PDFとして保存」を選択(オプション運用)</span>
@@ -286,7 +313,7 @@
             <td class="num">2</td><td style="text-align:center">ヶ</td>
             <td class="num">10,000</td><td class="num">20,000</td>
           </tr>
-          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td colspan="7" style="color:#888;font-size:12px">(同一客先の納品対象案件が複数ある場合は、ここに明細行が追加されます — 客先単位まとめ発行)</td></tr>
           <tr class="total">
             <td colspan="5">備考: 表面処理注意</td>
             <td style="text-align:center">合計</td><td class="num">¥20,000</td>
@@ -306,6 +333,8 @@
   </header>
   <div class="screen-body">
     <div class="preview-toolbar">
+      <label>対象</label>
+      <select><option>ダイゴテック</option><option>全客先まとめて(客先ごとに1枚ずつ連続印刷)</option></select>
       <button class="primary" onclick="printSheet('invoice')">🖨 印刷</button>
       <button class="ghost" onclick="showScreen('scr-list')">← 一覧へ戻る</button>
       <span>PDFにしたい場合は、印刷ダイアログで「PDFとして保存」を選択(オプション運用)</span>
@@ -334,7 +363,7 @@
             <td class="num">2</td><td style="text-align:center">ヶ</td>
             <td class="num">10,000</td><td class="num">20,000</td>
           </tr>
-          <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td colspan="9" style="color:#888;font-size:12px">(請求期間内に同一客先の案件が複数ある場合は、ここに明細行が追加され、合計に合算されます — 客先単位で1枚)</td></tr>
         </tbody>
       </table>
       <table class="totals">
@@ -365,6 +394,29 @@
   function printSheet(kind) {
     document.body.setAttribute('data-print', kind);
     window.print();
+  }
+  function csvEscape(v) {
+    return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+  function downloadCsv() {
+    var rows = [];
+    document.querySelector('#scr-list table').querySelectorAll('tr').forEach(function (tr) {
+      var cells = [];
+      tr.querySelectorAll('th, td').forEach(function (c) {
+        cells.push(csvEscape(c.innerText.trim()));
+      });
+      if (cells.length) rows.push(cells.join(','));
+    });
+    rows.push('');
+    rows.push(csvEscape(document.querySelector('#scr-list .sumrow').innerText.replace(/\s+/g, ' ').trim()));
+    var blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '案件一覧_20260701-20260731.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
   }
   window.addEventListener('afterprint', function () {
     document.body.removeAttribute('data-print');
