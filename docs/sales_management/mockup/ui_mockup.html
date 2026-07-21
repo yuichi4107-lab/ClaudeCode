@@ -26,6 +26,16 @@
   .note { max-width: 1080px; margin: 14px auto 0; padding: 10px 16px; background: var(--note-bg);
           border: 1px solid var(--note-border); border-radius: 8px; font-size: 13px; color: var(--note-text); }
 
+  /* ---- モックアップ用の画面切替タブ(実アプリにはない確認用UI) ---- */
+  .mock-tabs { max-width: 1080px; margin: 16px auto 0; padding: 0 16px; display: flex; gap: 8px;
+               flex-wrap: wrap; }
+  .mock-tabs button { padding: 9px 18px; border-radius: 8px 8px 0 0; border: 1px solid var(--border);
+                      border-bottom: none; background: #dde3ea; color: #475569; cursor: pointer;
+                      font-size: 14px; }
+  .mock-tabs button.active { background: #1e3a5f; color: #fff; border-color: #1e3a5f; font-weight: 600; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
   /* 以下はアプリ画面のモック(アプリ自体はライト基調のデザインで固定) */
   header.app { background: #1e3a5f; color: #fff; padding: 10px 20px; display: flex;
                align-items: center; gap: 24px; }
@@ -78,10 +88,12 @@
   .actions { margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap; }
   .spacer { flex: 1; }
 
-  /* ---- 納品書プレビュー(A4シート) ---- */
+  /* ---- 帳票プレビュー(A4シート: 210mm×297mm = 794px×1123px @96dpi) ---- */
   .preview-toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;
                      font-size: 13px; color: var(--sub); }
-  .sheet { background: #fff; color: #111; max-width: 700px; margin: 0 auto; padding: 40px 36px;
+  .sheet-wrap { overflow-x: auto; }
+  .sheet { background: #fff; color: #111; width: 794px; min-height: 1123px; margin: 0 auto;
+           padding: 75px 57px; /* 余白 上下20mm・左右15mm 相当 */
            border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(15,30,50,.15); font-size: 14px; }
   .sheet h2 { text-align: center; font-size: 24px; letter-spacing: .9em; text-indent: .9em;
               margin: 0 0 20px; font-weight: 700; }
@@ -108,12 +120,13 @@
   @page { size: A4 portrait; margin: 20mm 15mm; }
   @media print {
     body { background: #fff; }
-    body[data-print] .page-head, body[data-print] .note, body[data-print] .screen { display: none; }
+    body[data-print] .page-head, body[data-print] .note, body[data-print] .mock-tabs,
+    body[data-print] .screen { display: none; }
     body[data-print="delivery"] #pv-delivery, body[data-print="invoice"] #pv-invoice {
       display: block; border: none; box-shadow: none; border-radius: 0; margin: 0; max-width: none; }
     .print-target .screen-label, .print-target header.app, .print-target .preview-toolbar { display: none; }
     .print-target .screen-body { padding: 0; }
-    .sheet { border: none; box-shadow: none; max-width: none; padding: 0; }
+    .sheet { border: none; box-shadow: none; width: auto; min-height: 0; padding: 0; }
   }
 </style>
 </head>
@@ -121,13 +134,20 @@
 
 <div class="page-head">
   <h1>販売管理システム UIモックアップ</h1>
-  <p>主要2画面(S-02 案件一覧 / S-03 案件詳細)の見た目イメージ。アプリ本体はライト基調のデザインです。</p>
+  <p>実際のアプリの4つのページを、下のタブで切り替えて1画面ずつ確認できます。紺色のバー「販売管理」は各画面共通のアプリヘッダーです。</p>
 </div>
-<div class="note">⚠ これは<b>画面イメージ確認用のモックアップ</b>です(ボタン等は動作しません)。実装時はサーバー側で同じ見た目のHTMLを生成します。</div>
+<div class="note">⚠ これは<b>画面イメージ確認用のモックアップ</b>です(検索・保存などは動作しません)。③④の「🖨 印刷」ボタンだけは実際に動き、その帳票だけがA4で印刷されます。</div>
 
-<!-- ========== S-02 案件一覧 ========== -->
-<div class="screen">
-  <div class="screen-label">S-02 案件一覧(ホーム画面)</div>
+<div class="mock-tabs">
+  <button class="active" data-target="scr-list" onclick="showScreen('scr-list', this)">① 案件一覧</button>
+  <button data-target="scr-detail" onclick="showScreen('scr-detail', this)">② 案件詳細</button>
+  <button data-target="pv-delivery" onclick="showScreen('pv-delivery', this)">③ 納品書(印刷)</button>
+  <button data-target="pv-invoice" onclick="showScreen('pv-invoice', this)">④ 請求書(印刷)</button>
+</div>
+
+<!-- ========== ① 案件一覧 ========== -->
+<div class="screen active" id="scr-list">
+  <div class="screen-label">画面① 案件一覧 — アプリを開くと最初に表示されるホーム画面</div>
   <header class="app">
     <h1>販売管理</h1>
     <nav>
@@ -153,13 +173,13 @@
           <th>客先納期</th><th>状態</th>
         </tr></thead>
         <tbody>
-          <tr><td>10102</td><td>07/15</td><td>ダイゴテック</td><td>ブラケット</td><td>B0021</td>
+          <tr onclick="showScreen('scr-detail')"><td>10102</td><td>07/15</td><td>ダイゴテック</td><td>ブラケット</td><td>B0021</td>
               <td class="num">10</td><td class="num">55,000</td><td class="num">40,000</td><td class="num">15,000</td>
               <td>08/10</td><td><span class="badge b-blue">発注済</span></td></tr>
-          <tr><td>10101</td><td>07/12</td><td>山本精機</td><td>プレート</td><td>P-115</td>
+          <tr onclick="showScreen('scr-detail')"><td>10101</td><td>07/12</td><td>山本精機</td><td>プレート</td><td>P-115</td>
               <td class="num">4</td><td class="num">32,000</td><td class="num">24,000</td><td class="num">8,000</td>
               <td>07/25</td><td><span class="badge b-gray">受注済</span></td></tr>
-          <tr><td>10100</td><td>07/10</td><td>ダイゴテック</td><td>シャフト</td><td>A0010</td>
+          <tr onclick="showScreen('scr-detail')"><td>10100</td><td>07/10</td><td>ダイゴテック</td><td>シャフト</td><td>A0010</td>
               <td class="num">2</td><td class="num">20,000</td><td class="num">16,000</td><td class="num">4,000</td>
               <td>07/31</td><td><span class="badge b-green">納品済</span></td></tr>
         </tbody>
@@ -172,9 +192,9 @@
   </div>
 </div>
 
-<!-- ========== S-03 案件詳細 ========== -->
-<div class="screen">
-  <div class="screen-label">S-03 案件詳細(受注・発注カード) — Excelイメージの左右レイアウトを踏襲</div>
+<!-- ========== ② 案件詳細 ========== -->
+<div class="screen" id="scr-detail">
+  <div class="screen-label">画面② 案件詳細 — 受注(左)と発注(右)を並べたカード形式。Excelイメージのレイアウトを踏襲</div>
   <header class="app">
     <h1>販売管理</h1>
     <nav><a href="#">案件一覧</a><a class="active" href="#">案件詳細</a></nav>
@@ -184,7 +204,7 @@
       <span class="mno">管理No. 10100</span>
       <span class="badge b-green">納品済</span>
       <span class="spacer"></span>
-      <button class="ghost">← 一覧へ戻る</button>
+      <button class="ghost" onclick="showScreen('scr-list')">← 一覧へ戻る</button>
     </div>
     <div class="cards">
       <div class="card">
@@ -222,7 +242,7 @@
     <div class="section">
       <b>納品</b> 納品日 <input type="date" value="2026-07-29">
       <button class="primary">納品登録</button>
-      <button class="ghost">納品書印刷</button>
+      <button class="ghost" onclick="showScreen('pv-delivery')">納品書印刷</button>
     </div>
     <div class="actions">
       <button class="primary" style="padding:9px 28px">保存</button>
@@ -231,9 +251,9 @@
   </div>
 </div>
 
-<!-- ========== 納品書 印刷プレビュー ========== -->
+<!-- ========== ③ 納品書 印刷プレビュー ========== -->
 <div class="screen print-target" id="pv-delivery">
-  <div class="screen-label">納品書 印刷プレビュー — 「🖨 印刷」を押すとこの帳票だけがA4で印刷されます(このモックでも実際に動きます)</div>
+  <div class="screen-label">画面③ 納品書 印刷プレビュー — A4サイズの用紙イメージ。「🖨 印刷」でこの帳票だけがA4印刷されます(実際に動きます)</div>
   <header class="app">
     <h1>販売管理</h1>
     <nav><a href="#">案件一覧</a><a href="#">案件詳細</a><a class="active" href="#">納品書プレビュー</a></nav>
@@ -241,10 +261,10 @@
   <div class="screen-body">
     <div class="preview-toolbar">
       <button class="primary" onclick="printSheet('delivery')">🖨 印刷</button>
-      <button class="ghost">← 案件詳細へ戻る</button>
+      <button class="ghost" onclick="showScreen('scr-detail')">← 案件詳細へ戻る</button>
       <span>PDFにしたい場合は、印刷ダイアログで「PDFとして保存」を選択(オプション運用)</span>
     </div>
-    <div class="sheet">
+    <div class="sheet-wrap"><div class="sheet">
       <h2>納品書</h2>
       <div class="meta">納品日: 2026年7月29日<br>管理No.: 10100</div>
       <div class="parties">
@@ -273,13 +293,13 @@
           </tr>
         </tbody>
       </table>
-    </div>
+    </div></div>
   </div>
 </div>
 
-<!-- ========== 請求書 印刷プレビュー ========== -->
+<!-- ========== ④ 請求書 印刷プレビュー ========== -->
 <div class="screen print-target" id="pv-invoice">
-  <div class="screen-label">請求書 印刷プレビュー — 「🖨 印刷」を押すとこの帳票だけがA4で印刷されます(適格請求書対応レイアウト)</div>
+  <div class="screen-label">画面④ 請求書 印刷プレビュー — A4サイズの用紙イメージ(適格請求書対応)。「🖨 印刷」でこの帳票だけがA4印刷されます</div>
   <header class="app">
     <h1>販売管理</h1>
     <nav><a href="#">案件一覧</a><a href="#">締め処理</a><a class="active" href="#">請求書プレビュー</a></nav>
@@ -287,10 +307,10 @@
   <div class="screen-body">
     <div class="preview-toolbar">
       <button class="primary" onclick="printSheet('invoice')">🖨 印刷</button>
-      <button class="ghost">← 締め処理へ戻る</button>
+      <button class="ghost" onclick="showScreen('scr-list')">← 一覧へ戻る</button>
       <span>PDFにしたい場合は、印刷ダイアログで「PDFとして保存」を選択(オプション運用)</span>
     </div>
-    <div class="sheet">
+    <div class="sheet-wrap"><div class="sheet">
       <h2>請求書</h2>
       <div class="meta">請求日: 2026年7月31日<br>請求No.: INV-202607-001</div>
       <div class="parties">
@@ -328,11 +348,20 @@
         お振込先: ◯◯銀行 ◯◯支店 普通 1234567 カ)◯◯◯◯<br>
         お支払期限: 2026年8月31日
       </div>
-    </div>
+    </div></div>
   </div>
 </div>
 
 <script>
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(function (s) {
+      s.classList.toggle('active', s.id === id);
+    });
+    document.querySelectorAll('.mock-tabs button').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-target') === id);
+    });
+    window.scrollTo(0, 0);
+  }
   function printSheet(kind) {
     document.body.setAttribute('data-print', kind);
     window.print();
