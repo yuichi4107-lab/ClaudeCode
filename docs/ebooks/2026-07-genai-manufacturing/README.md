@@ -39,9 +39,11 @@ manuscript/
 
 ## KDP 入稿メモ
 
-- 各章 Markdown を結合し、pandoc 等で EPUB 化して入稿する:
-  `pandoc manuscript/*.md -o book.epub --metadata title="町工場の生成AI仕事術" --toc`
-- 表紙は 2,560 x 1,600px 推奨。タイトル文字を大きく、工場×AIのビジュアルで。
+- EPUB は `bash epub/build.sh` で生成する（要 pandoc / python3+Pillow / fonts-noto-cjk）。
+  出力は `build/book.epub`（入稿用）と `build/cover.jpg`（表紙、1,600 x 2,560px）。
+- メタデータ（書名・著者名・説明文）は `epub/metadata.yaml` で管理。
+  **入稿前に author の「（著者名を設定してください）」を実際の筆名に変更すること。**
+- 表紙は `epub/make_cover.py` で生成。デザイン変更もこのスクリプトを編集する。
 - カテゴリは「ビジネス・経済 > 産業研究」「コンピュータ・IT > ビジネスソフト」あたりを選択。
 - キーワード候補: 生成AI, ChatGPT, 製造業, 町工場, DX, 業務効率化, 中小企業
 - レポートの更新戦略に従い、モデルの世代交代ごとに「{年}年版」として改訂する。
