@@ -1,0 +1,4 @@
+interface:
+  display_name: "note販売AIチーム"
+  short_description: "企画から分析まで人間承認で進めるnote販売AIチーム"
+  default_prompt: "Use $note to run one approval-gated note article from planning through note publication, X main post plus first reply, and analysis."
