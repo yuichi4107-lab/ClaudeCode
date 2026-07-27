@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+.env
+yn_tools.db
+node_modules
+.git
+apps
+packages
+turbo.json
+package.json
+package-lock.json
+render.yaml
+DEPLOY.md
+*.md
+.venv

@@ -1,0 +1,14 @@
+{
+    "pdf_options": {
+        "format": "A4",
+        "margin": "20mm",
+        "printBackground": true,
+        "timeout": 120000
+    },
+    "launch_options": {
+        "timeout": 120000,
+        "args": [
+            "--no-sandbox"
+        ]
+    }
+}

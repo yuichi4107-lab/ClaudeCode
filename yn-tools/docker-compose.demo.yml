@@ -1,0 +1,21 @@
+# Seminar demo deployment.
+# - Reuses the same Dockerfile / source as production (docker-compose.yml).
+# - DEMO_MODE=true: app forces in-memory SQLite, bypasses Stripe/auth, hides pricing UI.
+# - No volumes mounted: container restart wipes data.
+# - Different container name + host port to coexist with production on the same VPS.
+
+services:
+  app:
+    build: .
+    container_name: yn-tools-demo
+    restart: unless-stopped
+    ports:
+      - "8081:8000"
+    env_file:
+      - .env.demo
+    environment:
+      - DEMO_MODE=true
+      - APP_ENV=demo
+      # DATABASE_URL is overridden to in-memory by app code, but set a stub for safety.
+      - "DATABASE_URL=sqlite+aiosqlite:///:memory:"
+      # Stripe / Google OAuth keys intentionally absent.

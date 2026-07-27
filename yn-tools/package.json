@@ -1,0 +1,19 @@
+{
+  "name": "yn-tools",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "new-app": "node scripts/create-app.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0"
+  },
+  "packageManager": "npm@10.0.0"
+}

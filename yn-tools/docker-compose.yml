@@ -1,0 +1,44 @@
+services:
+  app:
+    build: .
+    container_name: yn-tools
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql+asyncpg://yntools:${DB_PASSWORD}@db:5432/yntools
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID}
+      - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - SCRAPING_DELAY_SEC=2.0
+      - TRIAL_DAYS=30
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    container_name: yn-tools-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=yntools
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=yntools
+    volumes:
+      - yn-tools-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yntools"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  yn-tools-data:

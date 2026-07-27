@@ -1,0 +1,43 @@
+# Environment & Secrets
+.env
+.env.local
+.env.production
+.env.demo
+keys.json
+keys.txt
+
+# Database
+*.db
+*.db-journal
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+desktop.ini
+.DS_Store
+Thumbs.db
+
+# Tools
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+htmlcov/
+
+# Node (if Turborepo apps used)
+node_modules/
+.next/
+.turbo/

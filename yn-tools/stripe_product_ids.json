@@ -1,0 +1,110 @@
+{
+  "docai": {
+    "product_id": "prod_UFp3IgpCIr54HG",
+    "price_id": "price_1THJPOKAVaivWwqwJEUOJrVg"
+  },
+  "contentgen": {
+    "product_id": "prod_UFp3LMZzlN0ULB",
+    "price_id": "price_1THJPPKAVaivWwqwj92lyd7v"
+  },
+  "webresearch": {
+    "product_id": "prod_UFp30x9n1tYn7s",
+    "price_id": "price_1THJPQKAVaivWwqwVCFmcDJk"
+  },
+  "imagegen": {
+    "product_id": "prod_UFp3ZHqTQxb3At",
+    "price_id": "price_1THJPQKAVaivWwqw25SwccvF"
+  },
+  "chatbot": {
+    "product_id": "prod_UFp32bWsQT7ptK",
+    "price_id": "price_1THJPRKAVaivWwqwjGwhSBrE"
+  },
+  "qrcode": {
+    "product_id": "prod_UFp39TPyrLLDRU",
+    "price_id": "price_1THJPSKAVaivWwqwMmtP1TmD"
+  },
+  "fileconv": {
+    "product_id": "prod_UFp3KVARPkX3Cn",
+    "price_id": "price_1THJPSKAVaivWwqw1kuf6T0Z"
+  },
+  "taskmanager": {
+    "product_id": "prod_UFp3NjfUHt7WJe",
+    "price_id": "price_1THJPTKAVaivWwqwEK2YQnRT"
+  },
+  "formbuilder": {
+    "product_id": "prod_UFp3SuBbUDtbLo",
+    "price_id": "price_1THJPUKAVaivWwqwpAqLrDjO"
+  },
+  "invoice": {
+    "product_id": "prod_UFp3L1eMaimrOg",
+    "price_id": "price_1THJPUKAVaivWwqwKsLntUal"
+  },
+  "translate": {
+    "product_id": "prod_UFp3K4LNed31YU",
+    "price_id": "price_1THJPVKAVaivWwqwwxXhSt6e"
+  },
+  "writing": {
+    "product_id": "prod_UFp3F4qany79nA",
+    "price_id": "price_1THJPWKAVaivWwqwpHwGRyFI"
+  },
+  "contract": {
+    "product_id": "prod_UFp308HhMMenlv",
+    "price_id": "price_1THJPWKAVaivWwqwbBWKZBy0"
+  },
+  "sns": {
+    "product_id": "prod_UFp3uk2XZD5wPk",
+    "price_id": "price_1THJPXKAVaivWwqwru7RIWev"
+  },
+  "minutes": {
+    "product_id": "prod_UFp3154NpL55VZ",
+    "price_id": "price_1THJPYKAVaivWwqwo1m2ZIx4"
+  },
+  "lpbuilder": {
+    "product_id": "prod_UFp3OZX0ykdY80",
+    "price_id": "price_1THJPYKAVaivWwqwqboqKnW7"
+  },
+  "booking": {
+    "product_id": "prod_UFp3RaFrMMxc3r",
+    "price_id": "price_1THJPZKAVaivWwqw8rzyY8Xs"
+  },
+  "expense": {
+    "product_id": "prod_UFp3HKGC9fQBod",
+    "price_id": "price_1THJPaKAVaivWwqwFLVXq1gS"
+  },
+  "seocheck": {
+    "product_id": "prod_UFp3ce3E1769YH",
+    "price_id": "price_1THJPbKAVaivWwqw8bvDbyMp"
+  },
+  "salesboard": {
+    "product_id": "prod_UFp3tNEHiSZCM1",
+    "price_id": "price_1THJPcKAVaivWwqw7z2z1K3R"
+  },
+  "estimate": {
+    "product_id": "prod_UFp3uSaTm7R5pV",
+    "price_id": "price_1THJPcKAVaivWwqwK2s0whfa"
+  },
+  "passgen": {
+    "product_id": "prod_UFp3kd47rFpOUd",
+    "price_id": "price_1THJPdKAVaivWwqwnWPQpvAh"
+  },
+  "dailyreport": {
+    "product_id": "prod_UFp3NeprJwO0pA",
+    "price_id": "price_1THJPdKAVaivWwqw8ILW6Oag"
+  },
+  "cardreader": {
+    "product_id": "prod_UFp32AdZ8Z26WI",
+    "price_id": "price_1THJPeKAVaivWwqwGGZGe8v8"
+  },
+  "voiceminutes": {
+    "product_id": "prod_UFp3wee4HXwHcl",
+    "price_id": "price_1THJPfKAVaivWwqwi1U0sZDC"
+  },
+  "mdviewer": {
+    "product_id": "prod_UHJbhIzYkFTo6x",
+    "price_id": "price_1TIkyhKAVaivWwqwYyXh6YDx"
+  },
+  "epubcheck": {
+    "product_id": "prod_UQQ4B0EDbgzpCl",
+    "price_id": "price_1TRZEhKAVaivWwqwoiUavxgj"
+  }
+}
