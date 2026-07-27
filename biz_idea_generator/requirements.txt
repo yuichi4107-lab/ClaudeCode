@@ -1,0 +1,7 @@
+requests
+python-dotenv
+google-generativeai
+openai
+markdown
+xhtml2pdf
+paramiko
