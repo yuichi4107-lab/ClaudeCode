@@ -1,0 +1,161 @@
+# ─── Windows / Google Drive 同期関連 ───
+desktop.ini
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+*.tmp.drivedownload
+*.tmp.driveupload
+*.gdoc
+*.gsheet
+*.gslides
+.DS_Store
+
+# ─── 環境変数・シークレット ───
+.env
+.env.local
+.env.*.local
+.env.notion
+
+# Notionミラー(原本はNotion側。ミラーはDrive+ZSlimで保全、GitHubへは送らない)
+.company/inputs/notion_mirror/
+*.pem
+*.key
+secrets/
+credentials.json
+.company/engineering/sns-credentials/
+
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+wheels/
+pip-log.txt
+
+# ─── Node.js ───
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.next/
+.nuxt/
+.turbo/
+.parcel-cache/
+.cache/
+out/
+
+# ─── ログ・一時ファイル ───
+*.log
+logs/
+tmp/
+temp/
+*.bak
+*.swp
+*.swo
+*~
+
+# ─── IDE / エディタ ───
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+.vscode/settings.json
+.vscode/launch.json
+
+# ─── Claude Code ───
+.claude/worktrees/
+.claude/cache/
+.claude/tmp/
+
+# ─── プロジェクト固有 ───
+# ルート直下の雑多なログ・一時ファイル
+/claude_appdata.txt
+/claude_help.txt
+/config_log.txt
+/found_files.txt
+/install_log.txt
+/install_retry_log.txt
+/marketplace.txt
+/mkt_list.txt
+/mkt_update.txt
+/plugin_help.txt
+/qrcode_session.png
+
+# AI Trade System
+ai-trade-system/.env.bak.*
+ai-trade-system/logs/
+ai-trade-system/data/
+ai-trade-system/results/**/*.csv
+ai-trade-system/results/**/*.parquet
+
+# 電子書籍マンガ（大容量バイナリ）
+*.epub
+*.mobi
+.company/outputs/ebooks-manga/**/pages_backup_*/
+.company/outputs/ebooks-manga/**/_regen_test/
+
+# NanoBanana2生成物の中間キャッシュ
+.company/outputs/ebooks-manga/**/_cache/
+
+# Local-only manga rebuild archive (2026-05-12, 688MB)
+.company/outputs/ebooks-manga/chatgpt55-now-only-manga/archive_20260512_pre-redo/
+AYC/
+.company/codex/
+
+# ─── ルート整理アーカイブ（Drive専用・2026-07-05整理で退避した旧ファイル置き場）───
+_archive/
+
+# ─── git本体のローカルバックアップ（作業ツリー上の復旧用コピー）───
+# .git_drivebackup は 4.7GB の .git 復元コピー。git履歴に取り込むと再肥大化するためコミット厳禁
+.git_drivebackup/
+
+# ─── 大容量バイナリは Git 管理外（Drive が配布）2026-05-30 GitHub軸移行 ───
+# 画像
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+# 動画・音声の大物
+*.mp4
+*.mov
+# keiba 大容量データ（本番はVPS、ローカルは非稼働の古いコピー）
+keiba-unified/jra/data/
+keiba-unified/win5/data/cache/
+# 各種データダンプ・モデル
+*.pkl
+*.parquet
+*.sqlite
+*.sqlite3
+# 注: *.db は keiba 等のDBダンプ。Git管理したい小さなDBがあれば個別に !path で除外解除する
+*.db
+
+# Claude Code マシン固有のローカル設可設定（機密混入の恐れ・端末ごとに異なる）
+# 全階層に対応（リポジトリ直下・サブプロジェクト両方）
+**/.claude/settings.local.json
+settings.local.json
+
+# Playwright MCP snapshots (debug artifacts)
+.playwright-mcp/
+
+# Local virtual environments and generated company outputs
+.company/.venvs/
+.company/outputs/
+
+# ─── アーカイブ済み大容量成果物（svg/xhtml/pdf/ini 等も含むためディレクトリごと除外）2026-06-06 マルチPC移行 ───
+# 画像本体は上の *.png/*.jpg 等で除外済みだが、付随する svg/xhtml/pdf 等を取り込まないようディレクトリ単位で除外しDrive専用にする
+.company/outputs/picture-books/
+.company/outputs/ai-stock-investment/_archives/
