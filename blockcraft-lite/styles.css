@@ -1,0 +1,272 @@
+:root {
+  color-scheme: dark;
+  --panel: rgba(14, 18, 24, 0.72);
+  --panel-strong: rgba(14, 18, 24, 0.9);
+  --line: rgba(255, 255, 255, 0.16);
+  --text: #f4f7fb;
+  --muted: #b8c0ca;
+  --accent: #f0cf65;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  overflow: hidden;
+  background: #11161f;
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.11);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+#game,
+#scene {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#scene {
+  display: block;
+}
+
+#intro {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  align-items: center;
+  padding: 36px;
+  background:
+    linear-gradient(90deg, rgba(6, 10, 15, 0.8), rgba(6, 10, 15, 0.18) 62%, rgba(6, 10, 15, 0.05)),
+    linear-gradient(0deg, rgba(6, 10, 15, 0.42), rgba(6, 10, 15, 0.1));
+}
+
+#intro[hidden] {
+  display: none;
+}
+
+#intro > div {
+  width: min(620px, 100%);
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+h1 {
+  margin: 0 0 24px;
+  max-width: 780px;
+  font-size: clamp(24px, 4.2vw, 48px);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+h1 span {
+  display: block;
+  white-space: nowrap;
+}
+
+#play-button {
+  min-width: 180px;
+  min-height: 48px;
+  border-color: rgba(240, 207, 101, 0.72);
+  background: rgba(240, 207, 101, 0.16);
+  font-weight: 700;
+}
+
+#hud {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#status,
+#actions,
+#help,
+#hotbar {
+  pointer-events: auto;
+}
+
+#status {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#status span,
+#help {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+#message {
+  color: var(--text);
+}
+
+#actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+#actions button {
+  min-width: 70px;
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+}
+
+#crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+}
+
+#crosshair::before,
+#crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+}
+
+#crosshair::before {
+  left: 8px;
+  top: 0;
+  width: 2px;
+  height: 18px;
+}
+
+#crosshair::after {
+  left: 0;
+  top: 8px;
+  width: 18px;
+  height: 2px;
+}
+
+#hotbar {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(6, 58px);
+  gap: 8px;
+  transform: translateX(-50%);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  backdrop-filter: blur(10px);
+}
+
+.slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 2px solid transparent;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.slot.is-selected {
+  border-color: var(--accent);
+}
+
+.block-preview {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 8px 0 rgba(255, 255, 255, 0.18), inset 0 -8px 0 rgba(0, 0, 0, 0.16);
+}
+
+.slot kbd {
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.slot small {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  color: var(--text);
+  font-size: 10px;
+}
+
+#help {
+  position: absolute;
+  left: 50%;
+  bottom: 104px;
+  transform: translateX(-50%);
+  max-width: min(720px, calc(100vw - 24px));
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  #intro {
+    padding: 22px;
+  }
+
+  #status {
+    left: 10px;
+    top: 10px;
+    right: 10px;
+  }
+
+  #actions {
+    top: auto;
+    right: 10px;
+    bottom: 170px;
+    flex-direction: column;
+  }
+
+  #hotbar {
+    grid-template-columns: repeat(3, 58px);
+    bottom: 18px;
+  }
+
+  #help {
+    display: none;
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "blockcraft-lite",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8010",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "three": "^0.185.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}

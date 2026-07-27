@@ -1,0 +1,20 @@
+rsi2:
+  symbols: [SPY, QQQ]
+  rsi_period: 2
+  buy_below: 10
+  exit_above: 70
+  ma_filter: 200
+  paper_notional_usd: 10000   # ペーパー1トレードあたりの想定元本
+  cost_bp: 5                  # 往復コスト(記録用)
+
+basis:
+  entry_threshold_ann: 0.05   # ベーシス年率5%以上でエントリー検討通知
+  funding_warn_days: 3        # ファンディング3日平均<0で警戒
+  notional_btc: 0.1           # MBT 1枚相当
+
+notify:
+  quiet_when_no_signal: true
+  heartbeat_weekday: 0        # 月曜に週次サマリー
+
+paths:
+  state_dir: state

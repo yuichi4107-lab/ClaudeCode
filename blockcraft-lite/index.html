@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blockcraft Lite</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./node_modules/three/build/three.module.js",
+        "three/addons/": "./node_modules/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="game">
+    <canvas id="scene"></canvas>
+
+    <section id="intro" aria-label="ゲーム開始">
+      <div>
+        <p class="eyebrow">Blockcraft Lite</p>
+        <h1><span>ブロックの世界を歩いて、</span><span>壊して、積み上げる。</span></h1>
+        <button id="play-button" type="button">クリックして開始</button>
+      </div>
+    </section>
+
+    <div id="hud" aria-label="ゲームUI">
+      <div id="status">
+        <span id="position-label">x 0 / y 0 / z 0</span>
+        <span id="message">クリックで視点操作</span>
+      </div>
+      <div id="actions">
+        <button id="save-button" type="button">保存</button>
+        <button id="load-button" type="button">読込</button>
+        <button id="reset-button" type="button">リセット</button>
+      </div>
+      <div id="crosshair" aria-hidden="true"></div>
+      <div id="hotbar" aria-label="ブロック選択"></div>
+      <div id="help">
+        WASD: 移動 / Space: ジャンプ / 左クリック: 破壊 / 右クリック: 設置 / 1-6: 選択
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
