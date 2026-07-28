@@ -1,0 +1,36 @@
+channels:
+  - id: UCRxPq02pjQS_ax60gcTSDHQ
+    handle: "@AI仙人ch"
+    name: "AI仙人"
+    notebook_id: "05b5c139-ce24-461d-9084-dbb1f8d230f1"
+
+  - id: UCORVt7JG44UjGdPrhPIBetQ
+    handle: "@ax_channel"
+    name: "株式会社AX"
+    notebook_id: "e00c7721-3804-4b4e-bf98-ace7dbe6fa90"
+
+# 動作設定
+sync:
+  rss_max_entries: 15      # YouTube RSSの上限
+  init_max_videos: 0       # 0=無制限
+  request_delay_sec: 3     # 動画追加間の待機秒数
+  retry_count: 3
+  retry_backoff_sec: 5
+
+# Playwright
+playwright:
+  # user_data_dir: 常駐Chrome(scripts/start_chrome_mac.sh)が使う専用プロファイル
+  user_data_dir: "./.auth/chromium"
+  # cdp_endpoint: 常駐Chromeのremote-debugging接続先。sync.pyはここへCDP接続する
+  cdp_endpoint: "http://localhost:9222"
+  headless: true
+  navigation_timeout_ms: 60000
+  source_add_timeout_ms: 30000
+  notebooklm_url: "https://notebooklm.google.com"
+
+# ログ
+logging:
+  file: "logs/sync.log"
+  level: "INFO"
+  max_bytes: 10485760   # 10MB
+  backup_count: 5

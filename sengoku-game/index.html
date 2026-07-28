@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>戦国・国盗り</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 開始画面 -->
+  <section id="start-screen">
+    <h1>戦国・国盗り</h1>
+    <p>大名を選んで天下統一を目指せ（1560年）</p>
+    <div id="daimyo-picker"></div>
+  </section>
+
+  <!-- ゲーム画面 -->
+  <main id="game-screen" hidden>
+    <header id="topbar">
+      <span id="turn-label"></span>
+      <span id="player-stats"></span>
+      <span id="topbar-actions">
+        <button id="btn-save">セーブ</button>
+        <button id="btn-load">ロード</button>
+        <button id="btn-end-turn">ターン終了 ▶</button>
+      </span>
+    </header>
+    <div id="layout">
+      <div id="map-wrap"><svg id="map" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg></div>
+      <aside id="side-panel"></aside>
+    </div>
+    <footer id="bottom">
+      <div id="log"></div>
+      <div id="ranking"></div>
+    </footer>
+  </main>
+
+  <footer id="credits">
+    地図データ: 『旧国・旧郡境界データセット』（CODH作成）「幕末明治地勢地図境界データ」（人間文化研究機構作成）を加工 doi:10.20676/00000454（CC BY-NC・非商用利用）
+  </footer>
+
+  <!-- モーダル -->
+  <div id="modal" hidden><div id="modal-box"><p id="modal-text"></p><button id="modal-ok">OK</button></div></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

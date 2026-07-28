@@ -1,0 +1,9 @@
+{
+  "name": "@yn-tools/config",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./index.js",
+  "scripts": {
+    "build": "echo 'Config package built'"
+  }
+}
