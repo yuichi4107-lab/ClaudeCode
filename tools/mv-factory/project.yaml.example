@@ -1,0 +1,101 @@
+# MV Factory プロジェクト設定ファイル (project.yaml) サンプル
+#
+# 使い方:
+#   cp project.yaml.example projects/<YYYYMMDD-曲名スラッグ>/project.yaml
+#   その後 slug をディレクトリ名と一致させて編集する
+#
+# 1曲 = 1プロジェクトディレクトリ。ディレクトリ名は
+#   projects/{YYYYMMDD}-{曲名スラッグ}/
+# 例: projects/20260707-neon-tokyo-drive/
+
+# --- 基本情報 ---
+title: "ネオン東京ドライブ"          # 曲タイトル(表示用)
+slug: "20260707-neon-tokyo-drive"    # プロジェクトディレクトリ名と一致させる
+genre: "シティポップ / シンセウェイブ"
+vocal: "female"                      # female / male / none / duet
+theme: "深夜の高速道路を走る車窓から見るネオン街。都会の孤独と高揚感。"
+
+# --- 曲生成モード ---
+# suno_api    : Suno公式パートナーAPIで新規生成 (APIキー到着後に有効化、未実装)
+# suno_bridge : opensuno Bridge(localhost:3001)経由で自分のSunoアカウントから生成
+# manual      : 手持ちの音源ファイル + 歌詞テキストを投入する
+song_source: "suno_bridge"           # suno_api | suno_bridge | manual
+
+# song_source: suno_api の場合の設定 (Suno公式パートナーAPIキー到着後に確定させる)
+suno_api:
+  theme: ""                         # 未指定ならの theme を使う
+  lyrics_prompt: ""                  # 歌詞生成方闝(任意、空ならSuno任せ)
+  style_tags: []                     # 例: ["シティポップ", "80年代", "女性ボーカル"]
+  instrumental: false                # true ならボーカルなしインスト生成
+
+# song_source: suno_bridge の場合の設定
+# (opensuno Bridge Mode、.agents/skills/suno-music-gen/ と同じ仕組み)
+suno_bridge:
+  title: ""                          # 未指定なら上の title を使う
+  theme: ""                          # 未指定ならの theme を使う(参考情報として保存のみ)
+  lyrics: ""                         # 歌詞を直接記載(複数行可、YAMSの | ブロックを推婨)
+  lyrics_file: ""                    # または歌詞テキストファイルへの相対パス(lyricsより優先庤低)
+  style_tags: []                     # 例: ["J-POP", "キャッチー", "女性ボーカル", "夏"]
+  instrumental: false                # true ならボーカルなしインスト生成
+  model: "chirp-crow"                # chirp-crow(v5) / chirp-auk(v4.5) 等
+
+# song_source: manual の場合の設定
+manual_audio:
+  audio_path: "input/song.mp3"       # プロジェクトディレクトリからの相対パス (mp3/wav)
+  lyrics_path: "input/lyrics.txt"    # 歌詞テキストファイル(UTF-8、行匲切り
+
+# --- 尺ゃアÂ�ガ (2バージェン固定) ---
+versions:
+  short:
+    duration_sec: 60
+    aspect_ratio: "9:16"
+    clip_duration_sec: 5             # 1クリップの長さ(4〜15秒、Seedance仕晘)
+  full:
+    duration_sec: 180
+    aspect_ratio: "16:9"
+    clip_duration_sec: 5
+
+# --- 参照画像 (工程4、任意) ---
+reference_images:
+  enabled: true                     # false ならテキストのみtext-to-video
+  characters:                        # キャラクター設定(複数叫)
+    - name: "主人公"
+      description: "20代女性、コョートヘア、革�8ャケット、都会的な雰囲気"
+  world:
+    description: "深夜のネオン街、雨上がりの路面反射、サイバーパンク寄りの色彩"
+  provider: "nanobanana2"            # nanobanana2 | openai_web (手動)
+
+# --- キャラクターシート (工程3、必須。2026-07-05パイロットのオーナー指摘で追加) ---
+# storyboard_{short,full}.json の character_sheet に転記する固定記述の元ネタ。
+# 「シーンごとに服装・髪型が変わる」問題を防ぐため、髪型・服装・靴・体型を
+# ここで1箇所に固定し、全シーンのvideo_promptで同じ語句を再利用すること。
+# storyboardバリデータ(mvfactory/storyboard.py)がvideo_promptとの一致率を
+# チェックし、25%未満なら検証エラーにする。
+character_sheet:
+  hairstyle: "shoulder-length black hair with soft bangs"
+  outfit: "white long-sleeve shirt tucked into light blue denim jeans, small beige backpack"
+  shoes: "white canvas sneakers, one shoe per foot"
+  build: "slim build, young adult Japanese woman, approx. 165cm"
+
+# --- 動画生成 (工程5, Atlas Cloud) ---
+video_generation:
+  provider: "atlas_cloud"
+  model: "bytedance/seedance-2.0/text-to-video"  # 変更されたら.envのATLAS_MODELで上書き可
+  resolution: "720p"                 # 480p | 720p | 1080p(standardのみ)
+  mode: "std"                        # std | fast
+  generate_audio: false              # クリップ側の音声は不要(曲をmuxするため)
+  watermark: false
+  max_retries: 2                     # 生成失敗時のリトライ回数
+  retry_backoff_sec: 20
+
+# --- 編集・合成 (工程6) ---
+mix:
+  audio_fade_in_sec: 1.0
+  audio_fade_out_sec: 2.0
+  video_fade_out_sec: 1.0
+  short_duration_mode: "trim_to_music"   # クリップ合計と曲尺の差異吸収方針(README参照)
+  full_duration_mode: "trim_to_music"
+
+# --- 予算・安全装置 ---
+budget:
+  max_usd_per_run: 30.0              # このプロジェクト1回の実行での上限目安(自己申告、厳密課金停止ではない)
