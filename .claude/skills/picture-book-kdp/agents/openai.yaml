@@ -1,0 +1,7 @@
+interface:
+  display_name: "KDP絵本制作"
+  short_description: "KDP絵本を本文・表紙・LPまで制作"
+  brand_color: "#8B653A"
+  default_prompt: "Use $picture-book-kdp to create a 32-page Amazon KDP絵本 with Kindle EPUB, paperback PDFs, metadata, and optional LP/QR CTA."
+policy:
+  allow_implicit_invocation: true

@@ -425,7 +425,7 @@ def cmd_evaluate(args):
     print(f"  的中数:       {correct}")
     print(f"  的中率:       {hit_rate:.1%}")
     print(f"  総賭金:       {total_bet:,.0f}円")
-    print(f"  総払戻:       {total_return:,.0f}円")
+    print(f"  紏払戻:       {total_return:,.0f}円")
     print(f"  回収率:       {return_rate:.1%}")
     print(f"  損益:         {total_return - total_bet:+,.0f}円")
     print(f"\n{'='*60}")

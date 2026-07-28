@@ -40,7 +40,7 @@ topics:
   auto_replenish:
     enabled: true
     min_by_difficulty:
-      beginner: 8        # 使用可能ネタがこの数未満なら自動補充
+      beginner: 8        # 使用可能ネタがこの数未満など自動補充
       intermediate: 16
     target_by_difficulty:
       beginner: 18       # 補充後に目指す本数
@@ -59,7 +59,7 @@ seedance:
   model: fast                   # std ($0.112/s) | fast ($0.09/s)
   resolution: 720p
   ratio: "9:16"
-  audio_mode: voicevox          # voicevox=日本語TTSで差し替える | native=Seedance音声を使う
+  audio_mode: voicevox          # voicevox=日本語TTSで差し替え | native=Seedance音声を使う
   generate_audio: false         # 音声はVOICEVOXで差し替え、Seedance音声は使わない
   voicevox_speaker_id: 13       # 青山龍星（ノーマル）
   voicevox_speaker_credit: "VOICEVOX:青山龍星"
