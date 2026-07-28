@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trade - Chart Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+        #toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+        }
+        #toolbar label { font-size: 13px; color: #a0a0c0; }
+        #toolbar select, #toolbar input, #toolbar button {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #0f3460;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-size: 13px;
+        }
+        #toolbar button {
+            cursor: pointer;
+            background: #0f3460;
+            transition: background 0.2s;
+        }
+        #toolbar button:hover { background: #e94560; }
+        #toolbar button.active { background: #e94560; }
+        #toolbar .spacer { flex: 1; }
+        #status { font-size: 12px; color: #a0a0c0; }
+
+        #chart-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 45px);
+        }
+        #chart-container canvas { display: block; }
+
+        /* 選択オーバーレイ */
+        #selection-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            cursor: crosshair;
+            display: none;
+            z-index: 10;
+        }
+        #selection-box {
+            position: absolute;
+            border: 2px dashed #e94560;
+            background: rgba(233, 69, 96, 0.1);
+            display: none;
+            pointer-events: none;
+        }
+
+        /* プレビューモーダル */
+        #preview-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+        #preview-modal.show { display: flex; }
+        #preview-canvas {
+            border: 1px solid #0f3460;
+            max-width: 80vw;
+            max-height: 70vh;
+        }
+        #preview-modal .btn-group { display: flex; gap: 12px; }
+        #preview-modal button {
+            padding: 10px 24px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #btn-download { background: #e94560; color: #fff; }
+        #btn-download:hover { background: #c73650; }
+        #btn-cancel-preview { background: #333; color: #fff; }
+        #btn-cancel-preview:hover { background: #555; }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <label>データ:</label>
+        <input type="file" id="file-input" accept=".json,.csv">
+        <div class="spacer"></div>
+        <button id="btn-select" title="範囲選択モード (S)">範囲選択</button>
+        <span id="status">JSONファイルを読み込んでください</span>
+    </div>
+
+    <div id="chart-container">
+        <canvas id="chart-canvas"></canvas>
+        <div id="selection-overlay">
+            <div id="selection-box"></div>
+        </div>
+    </div>
+
+    <!-- プレビューモーダル -->
+    <div id="preview-modal">
+        <canvas id="preview-canvas"></canvas>
+        <div class="btn-group">
+            <button id="btn-download">ダウンロード (PNG)</button>
+            <button id="btn-cancel-preview">キャンセル</button>
+        </div>
+    </div>
+
+    <script>
+    (() => {
+        // ========== State ==========
+        let candles = [];
+        let viewOffset = 0;     // 表示開始インデックス
+        let candleWidth = 8;    // 1本のローソク足の幅(px)
+        let candleGap = 2;
+        let isSelectMode = false;
+        let selStart = null;
+        let selEnd = null;
+
+        // ========== DOM ==========
+        const canvas = document.getElementById('chart-canvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('chart-container');
+        const overlay = document.getElementById('selection-overlay');
+        const selBox = document.getElementById('selection-box');
+        const btnSelect = document.getElementById('btn-select');
+        const fileInput = document.getElementById('file-input');
+        const status = document.getElementById('status');
+        const previewModal = document.getElementById('preview-modal');
+        const previewCanvas = document.getElementById('preview-canvas');
+        const btnDownload = document.getElementById('btn-download');
+        const btnCancelPreview = document.getElementById('btn-cancel-preview');
+
+        // ========== Resize ==========
+        function resize() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            draw();
+        }
+        window.addEventListener('resize', resize);
+
+        // ========== File Load ==========
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    if (file.name.endsWith('.json')) {
+                        candles = JSON.parse(ev.target.result);
+                    } else {
+                        // CSV parse
+                        const lines = ev.target.result.trim().split('\n');
+                        const headers = lines[0].split(',');
+                        candles = lines.slice(1).map(line => {
+                            const vals = line.split(',');
+                            const obj = {};
+                            headers.forEach((h, i) => obj[h.trim()] = vals[i]?.trim());
+                            return {
+                                datetime: obj.datetime,
+                                timestamp: Number(obj.timestamp),
+                                open: Number(obj.open),
+                                high: Number(obj.high),
+                                low: Number(obj.low),
+                                close: Number(obj.close),
+                                volume: Number(obj.volume),
+                            };
+                        });
+                    }
+                    viewOffset = Math.max(0, candles.length - visibleCount());
+                    status.textContent = `${candles.length}本のローソク足を読み込みました`;
+                    draw();
+                } catch (err) {
+                    status.textContent = `読み込みエラー: ${err.message}`;
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // ========== Chart Drawing ==========
+        function visibleCount() {
+            return Math.floor(canvas.width / (candleWidth + candleGap));
+        }
+
+        function draw() {
+            if (candles.length === 0) {
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#555';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('JSONまたはCSVファイルを読み込んでください', canvas.width/2, canvas.height/2);
+                return;
+            }
+
+            const W = canvas.width;
+            const H = canvas.height;
+            const padding = { top: 20, bottom: 40, left: 60, right: 20 };
+            const chartH = H - padding.top - padding.bottom;
+
+            // 表示範囲のデータ
+            const count = visibleCount();
+            const visible = candles.slice(viewOffset, viewOffset + count);
+            if (visible.length === 0) return;
+
+            // 価格レンジ
+            let minPrice = Infinity, maxPrice = -Infinity;
+            visible.forEach(c => {
+                if (c.low < minPrice) minPrice = c.low;
+                if (c.high > maxPrice) maxPrice = c.high;
+            });
+            const priceRange = maxPrice - minPrice || 1;
+            const pricePad = priceRange * 0.05;
+            minPrice -= pricePad;
+            maxPrice += pricePad;
+
+            function priceToY(price) {
+                return padding.top + chartH * (1 - (price - minPrice) / (maxPrice - minPrice));
+            }
+
+            // 背景
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, W, H);
+
+            // グリッド
+            ctx.strokeStyle = '#222244';
+            ctx.lineWidth = 0.5;
+            const gridLines = 8;
+            for (let i = 0; i <= gridLines; i++) {
+                const price = minPrice + (maxPrice - minPrice) * (i / gridLines);
+                const y = priceToY(price);
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(W - padding.right, y);
+                ctx.stroke();
+
+                // 価格ラベル
+                ctx.fillStyle = '#666688';
+                ctx.font = '11px monospace';
+                ctx.textAlign = 'right';
+                ctx.fillText(price.toFixed(1), padding.left - 5, y + 4);
+            }
+
+            // ローソク足描画
+            visible.forEach((c, i) => {
+                const x = padding.left + i * (candleWidth + candleGap) + candleGap;
+                const isUp = c.close >= c.open;
+                const color = isUp ? '#26a69a' : '#ef5350';
+
+                const bodyTop = priceToY(Math.max(c.open, c.close));
+                const bodyBot = priceToY(Math.min(c.open, c.close));
+                const bodyH = Math.max(1, bodyBot - bodyTop);
+
+                // ヒゲ
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                const cx = x + candleWidth / 2;
+                ctx.moveTo(cx, priceToY(c.high));
+                ctx.lineTo(cx, priceToY(c.low));
+                ctx.stroke();
+
+                // 実体
+                ctx.fillStyle = color;
+                ctx.fillRect(x, bodyTop, candleWidth, bodyH);
+            });
+
+            // 日時ラベル（間引き）
+            ctx.fillStyle = '#666688';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+            const labelStep = Math.max(1, Math.floor(count / 10));
+            visible.forEach((c, i) => {
+                if (i % labelStep !== 0) return;
+                const x = padding.left + i * (candleWidth + candleGap) + candleWidth / 2;
+                const dt = c.datetime || new Date(c.timestamp).toISOString();
+                const short = dt.substring(5, 16).replace('T', ' ');
+                ctx.fillText(short, x, H - padding.bottom + 15);
+            });
+        }
+
+        // ========== Scroll & Zoom ==========
+        container.addEventListener('wheel', (e) => {
+            if (isSelectMode) return;
+            e.preventDefault();
+            if (e.ctrlKey) {
+                // ズーム
+                const delta = e.deltaY > 0 ? -1 : 1;
+                candleWidth = Math.max(2, Math.min(30, candleWidth + delta));
+            } else {
+                // スクロール
+                const step = Math.max(1, Math.floor(visibleCount() * 0.1));
+                viewOffset += e.deltaY > 0 ? step : -step;
+            }
+            viewOffset = Math.max(0, Math.min(candles.length - visibleCount(), viewOffset));
+            draw();
+        });
+
+        // ========== Selection Mode ==========
+        btnSelect.addEventListener('click', () => {
+            isSelectMode = !isSelectMode;
+            btnSelect.classList.toggle('active', isSelectMode);
+            overlay.style.display = isSelectMode ? 'block' : 'none';
+            status.textContent = isSelectMode ? '範囲をドラッグで選択してください' : '';
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 's' || e.key === 'S') {
+                if (document.activeElement.tagName === 'INPUT') return;
+                btnSelect.click();
+            }
+            if (e.key === 'Escape') {
+                if (previewModal.classList.contains('show')) {
+                    previewModal.classList.remove('show');
+                } else if (isSelectMode) {
+                    btnSelect.click();
+                }
+            }
+        });
+
+        // ドラッグ選択
+        overlay.addEventListener('mousedown', (e) => {
+            selStart = { x: e.offsetX, y: e.offsetY };
+            selEnd = null;
+            selBox.style.display = 'block';
+            updateSelBox(e.offsetX, e.offsetY);
+        });
+
+        overlay.addEventListener('mousemove', (e) => {
+            if (!selStart) return;
+            updateSelBox(e.offsetX, e.offsetY);
+        });
+
+        overlay.addEventListener('mouseup', (e) => {
+            if (!selStart) return;
+            selEnd = { x: e.offsetX, y: e.offsetY };
+
+            // 正方形に切り出してプレビュー
+            const rect = getSquareRect(selStart, selEnd);
+            if (rect.size > 10) {
+                captureAndPreview(rect);
+            }
+            selStart = null;
+            selBox.style.display = 'none';
+        });
+
+        function updateSelBox(mx, my) {
+            if (!selStart) return;
+            // 正方形に制約
+            const dx = mx - selStart.x;
+            const dy = my - selStart.y;
+            const size = Math.max(Math.abs(dx), Math.abs(dy));
+            const sx = dx >= 0 ? selStart.x : selStart.x - size;
+            const sy = dy >= 0 ? selStart.y : selStart.y - size;
+            selBox.style.left = sx + 'px';
+            selBox.style.top = sy + 'px';
+            selBox.style.width = size + 'px';
+            selBox.style.height = size + 'px';
+        }
+
+        function getSquareRect(start, end) {
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const size = Math.max(Math.abs(dx), Math.abs(dy));
+            const x = dx >= 0 ? start.x : start.x - size;
+            const y = dy >= 0 ? start.y : start.y - size;
+            return { x, y, size };
+        }
+
+        // ========== Capture & Preview ==========
+        function captureAndPreview(rect) {
+            const outputSize = 512; // 出力画像サイズ
+            previewCanvas.width = outputSize;
+            previewCanvas.height = outputSize;
+            const pCtx = previewCanvas.getContext('2d');
+
+            // チャートCanvasから切り出してリサイズ
+            pCtx.drawImage(
+                canvas,
+                rect.x, rect.y, rect.size, rect.size,
+                0, 0, outputSize, outputSize
+            );
+
+            previewModal.classList.add('show');
+        }
+
+        // ダウンロード
+        btnDownload.addEventListener('click', () => {
+            const ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+            const link = document.createElement('a');
+            link.download = `chart_${ts}.png`;
+            link.href = previewCanvas.toDataURL('image/png');
+            link.click();
+            previewModal.classList.remove('show');
+            status.textContent = `保存しました: ${link.download}`;
+        });
+
+        btnCancelPreview.addEventListener('click', () => {
+            previewModal.classList.remove('show');
+        });
+
+        // ========== Init ==========
+        resize();
+    })();
+    </script>
+</body>
+</html>

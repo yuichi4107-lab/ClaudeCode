@@ -222,5 +222,66 @@ class TestYoriTen:
 
 class TestComputeMetrics:
     def _make_trade(self, pnl_pct: float, is_yori_ten: bool = False) -> object:
-        """ãƒ€ãƒŸãƒ¼ Trade ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã™ã‚‹ã€‚"" ¢&WGW&âöVæv–æRåG&FR€¢FFSÒ###BÓÓ"À¢6öFSÒ%C"À¢÷Vå÷&–6SÓãÀ¢VçG'•÷&–6SÓãÀ¢6Æ÷6U÷&–6UöF“ÓSãÀ¢†–vƒÓãÀ¢Æ÷sÓ“ƒãÀ¢6Å÷&–6SÓ“ƒã“‚À¢G÷&–6SÓSãRÀ¢G%÷&–6SÓãÀ¢W†—E÷&–6UögVÆÃÓãÀ¢W†—E÷&–6U÷GÓãÀ¢W†—E÷&–6U÷G#ÓãÀ¢W†—E÷&V6öãÒ$6Æ÷6R"À¢æÅ÷7C×æÅ÷7BÀ¢æÅö'3Ó3ó¢æÅ÷7BÀ¢6†&W3Ó#“’ãrÀ¢–çfW7FVCÓ3óãÀ¢&öçW5÷66÷&SÓãÀ¢—5÷–÷&•÷FVãÖ—5÷–÷&•÷FVâÀ¢ ¢FVbFW7E÷v–å÷&FUö6Æ7VÆF–öâ‡6VÆb“ ¢"".X¹Şxèn8ÎjÚ>8~8şŠˆzé~8^8(Î8(¾8""" ¢G&FW2Ò°¢6VÆbåöÖ¶U÷G&FRƒãR’À¢6VÆbåöÖ¶U÷G&FRƒãR’À¢6VÆbåöÖ¶U÷G&FR‚Óã"’À¢6VÆbåöÖ¶U÷G&FR‚Óã"’À¢Ğ¢F–Ç•÷æÅöÆ—7BÒ²†b###BÓ×¶’³£&GÒ"ÂBçæÅö'2’f÷"’ÂB–âVçVÖW&FR‡G&FW2•Ğ¢&W7VÇBÒöVæv–æRåö6ö×WFUöÖWG&–72‡G&FW2ÂF–Ç•÷æÅöÆ—7BÂóóÂóó¢76W'B&W7VÇBçv–å÷&FRÓÒ—FW7Bæ&÷‚ƒãR ¢FVbFW7E÷&öf—Eöf7F÷%ö6Æ7VÆF–öâ‡6VÆb“ ¢""%bÒ{xşXŠy¸¢ò{xşiŞZK8ÎjÚ>8~8şŠˆzé~8^8(Î8(¾8""" ¢G&FW2Ò°¢6VÆbåöÖ¶U÷G&FRƒã’À¢6VÆbåöÖ¶U÷G&FR‚Óã"’À¢Ğ¢F–Ç•÷æÅöÆ—7BÒ²†b###BÓ×¶’³£&GÒ"ÂBçæÅö'2’f÷"’ÂB–âVçVÖW&FR‡G&FW2•Ğ¢&W7VÇBÒöVæv–æRåö6ö×WFUöÖWG&–72‡G&FW2ÂF–Ç•÷æÅöÆ—7BÂóóÂóó¢76W'B&W7VÇBç&öf—Eöf7F÷"ÓÒ—FW7Bæ&÷‚ƒãòã"Â&VÃÓRÓ2 ¢FVbFW7E÷–÷&•÷FVå÷&FR‡6VÆb“ ¢"".ZøN8(®ZJy›®yIşxè~8ÎjÚ>8~8şŠˆzé~8^8(Î8(¾ûÈƒ"óBÒS^ûÈ8""" ¢G&FW2Ò°¢6VÆbåöÖ¶U÷G&FRƒãRÂ—5÷–÷&•÷FVãÕG'VR’À¢6VÆbåöÖ¶U÷G&FRƒãRÂ—5÷–÷&•÷FVãÕG'VR’À¢6VÆbåöÖ¶U÷G&FR‚Óã"Â—5÷–÷&•÷FVãÔfÇ6R’À¢6VÆbåöÖ¶U÷G&FR‚Óã"Â—5÷–÷&•÷FVãÔfÇ6R’À¢Ğ¢F–Ç•÷æÅöÆ—7BÒ²†b###BÓ×¶’³£&GÒ"ÂBçæÅö'2’f÷"’ÂB–âVçVÖW&FR‡G&FW2•Ğ¢&W7VÇBÒöVæv–æRåö6ö×WFUöÖWG&–72‡G&FW2ÂF–Ç•÷æÅöÆ—7BÂóóÂóó¢76W'B&W7VÇBç–÷&•÷FVå÷&FRÓÒ—FW7Bæ&÷‚ƒãR ¢FVbFW7E÷¦W&õ÷G&FW2‡6VÆb“ ¢"".Xùn[É^8+Î8:Ş8îZNY8ş88~89^8*8:¾88X
-N8Î‹ùN8(¾8""" ¢&W7VÇBÒöVæv–æRåö6ö×WFUöÖWG&–72…µÒÂµÒÂóóÂóó¢76W'B&W7VÇBçF÷FÅ÷G&FW2ÓÒ ¢76W'B&W7VÇBçv–å÷&FRÓÒã  
+        """ãƒ€ãƒŸãƒ¼ Trade ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã™ã‚‹ã€‚"""
+        return _engine.Trade(
+            date="2024-01-01",
+            code="T001",
+            open_price=1000.0,
+            entry_price=1001.0,
+            close_price_day=1050.0,
+            high=1100.0,
+            low=980.0,
+            sl_price=980.98,
+            tp1_price=1051.05,
+            tp2_price=1101.1,
+            exit_price_full=1000.0,
+            exit_price_tp1=1000.0,
+            exit_price_tp2=1000.0,
+            exit_reason="Close",
+            pnl_pct=pnl_pct,
+            pnl_abs=300_000 * pnl_pct,
+            shares=299.7,
+            invested=300_000.0,
+            bonus_score=0.0,
+            is_yori_ten=is_yori_ten,
+        )
+
+    def test_win_rate_calculation(self):
+        """å‹ç‡ãŒæ­£ã—ãè¨ˆç®—ã•ã‚Œã‚‹ã€‚"""
+        trades = [
+            self._make_trade(0.05),
+            self._make_trade(0.05),
+            self._make_trade(-0.02),
+            self._make_trade(-0.02),
+        ]
+        daily_pnl_list = [(f"2024-01-{i+1:02d}", t.pnl_abs) for i, t in enumerate(trades)]
+        result = _engine._compute_metrics(trades, daily_pnl_list, 1_000_000, 1_000_000)
+        assert result.win_rate == pytest.approx(0.5)
+
+    def test_profit_factor_calculation(self):
+        """PF = ç·åˆ©ç›Š / ç·æå¤± ãŒæ­£ã—ãè¨ˆç®—ã•ã‚Œã‚‹ã€‚"""
+        trades = [
+            self._make_trade(0.10),
+            self._make_trade(-0.02),
+        ]
+        daily_pnl_list = [(f"2024-01-{i+1:02d}", t.pnl_abs) for i, t in enumerate(trades)]
+        result = _engine._compute_metrics(trades, daily_pnl_list, 1_000_000, 1_000_000)
+        assert result.profit_factor == pytest.approx(0.10 / 0.02, rel=1e-3)
+
+    def test_yori_ten_rate(self):
+        """å¯„ã‚Šå¤©ç™ºç”Ÿç‡ãŒæ­£ã—ãè¨ˆç®—ã•ã‚Œã‚‹ï¼ˆ2/4 = 50%ï¼‰ã€‚"""
+        trades = [
+            self._make_trade(0.05, is_yori_ten=True),
+            self._make_trade(0.05, is_yori_ten=True),
+            self._make_trade(-0.02, is_yori_ten=False),
+            self._make_trade(-0.02, is_yori_ten=False),
+        ]
+        daily_pnl_list = [(f"2024-01-{i+1:02d}", t.pnl_abs) for i, t in enumerate(trades)]
+        result = _engine._compute_metrics(trades, daily_pnl_list, 1_000_000, 1_000_000)
+        assert result.yori_ten_rate == pytest.approx(0.5)
+
+    def test_zero_trades(self):
+        """å–å¼•ã‚¼ãƒ­ã®å ´åˆã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ãŒè¿”ã‚‹ã€‚"""
+        result = _engine._compute_metrics([], [], 1_000_000, 1_000_000)
+        assert result.total_trades == 0
+        assert result.win_rate == 0.0

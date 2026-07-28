@@ -1,9 +1,9 @@
 """
 スクリーニングエンジン。
 
-J-Quants Free プランで取得できる日足データのみを使ぁ、
+J-Quants Free プランで取得できる日足データのみを使い、
 F1 / F3 / F4 / F5(プロキシ) / 加点3 を実装する。
-F2（時価総額）・F6ほF7 はデータ制約でスキップ（ログ出力あり）。
+F2（時価総額）・F6・F7 はデータ制約でスキップ（ログ出力あり）。
 適時開示フラグ（加点1）は将来対応のため常に False。
 
 先読みバイアス防止:
@@ -114,7 +114,7 @@ def apply_f1_price(
     F1: 株価 ≤ 3,000円 かつ 単元代金 ≤ 30万円（is_value_stock=0 で判定）。
 
     対象市場: グロース市場のみ（戦略仕様: グロース市場中心）。
-    市場名に「グロース」が含まれる銘柄をフィルターする。
+    市場名に「グロース」が含まれる銘柄のみをフィルターする。
 
     Parameters
     ----------
@@ -126,10 +126,10 @@ def apply_f1_price(
     Returns
     -------
     pd.DataFrame
-        フィルター通過銘柄で  stocks_master（グロース市場 + is_value_stock=0）
+        フィルター通過銘柄の stocks_master（グロース市場 + is_value_stock=0）
     """
     _ = cfg or SCREENING_CONFIG
-    # グロース市場のみに絞る（戦略仕杆通り）
+    # グロース市場のみに絞る（戦略仕様通り）
     growth_mask = master["market"].str.contains("グロース", na=False)
     filtered = master[growth_mask & (master["is_value_stock"] == 0)].copy()
     logger.debug(
@@ -143,7 +143,7 @@ def apply_f2_market_cap_skip(cfg: Optional[dict] = None) -> None:
     """
     F2: 時価総額フィルター。
 
-    データ未提供のため暫定コルスト。呼び出凷時に WARNING を出力する。
+    データ未提供のため暫定スキップ。呼び出し時に WARNING を出力する。
     """
     c = cfg or SCREENING_CONFIG
     if not c.get("market_cap_available", False):
@@ -166,13 +166,13 @@ def compute_intraday_range(
     days: int = 5,
 ) -> pd.DataFrame:
     """
-    各銘柄ほ各日の「直近 N 日間の日中値幃率平均」を計算する。
+    各銘柄・各日の「直近 N 日間の日中値幅率の平均」を計算する。
 
-    日中値幃率 = (high - low) / close
+    日中値幅率 = (high - low) / close
 
     先読みバイアス注意:
-        当日の high/low/close は当日終了後にしか確誜だしていため、
-        当日を含む N 日ローリングではなく、前日までの N 日」を使う。
+        当日の high/low/close は当日終了後にしか確定しないため、
+        当日を含む N 日ローリングではなく「前日までの N 日」を使う。
         実装上は shift(1) した後に rolling(N).mean() を適用する。
 
     Parameters
@@ -202,7 +202,7 @@ def apply_f3_intraday_range(
     cfg: Optional[dict] = None,
 ) -> pd.DataFrame:
     """
-    F3: 直近5日日中値幃率（(high-low)/close の5日平均）≥ 5%。
+    F3: 直近5日日中値幅率（(high-low)/close の5日平均）≥ 5%。
 
     Parameters
     ----------
@@ -262,16 +262,16 @@ def apply_f4_volume(
 
 def compute_gap_rate(prices: pd.DataFrame) -> pd.DataFrame:
     """
-    GAP 率（当日 Open / 前日 Close - 1） を計算する。
+    GAP 率（当日 Open / 前日 Close - 1）を計算する。
 
     先読み防止:
         前日 Close は shift(1) で取得。
-        当日 Open は約定価格として使うのではなくフィルターに判定にのみ使用する
+        当日 Open は約定価格として使うのではなくフィルター判定にのみ使用する
         （エントリー判定後に参照するため先読みにはならない）。
 
     Note
     ----
-    F5 に「8:59 時点の買気配 / 前日終値 - 1」が本来の仕様だが、
+    F5 は「8:59 時点の買気配 / 前日終値 - 1」が本来の仕様だが、
     日足のみのデータでは寄り付き価格（Open）で代用する。
     """
     prices = prices.sort_values(["code", "date"]).copy()
@@ -287,9 +287,9 @@ def apply_f5_gap_rate(
     cfg: Optional[dict] = None,
 ) -> pd.DataFrame:
     """
-    F5 (パロキシ): GAP 率（当日 Open / 前日 Close - 1）≥ +3%。
+    F5 (プロキシ): GAP 率（当日 Open / 前日 Close - 1）≥ +3%。
 
-    本来は 8:59 時点の買気配 / 前日終値 が、日足で代用。
+    本来は 8:59 時点の買気配 / 前日終値 だが、日足で代用。
 
     Parameters
     ----------
@@ -313,24 +313,24 @@ def compute_volume_ratio_week_ago(prices: pd.DataFrame) -> pd.DataFrame:
     """
     前週同日比出来高倍率（volume_ratio_week_ago）を計算する。
 
-    概盬: 5ㅬ開日前の出来高を「前週同日」とする（厳密な旗日一致は不要）。
+    概算: 5営業日前の出来高を「前週同日」とする（厳密な曜日一致は不要）。
 
-    先読み防止: 前週の出来高がないので当然当日より前のデータ。
+    先読み防止: 前週の出来高なので当然当日より前のデータ。
     """
     prices = prices.sort_values(["code", "date"]).copy()
     prices["volume_5d_ago"] = prices.groupby("code")["volume"].transform(
         lambda s: s.shift(5)
     )
-    # 分母ゼチェック
+    # 分母ゼロ防止
     prices["volume_ratio_week_ago"] = prices["volume_prev"] / prices["volume_5d_ago"].replace(0, float("nan"))
     return prices
 
 
 def compute_bonus_score(prices: pd.DataFrame, cfg: Optional[dict] = None) -> pd.DataFrame:
     """
-    加点スコァ（bonus_score）を計算する。
+    加点スコア（bonus_score）を計算する。
 
-    加点1: 適時開示幁（・洲っ → 常に False￩.将来対応）
+    加点1: 適時開示フラグ → 常に False（将来対応）
     加点3: 前日出来高前週同日比 ≥ 200%
 
     Parameters
@@ -369,7 +369,7 @@ def compute_bonus_score(prices: pd.DataFrame, cfg: Optional[dict] = None) -> pd.
 
 def apply_f6_presale_ratio_live_only(is_backtest: bool = True) -> None:
     """
-    F6: 寄り前売買比率ゕィルター（ライブ専用）。
+    F6: 寄り前売買比率フィルター（ライブ専用）。
 
     バックテスト時は常にスキップ。
     """
@@ -448,7 +448,7 @@ def screen_for_date(
     # NaN 除去（計算不能な初期行は除外）
     day_df = day_df.dropna(subset=["intraday_range_avg", "volume_prev", "gap_rate"])
 
-    # bonus_score 降騆でソート
+    # bonus_score 降順でソート
     day_df = day_df.sort_values("bonus_score", ascending=False)
 
     logger.info(

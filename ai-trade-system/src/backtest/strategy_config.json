@@ -1,0 +1,350 @@
+{
+  "description": "通貨別最適戦略設定（マルチ戦略・トレンドフィルター対応）",
+  "updated": "2026-03-28",
+  "data_period": "2023-06-30 to 2026-03-25 (1d x 1000)",
+  "default": {
+    "pattern": "double_bottom_v3_neckline",
+    "window_size": 50,
+    "step": 5,
+    "hold_bars": 20,
+    "fee_rate": 0.001,
+    "direction": "long"
+  },
+  "trend_filter": {
+    "enabled": true,
+    "fast_period": 50,
+    "slow_period": 200,
+    "description": "SMA50 < SMA200 の場合、ロング系シグナル（ダブルボトム等）を無視"
+  },
+  "currencies": {
+    "BTC-USDT": {
+      "strategies": [
+        {
+          "id": "double_bottom",
+          "pattern": "double_bottom_v3_neckline",
+          "direction": "long",
+          "take_profit": null,
+          "stop_loss": 0.04,
+          "hold_bars": 30,
+          "trend_filter": true,
+          "optimized": "PF 3.86, +252%, DD 29.4% (SL=4%, Hold=30)"
+        },
+        {
+          "id": "rsi_oversold_bounce",
+          "pattern": "rsi_oversold_bounce",
+          "direction": "long",
+          "take_profit": 0.01,
+          "stop_loss": 0.02,
+          "hold_bars": 15,
+          "trend_filter": true,
+          "reentry_confirm_days": 5,
+          "optimized": "PF inf, +44.0%, DD 0.0% (TP=1%, Hold=15) | backtest_20260327_210209 | SL=2% added for safety"
+        },
+        {
+          "id": "crash_rebound",
+          "pattern": "crash_rebound",
+          "direction": "long",
+          "take_profit": null,
+          "stop_loss": 0.01,
+          "hold_bars": 15,
+          "trend_filter": true,
+          "reentry_confirm_days": 5,
+          "optimized": "PF 2.34, +114.2%, DD 28.5% (SL=1%, Hold=15) | backtest_20260327_221754"
+        },
+        {
+          "id": "double_top",
+          "pattern": "double_top",
+          "direction": "short",
+          "take_profit": null,
+          "stop_loss": 0.04,
+          "hold_bars": 30,
+          "trend_filter": true,
+          "enabled": false,
+          "note": "Phase 1: BTC double_bottom の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: 上昇相場バイアスにより全パターンで PF<1.3 / Calmar<0.5"
+        },
+        {
+          "id": "rsi_overbought_reversal",
+          "pattern": "rsi_overbought_reversal",
+          "direction": "short",
+          "take_profit": 0.01,
+          "stop_loss": 0.02,
+          "hold_bars": 15,
+          "trend_filter": false,
+          "enabled": false,
+          "note": "Phase 1: BTC rsi_oversold_bounce の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: 上昇相場バイアスにより全パターンで PF<1.3 / Calmar<0.5"
+        },
+        {
+          "id": "rally_top",
+          "pattern": "rally_top",
+          "direction": "short",
+          "take_profit": null,
+          "stop_loss": 0.01,
+          "hold_bars": 15,
+          "trend_filter": false,
+          "enabled": false,
+          "note": "Phase 1: BTC crash_rebound の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: 上昇相場バイアスにより全パターンで PF<1.3 / Calmar<0.5"
+        }
+      ],
+      "result_dir": "backtest_20260325_194746"
+    },
+    "ETH-USDT": {
+      "strategies": [
+        {
+          "id": "double_bottom",
+          "pattern": "double_bottom_v3_neckline",
+          "direction": "long",
+          "take_profit": null,
+          "stop_loss": 0.025,
+          "hold_bars": 40,
+          "trend_filter": true,
+          "optimized": "PF 2.49, +97%, DD 16.2% (SL=2.5%, Hold=40)"
+        },
+        {
+          "id": "rsi_oversold_bounce",
+          "pattern": "rsi_oversold_bounce",
+          "direction": "long",
+          "take_profit": null,
+          "stop_loss": 0.01,
+          "hold_bars": 50,
+          "trend_filter": false,
+          "optimized": "PF 2.91, +121.6%, DD 24.0% (SL=1%, Hold=50) | backtest_20260327_211515"
+        },
+        {
+          "id": "crash_rebound",
+          "pattern": "crash_rebound",
+          "direction": "long",
+          "take_profit": null,
+          "stop_loss": 0.01,
+          "hold_bars": 20,
+          "trend_filter": false,
+          "optimized": "PF 1.81, +79.1%, DD 30.0% (SL=1%, Hold=20) | backtest_20260327_221758"
+        },
+        {
+          "id": "double_top",
+          "pattern": "double_top",
+          "direction": "short",
+          "take_profit": null,
+          "stop_loss": 0.025,
+          "hold_bars": 40,
+          "trend_filter": true,
+          "enabled": false,
+          "note": "Phase 1: ETH double_bottom の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: PF=1.08 で基準未到達（DD<=30%制約下）"
+        },
+        {
+          "id": "rsi_overbought_reversal",
+          "pattern": "rsi_overbought_reversal",
+          "direction": "short",
+          "take_profit": null,
+          "stop_loss": 0.01,
+          "hold_bars": 50,
+          "trend_filter": false,
+          "enabled": false,
+          "note": "Phase 1: ETH rsi_oversold_bounce の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: Calmar=0.224 で基準未到達"
+        },
+        {
+          "id": "rally_top",
+          "pattern": "rally_top",
+          "direction": "short",
+          "take_profit": null,
+          "stop_loss": 0.005,
+          "hold_bars": 15,
+          "trend_filter": false,
+          "enabled": true,
+          "optimized": "Phase 1 optimal (DD<=30%): TP=None, SL=0.5%, Hold=15. PF=2.12, Return=+54%, DD=28%, Calmar=1.930 | 採用"
+        }
+      ],
+      "result_dir": "backtest_20260325_201508"
+    },
+    "SOL-USDT": {
+      "strategies": [
+        {
+          "id": "double_bottom",
+          "pattern": "double_bottom_v3_neckline",
+          "direction": "long",
+          "take_profit": 0.04,
+          "stop_loss": 0.02,
+          "hold_bars": 15,
+          "trend_filter": true,
+          "optimized": "PF 3.63, +77%, DD 19.9% (TP=4%, Hold=15) | SL=2% added for safety"
+        },
+        {
+          "id": "rsi_oversold_bounce",
+          "pattern": "rsi_oversold_bounce",
+          "direction": "long",
+          "take_profit": 0.01,
+          "stop_loss": 0.02,
+          "hold_bars": 10,
+          "trend_filter": false,
+          "optimized": "PF inf, +44.0%, DD 0.0% (TP=1%, Hold=10) | backtest_20260327_214620 | SL=2% added for safety"
+        },
+        {
+          "id": "crash_rebound",
+          "pattern": "crash_rebound",
+          "direction": "long",
+          "take_profit": 0.01,
+          "stop_loss": 0.02,
+          "hold_bars": 5,
+          "trend_filter": false,
+          "optimized": "PF 3.56, +44.3%, DD 7.6% (TP=1%, Hold=5) | backtest_20260327_225516 | SL=2% added for safety"
+        },
+        {
+          "id": "double_top",
+          "pattern": "double_top",
+          "direction": "short",
+          "take_profit": 0.04,
+          "stop_loss": 0.02,
+          "hold_bars": 15,
+          "trend_filter": true,
+          "enabled": false,
+          "note": "Phase 1: SOL double_bottom の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: DD<=30%制約下で PF≤1.04 と収益性不足"
+        },
+        {
+          "id": "rsi_overbought_reversal",
+          "pattern": "rsi_overbought_reversal",
+          "direction": "short",
+          "take_profit": 0.01,
+          "stop_loss": 0.02,
+          "hold_bars": 10,
+          "trend_filter": false,
+          "enabled": false,
+          "note": "Phase 1: SOL rsi_oversold_bounce の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: DD<=30%制約下で PF≤1.04 と収益性不足"
+        },
+        {
+          "id": "rally_top",
+          "pattern": "rally_top",
+          "direction": "short",
+          "take_profit": 0.01,
+          "stop_loss": 0.02,
+          "hold_bars": 5,
+          "trend_filter": false,
+          "enabled": false,
+          "note": "Phase 1: SOL crash_rebound の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: DD<=30%制約下で PF≤1.04 と収益性不足"
+        }
+      ],
+      "result_dir": "backtest_20260325_204339"
+    },
+    "XRP-USDT": {
+      "strategies": [
+        {
+          "id": "double_bottom",
+          "pattern": "double_bottom_v7_precision",
+          "direction": "long",
+          "take_profit": null,
+          "stop_loss": 0.04,
+          "hold_bars": 15,
+          "trend_filter": true,
+          "optimized": "PF 3.17, +157%, DD 25.2% (SL=4%, Hold=15)"
+        },
+        {
+          "id": "rsi_oversold_bounce",
+          "pattern": "rsi_oversold_bounce",
+          "direction": "long",
+          "take_profit": 0.015,
+          "stop_loss": 0.02,
+          "hold_bars": 5,
+          "trend_filter": false,
+          "optimized": "PF 1.07, +4.4%, DD 27.3% (TP=1.5%, Hold=5) | backtest_20260327_214625 | NOTE: 低Calmar(0.160) 様子見推奨 | SL=2% added for safety"
+        },
+        {
+          "id": "crash_rebound",
+          "pattern": "crash_rebound",
+          "direction": "long",
+          "take_profit": 0.10,
+          "stop_loss": 0.015,
+          "hold_bars": 5,
+          "trend_filter": false,
+          "optimized": "PF 0.88, -14.4%, DD 28.6% (TP=10%, SL=1.5%, Hold=5) | backtest_20260327_225520 | WARNING: 負Calmar(-0.503) 無効化推奨"
+        },
+        {
+          "id": "double_top",
+          "pattern": "double_top",
+          "direction": "short",
+          "take_profit": 0.01,
+          "stop_loss": null,
+          "hold_bars": 30,
+          "trend_filter": true,
+          "enabled": true,
+          "optimized": "Phase 1 optimal (DD<=30%): TP=1%, SL=None, Hold=30. PF=4.89, Return=+42.65%, DD=10.95%, Calmar=3.895 | XRP単独採用（戦略合否は不合格）"
+        },
+        {
+          "id": "rsi_overbought_reversal",
+          "pattern": "rsi_overbought_reversal",
+          "direction": "short",
+          "take_profit": 0.015,
+          "stop_loss": 0.02,
+          "hold_bars": 5,
+          "trend_filter": false,
+          "enabled": false,
+          "note": "Phase 1: XRP rsi_oversold_bounce の鏡像。バックテスト後に最適化予定 | Phase 1 不採用: PF=1.52 は合格水準だが、rally_top/double_top が圧倒的に優秀"
+        },
+        {
+          "id": "rally_top",
+          "pattern": "rally_top",
+          "direction": "short",
+          "take_profit": 0.02,
+          "stop_loss": null,
+          "hold_bars": 25,
+          "trend_filter": false,
+          "enabled": true,
+          "optimized": "Phase 1 optimal (DD<=30%): TP=2%, SL=None, Hold=25. PF=4.84, Return=+82.84%, DD=8.76%, Calmar=9.457 | 採用"
+        }
+      ],
+      "result_dir": "backtest_20260325_211229"
+    },
+
+    "USD-JPY": {
+      "asset_class": "fx",
+      "exchange": "saxo",
+      "supported_exchanges": ["saxo_sim", "saxo", "oanda_demo", "oanda"],
+      "strategies": [
+        {
+          "id": "double_bottom",
+          "pattern": "double_bottom_v3_neckline",
+          "direction": "long",
+          "take_profit": 0.005,
+          "stop_loss": 0.003,
+          "hold_bars": 10,
+          "trend_filter": true,
+          "note": "FX Phase1: TP/SLは暗号資産より小さい値（ボラティリティが低いため）。バックテスト後に最適化予定"
+        },
+        {
+          "id": "rsi_oversold_bounce",
+          "pattern": "rsi_oversold_bounce",
+          "direction": "long",
+          "take_profit": 0.003,
+          "stop_loss": 0.002,
+          "hold_bars": 5,
+          "trend_filter": false,
+          "note": "FX Phase1: 短期RSIバウンス。バックテスト後に最適化予定"
+        }
+      ]
+    },
+    "EUR-JPY": {
+      "asset_class": "fx",
+      "exchange": "saxo",
+      "supported_exchanges": ["saxo_sim", "saxo", "oanda_demo", "oanda"],
+      "strategies": [
+        {
+          "id": "double_bottom",
+          "pattern": "double_bottom_v3_neckline",
+          "direction": "long",
+          "take_profit": 0.005,
+          "stop_loss": 0.003,
+          "hold_bars": 10,
+          "trend_filter": true,
+          "note": "FX Phase1: USD/JPYよりボラが大きいため同パラメータで開始。バックテスト後に最適化予定"
+        }
+      ]
+    }
+  },
+  "optimization_summary": {
+    "method": "Grid search (extended: 11xTP x 9xSL x 8xHold = 792 combos per currency)",
+    "scoring": "Calmar ratio (Return / MaxDD)",
+    "dd_constraint": "MaxDD <= 30%",
+    "key_finding": "SLのみ（利確なし）で損失を限定し利益を伸ばす戦略が最も効果的。DD 64-92% → 16-29%に改善。",
+    "new_strategies_2026_03_28": {
+      "rsi_oversold_bounce": "BTC/SOL: TP=1%が効果的（DD=0%）。ETH: SL=1%+長期保有で安定。XRP: 低Calmarのため様子見",
+      "crash_rebound": "BTC/ETH: SL=1%で安定（DD30%以下）。SOL: TP=1%+超短期で高PF(3.56)。XRP: 負Calmarのため無効化推奨"
+    }
+  }
+}

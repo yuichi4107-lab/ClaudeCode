@@ -124,7 +124,7 @@ def post_one(item_id: str, *, retry_failed: bool = False) -> int:
 def main() -> int:
     drive_guard.install()
     CONFIG.assert_runtime_ready()
-    ap = argparse.ArgumentParser(description="承認済みシート動画を1件だけ投稿する")
+    ap = argparse.ArgumentParser(description="承認済みショート動画を1件だけ投稿する")
     ap.add_argument("item_id")
     ap.add_argument("--retry-failed", action="store_true")
     args = ap.parse_args()

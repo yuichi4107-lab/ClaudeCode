@@ -43,6 +43,7 @@ def server_tokubetsu_kai():
 def server_tokubetsu_uri():
     return KabuMockServer(scenario="tokubetsu_uri", seed=42)
 
+
 # ---------------------------------------------------------------------------
 # トークン
 # ---------------------------------------------------------------------------
@@ -62,7 +63,7 @@ class TestGetToken:
 # ---------------------------------------------------------------------------
 
 class TestBoardResponseFormat:
-    """公式 kabu API レスポンス形式との一致を検証す"""
+    """公式 kabu API レスポンス形式との一致を検証する"""
 
     REQUIRED_FIELDS = [
         "Symbol", "SymbolName", "Exchange",
@@ -76,7 +77,7 @@ class TestBoardResponseFormat:
     def test_required_fields_present(self, server):
         board = server.get_board("7203")
         for field in self.REQUIRED_FIELDS:
-            assert field in board, f"必褈フィールド '{field}' がありません"
+            assert field in board, f"必須フィールド '{field}' がありません"
 
     def test_sell_levels_1_to_10(self, server):
         """Sell1〜Sell10 が全て存在すること"""
@@ -97,12 +98,12 @@ class TestBoardResponseFormat:
             assert "Qty" in board[key]
 
     def test_sell1_has_sign_field(self, server):
-        """Sell1 に Sign フエールドがあること"""
+        """Sell1 に Sign フィールドがあること"""
         board = server.get_board("7203")
         assert "Sign" in board["Sell1"]
 
     def test_buy1_has_sign_field(self, server):
-        """Buy1 に Sign フエールドがあること"""
+        """Buy1 に Sign フィールドがあること"""
         board = server.get_board("7203")
         assert "Sign" in board["Buy1"]
 
@@ -138,17 +139,17 @@ class TestScenarios:
         assert board["AskSign"] == SIGN_NORMAL
 
     def test_buy_dominant_under_buy_gt_over_sell(self, server_buy):
-        """買い優刢: UnderBuy > OverSell であること"""
+        """買い優勢: UnderBuy > OverSell であること"""
         board = server_buy.get_board("7203")
         assert board["UnderBuy"] > board["OverSell"]
 
     def test_tokubetsu_kai_ask_sign(self, server_tokubetsu_kai):
-        """特別買ぁ気配: AskSign = 0103 であること"""
+        """特別買い気配: AskSign = 0103 であること"""
         board = server_tokubetsu_kai.get_board("7203")
         assert board["AskSign"] == SIGN_TOKUBETSU_KAI
 
     def test_tokubetsu_uri_bid_sign(self, server_tokubetsu_uri):
-        """特別売芹曗配: BidSign = 0104 であること"""
+        """特別売り気配: BidSign = 0104 であること"""
         board = server_tokubetsu_uri.get_board("7203")
         assert board["BidSign"] == SIGN_TOKUBETSU_URI
 
@@ -161,11 +162,11 @@ class TestScenarios:
         board_buy = server.get_board("7203", scenario="buy_dominant")
         board_normal = server.get_board("7203", scenario="normal")
         # buy_dominant では UnderBuy > OverSell になるはず
-        assert board_buy["UnderBuy"] >= board_normal["UnderBuy"] or True  # 乱数佝存のため緩く碪認
+        assert board_buy["UnderBuy"] >= board_normal["UnderBuy"] or True  # 乱数依存のため緩く確認
 
 
 # ---------------------------------------------------------------------------
-# 板順库・整合性テスト
+# 板順序・整合性テスト
 # ---------------------------------------------------------------------------
 
 class TestBoardLevels:
@@ -179,7 +180,7 @@ class TestBoardLevels:
         """Buy 板は価格が降順であること（Buy1 > Buy2 > ... > Buy10）"""
         board = server.get_board("7203")
         prices = [board[f"Buy{i}"]["Price"] for i in range(1, 11)]
-        assert prices == sorted(prices, reverse=True), f"Buy板の価格が降要でありません: {prices}"
+        assert prices == sorted(prices, reverse=True), f"Buy板の価格が降順でありません: {prices}"
 
     def test_qty_positive(self, server):
         """全板の数量が正の整数であること"""
@@ -190,7 +191,7 @@ class TestBoardLevels:
 
 
 # ---------------------------------------------------------------------------
-# 再珦性テスト（seed 固定）
+# 再現性テスト（seed 固定）
 # ---------------------------------------------------------------------------
 
 class TestReproducibility:
@@ -201,7 +202,7 @@ class TestReproducibility:
         assert s1.get_board("7203") == s2.get_board("7203")
 
     def test_different_seed_different_result(self):
-        """異なるsードでは異なる結果になること（CalcPrice 等）"""
+        """異なるシードでは異なる結果になること（CalcPrice 等）"""
         s1 = KabuMockServer(scenario="normal", seed=1)
         s2 = KabuMockServer(scenario="normal", seed=2)
         b1 = s1.get_board("7203")
