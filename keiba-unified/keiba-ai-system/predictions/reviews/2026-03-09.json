@@ -1,0 +1,151 @@
+{
+  "date": "2026-03-09",
+  "strategies": {
+    "◎本命": {
+      "bets": 12,
+      "hits": 12,
+      "hit_rate": 1.0,
+      "investment": 1200,
+      "payout": 0,
+      "return_rate": 0.0,
+      "profit": -1200
+    },
+    "◎○上位2頭": {
+      "bets": 24,
+      "hits": 12,
+      "hit_rate": 0.5,
+      "investment": 2400,
+      "payout": 0,
+      "return_rate": 0.0,
+      "profit": -2400
+    },
+    "★期待値>1.0": {
+      "bets": 0,
+      "hits": 0,
+      "hit_rate": 0,
+      "investment": 0,
+      "payout": 0,
+      "return_rate": 0,
+      "profit": 0
+    },
+    "◎○▲上位3頭": {
+      "bets": 36,
+      "hits": 12,
+      "hit_rate": 0.3333333333333333,
+      "investment": 3600,
+      "payout": 0,
+      "return_rate": 0.0,
+      "profit": -3600
+    }
+  },
+  "race_details": [
+    {
+      "race_no": "1",
+      "pred_name": "シンエイパーク",
+      "pred_num": 1,
+      "pred_rank_result": 1,
+      "winner_name": "シンエイパーク",
+      "winner_num": 1,
+      "hit": true
+    },
+    {
+      "race_no": "2",
+      "pred_name": "アルバノチエチャン",
+      "pred_num": 5,
+      "pred_rank_result": 1,
+      "winner_name": "アルバノチエチャン",
+      "winner_num": 5,
+      "hit": true
+    },
+    {
+      "race_no": "3",
+      "pred_name": "ジェイメーカー",
+      "pred_num": 7,
+      "pred_rank_result": 1,
+      "winner_name": "ジェイメーカー",
+      "winner_num": 7,
+      "hit": true
+    },
+    {
+      "race_no": "4",
+      "pred_name": "ヤマトリキ",
+      "pred_num": 5,
+      "pred_rank_result": 1,
+      "winner_name": "ヤマトリキ",
+      "winner_num": 5,
+      "hit": true
+    },
+    {
+      "race_no": "5",
+      "pred_name": "トップシャイン",
+      "pred_num": 3,
+      "pred_rank_result": 1,
+      "winner_name": "トップシャイン",
+      "winner_num": 3,
+      "hit": true
+    },
+    {
+      "race_no": "6",
+      "pred_name": "イワキマッシクラ",
+      "pred_num": 9,
+      "pred_rank_result": 1,
+      "winner_name": "イワキマッシクラ",
+      "winner_num": 9,
+      "hit": true
+    },
+    {
+      "race_no": "7",
+      "pred_name": "イチマツ",
+      "pred_num": 2,
+      "pred_rank_result": 1,
+      "winner_name": "イチマツ",
+      "winner_num": 2,
+      "hit": true
+    },
+    {
+      "race_no": "8",
+      "pred_name": "マサノスパークル",
+      "pred_num": 6,
+      "pred_rank_result": 1,
+      "winner_name": "マサノスパークル",
+      "winner_num": 6,
+      "hit": true
+    },
+    {
+      "race_no": "9",
+      "pred_name": "ジェイクイン",
+      "pred_num": 3,
+      "pred_rank_result": 1,
+      "winner_name": "ジェイクイン",
+      "winner_num": 3,
+      "hit": true
+    },
+    {
+      "race_no": "10",
+      "pred_name": "サクラジョージ",
+      "pred_num": 3,
+      "pred_rank_result": 1,
+      "winner_name": "サクラジョージ",
+      "winner_num": 3,
+      "hit": true
+    },
+    {
+      "race_no": "11",
+      "pred_name": "ジェイホースワン",
+      "pred_num": 2,
+      "pred_rank_result": 1,
+      "winner_name": "ジェイホースワン",
+      "winner_num": 2,
+      "hit": true
+    },
+    {
+      "race_no": "12",
+      "pred_name": "ホクセイウンカキ",
+      "pred_num": 9,
+      "pred_rank_result": 1,
+      "winner_name": "ホクセイウンカキ",
+      "winner_num": 9,
+      "hit": true
+    }
+  ]
+}

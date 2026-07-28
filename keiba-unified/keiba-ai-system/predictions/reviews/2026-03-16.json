@@ -1,0 +1,151 @@
+{
+  "date": "2026-03-16",
+  "strategies": {
+    "◎本命": {
+      "bets": 12,
+      "hits": 1,
+      "hit_rate": 0.08333333333333333,
+      "investment": 1200,
+      "payout": 420,
+      "return_rate": 0.35,
+      "profit": -780
+    },
+    "◎○上位2頭": {
+      "bets": 24,
+      "hits": 4,
+      "hit_rate": 0.16666666666666666,
+      "investment": 2400,
+      "payout": 2650,
+      "return_rate": 1.1041666666666667,
+      "profit": 250
+    },
+    "★期待値>1.0": {
+      "bets": 15,
+      "hits": 2,
+      "hit_rate": 0.13333333333333333,
+      "investment": 1500,
+      "payout": 1690,
+      "return_rate": 1.1266666666666667,
+      "profit": 190
+    },
+    "◎○▲上位3頭": {
+      "bets": 36,
+      "hits": 6,
+      "hit_rate": 0.16666666666666666,
+      "investment": 3600,
+      "payout": 3970,
+      "return_rate": 1.1027777777777779,
+      "profit": 370
+    }
+  },
+  "race_details": [
+    {
+      "race_no": "1",
+      "pred_name": "タカラエビス",
+      "pred_num": 6,
+      "pred_rank_result": 2,
+      "winner_name": "マルホンポナ",
+      "winner_num": 7,
+      "hit": false
+    },
+    {
+      "race_no": "2",
+      "pred_name": "イワキハレワタリ",
+      "pred_num": 6,
+      "pred_rank_result": 6,
+      "winner_name": "トウヤノハッピー",
+      "winner_num": 1,
+      "hit": false
+    },
+    {
+      "race_no": "3",
+      "pred_name": "イワキミハル",
+      "pred_num": 2,
+      "pred_rank_result": 8,
+      "winner_name": "マツノゴウリキ",
+      "winner_num": 1,
+      "hit": false
+    },
+    {
+      "race_no": "4",
+      "pred_name": "アンペラール",
+      "pred_num": 5,
+      "pred_rank_result": 6,
+      "winner_name": "キタノレンザン",
+      "winner_num": 3,
+      "hit": false
+    },
+    {
+      "race_no": "5",
+      "pred_name": "マルオテンガール",
+      "pred_num": 8,
+      "pred_rank_result": 2,
+      "winner_name": "フォルゴーレ",
+      "winner_num": 6,
+      "hit": false
+    },
+    {
+      "race_no": "6",
+      "pred_name": "マキシゴールド",
+      "pred_num": 8,
+      "pred_rank_result": 4,
+      "winner_name": "アアモンドサン",
+      "winner_num": 5,
+      "hit": false
+    },
+    {
+      "race_no": "7",
+      "pred_name": "ジェイイサム",
+      "pred_num": 2,
+      "pred_rank_result": 2,
+      "winner_name": "不明",
+      "winner_num": 0,
+      "hit": false
+    },
+    {
+      "race_no": "8",
+      "pred_name": "サカノフクムスメ",
+      "pred_num": 1,
+      "pred_rank_result": 2,
+      "winner_name": "キョウエイハンター",
+      "winner_num": 4,
+      "hit": false
+    },
+    {
+      "race_no": "9",
+      "pred_name": "シュゲンドウ",
+      "pred_num": 1,
+      "pred_rank_result": 4,
+      "winner_name": "ニジイロアオゾラ",
+      "winner_num": 2,
+      "hit": false
+    },
+    {
+      "race_no": "10",
+      "pred_name": "プラチナガール",
+      "pred_num": 7,
+      "pred_rank_result": 3,
+      "winner_name": "ジェイホースサン",
+      "winner_num": 1,
+      "hit": false
+    },
+    {
+      "race_no": "11",
+      "pred_name": "トウケイレーヴ",
+      "pred_num": 9,
+      "pred_rank_result": 1,
+      "winner_name": "トウケイレーヴ",
+      "winner_num": 9,
+      "hit": true
+    },
+    {
+      "race_no": "12",
+      "pred_name": "ホクセイタケタカラ",
+      "pred_num": 9,
+      "pred_rank_result": 3,
+      "winner_name": "サカノテンリュウ",
+      "winner_num": 1,
+      "hit": false
+    }
+  ]
+}

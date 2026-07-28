@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>音声録音アプリ</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- エラーバナー -->
+  <div id="error-banner" class="error-banner hidden" role="alert" aria-live="assertive">
+    <span id="error-message"></span>
+    <button id="error-close" class="error-close" aria-label="エラーを閉じる">×</button>
+  </div>
+
+  <div class="app-container">
+    <header class="app-header">
+      <h1>音声録音アプリ</h1>
+    </header>
+
+    <main>
+      <!-- マイクデバイス選択 -->
+      <section class="device-section card" aria-label="マイク設定">
+        <label for="mic-select" class="section-label">マイクデバイス</label>
+        <div class="device-row">
+          <select id="mic-select" aria-label="使用するマイクを選択">
+            <option value="">デフォルトマイク</option>
+          </select>
+          <button id="refresh-devices" class="btn btn-secondary btn-sm" aria-label="デバイス一覧を更新">
+            更新
+          </button>
+        </div>
+      </section>
+
+      <!-- 録音コントロール -->
+      <section class="recorder-section card" aria-label="録音コントロール">
+        <!-- タイマー -->
+        <div class="timer-display" aria-live="polite" aria-label="経過時間">
+          <span id="timer">00:00</span>
+          <span id="rec-dot" class="rec-dot hidden" aria-hidden="true"></span>
+        </div>
+
+        <!-- 波形キャンバス -->
+        <div class="visualizer-wrapper">
+          <canvas id="visualizer" aria-label="音量メーター" role="img"></canvas>
+          <p id="visualizer-hint" class="visualizer-hint">録音開始で波形を表示します</p>
+        </div>
+
+        <!-- ボタン群 -->
+        <div class="controls" role="group" aria-label="録音操作">
+          <button id="btn-record" class="btn btn-primary btn-record" aria-label="録音開始">
+            <span class="btn-icon" aria-hidden="true">&#9679;</span>
+            録音開始
+          </button>
+          <button id="btn-pause" class="btn btn-secondary" aria-label="一時停止" disabled>
+            <span class="btn-icon" aria-hidden="true">&#9646;&#9646;</span>
+            一時停止
+          </button>
+          <button id="btn-stop" class="btn btn-danger" aria-label="停止" disabled>
+            <span class="btn-icon" aria-hidden="true">&#9632;</span>
+            停止
+          </button>
+        </div>
+
+        <!-- 録音状態ラベル -->
+        <p id="recording-status" class="recording-status" aria-live="polite"></p>
+      </section>
+
+      <!-- 録音リスト -->
+      <section class="list-section" aria-label="録音リスト">
+        <div class="list-header">
+          <h2 class="section-title">録音リスト</h2>
+          <span id="recordings-count" class="recordings-count" aria-live="polite"></span>
+        </div>
+        <ul id="recording-list" class="recording-list" aria-label="録音済みファイル一覧">
+          <li id="empty-message" class="empty-message">録音がまだありません</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <!-- 録音リスト項目テンプレート -->
+  <template id="recording-item-tpl">
+    <li class="recording-item">
+      <div class="recording-header">
+        <!-- 表示モード -->
+        <div class="name-display">
+          <span class="recording-name"></span>
+          <button class="btn btn-icon rename-btn" aria-label="名前を変更する" title="名前を変更">
+            &#9998;
+          </button>
+        </div>
+        <!-- 編集モード（初期非表示） -->
+        <div class="name-edit hidden">
+          <input type="text" class="rename-input" aria-label="新しい録音名を入力" />
+          <button class="btn btn-primary btn-sm rename-ok" aria-label="名前変更を確定">確定</button>
+          <button class="btn btn-secondary btn-sm rename-cancel" aria-label="名前変更をキャンセル">キャンセル</button>
+        </div>
+        <div class="recording-meta">
+          <span class="recording-date"></span>
+          <span class="recording-duration"></span>
+        </div>
+      </div>
+      <audio class="recording-player" controls></audio>
+      <div class="recording-actions" role="group" aria-label="録音ファイル操作">
+        <a class="btn btn-secondary btn-sm dl-webm" download aria-label="WebM形式でダウンロード">
+          &#8615; WebM
+        </a>
+        <a class="btn btn-secondary btn-sm dl-wav" download aria-label="WAV形式でダウンロード">
+          &#8615; WAV
+        </a>
+        <button class="btn btn-danger btn-sm delete-btn" aria-label="この録音を削除">
+          削除
+        </button>
+      </div>
+    </li>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -14,7 +14,7 @@ cd jp-daytrade
 pip install -r requirements.txt
 ```
 
-### 2. 設定フイル作成
+### 2. 設定ファイル作成
 
 ```bash
 cp config/kabu_config.env.example config/.env
