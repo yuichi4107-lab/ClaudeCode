@@ -1,42 +1,117 @@
-"""jra DBの表記を win5 の語彙へ正規化する純粋関数群"""
+"""競馬場・レース関連の定数マスタ"""
 
-from config.venues import VENUE_NAME_TO_CODE, RACE_CLASS, SURFACE_TYPES
-
-# jra の class 表記 → win5 RACE_CLASS のキー
-CLASS_ALIASES = {
-    "1勝": "1勝クラス",
-    "2勝": "2勝クラス",
-    "3勝": "3勝クラス",
-    "OP": "オープン",
+# ──────────────────────────────────────
+# 競馬場コード (netkeiba準拠)
+# ──────────────────────────────────────
+VENUE_CODE = {
+    "01": "札幌",
+    "02": "函館",
+    "03": "福島",
+    "04": "新潟",
+    "05": "東京",
+    "06": "中山",
+    "07": "中京",
+    "08": "京都",
+    "09": "阪神",
+    "10": "小倉",
 }
 
+VENUE_NAME_TO_CODE = {v: k for k, v in VENUE_CODE.items()}
 
-def normalize_class(jra_class: str) -> tuple[str, int]:
-    """jra の class 文字列 → (win5クラス名, クラスコード)"""
-    name = CLASS_ALIASES.get((jra_class or "").strip(), (jra_class or "").strip())
-    return name, RACE_CLASS.get(name, 0)
+# ──────────────────────────────────────
+# 馬場種類
+# ──────────────────────────────────────
+SURFACE_TYPES = {
+    "芝": "turf",
+    "ダ": "dirt",
+    "ダート": "dirt",
+    "障": "jump",
+    "障害": "jump",
+}
+
+# ──────────────────────────────────────
+# 馬場状態
+# ──────────────────────────────────────
+TRACK_CONDITIONS = {
+    "良": "good",
+    "稍": "slightly_heavy",
+    "稍重": "slightly_heavy",
+    "重": "heavy",
+    "不": "bad",
+    "不良": "bad",
+}
+
+TRACK_CONDITION_ORDER = {"good": 0, "slightly_heavy": 1, "heavy": 2, "bad": 3}
+
+# ──────────────────────────────────────
+# クラス
+# ──────────────────────────────────────
+RACE_CLASS = {
+    "新馬": 1,
+    "未勝利": 2,
+    "1勝クラス": 3,
+    "2勝クラス": 4,
+    "3勝クラス": 5,
+    "オープン": 6,
+    "リスッド": 7,
+    "G3": 8,
+    "G2": 9,
+    "G1": 10,
+    "GIII": 8,
+    "GII": 9,
+    "GI": 10,
+}
+
+# ──────────────────────────────────────
+# 距離カテゴリ
+# ──────────────────────────────────────
+def distance_category(distance_m: int) -> str:
+    """距離をカテゴリに変換する"""
+    if distance_m <= 1400:
+        return "sprint"
+    elif distance_m <= 1800:
+        return "mile"
+    elif distance_m <= 2200:
+        return "intermediate"
+    elif distance_m <= 2800:
+        return "long"
+    else:
+        return "extended"
 
 
-def split_sex_age(sex_age: str) -> tuple[str, int]:
-    """'牝3' → ('牝', 3)。空なら ('', 0)"""
-    s = (sex_age or "").strip()
-    if not s:
-        return "", 0
-    sex = s[0]
-    digits = "".join(ch for ch in s[1:] if ch.isdigit())
-    return sex, int(digits) if digits else 0
+DISTANCE_CATEGORIES = {
+    "sprint": "短距離",
+    "mile": "マイル",
+    "intermediate": "中距離",
+    "long": "長距離",
+    "extended": "超長距離",
+}
 
+# ──────────────────────────────────────
+# 脚質
+# ──────────────────────────────────────
+RUNNING_STYLES = {
+    "逃げ": "front_runner",
+    "先行": "stalker",
+    "差し": "closer",
+    "追込": "deep_closer",
+}
 
-def normalize_surface(surface: str) -> str:
-    """'ダート'→'dirt', '芝'→'turf'。未知は ''"""
-    return SURFACE_TYPES.get((surface or "").strip(), "")
+# ──────────────────────────────────────
+# 性別・年齢条件
+# ──────────────────────────────────────
+SEX_MAP = {"牡": "male", "牝": "female", "セ": "gelding"}
 
-
-def venue_code_from_race_id(race_id: str) -> str:
-    """netkeiba 12桁レースIDの会場コード2桁を返す（例: '2026 06 ...' → '06'）"""
-    return race_id[4:6] if race_id and len(race_id) >= 6 else ""
-
-
-def venue_name_to_code(venue_name: str) -> str:
-    """会場名 → コード。未知で ''"""
-    return VENUE_NAME_TO_CODE.get((venue_name or "").strip(), "")
+# ──────────────────────────────────────
+# 枠番カラー
+# ──────────────────────────────────────
+POST_POSITION_COLORS = {
+    1: "white",
+    2: "black",
+    3: "red",
+    4: "blue",
+    5: "yellow",
+    6: "green",
+    7: "orange",
+    8: "pink",
+}

@@ -1,0 +1,70 @@
+common:
+  initial_bankroll: 1000000
+  min_bet: 100
+  daily_loss_limit_pct: 0.10
+
+race_filter:
+  min_horse_count: 8
+  allowed_race_types: ["芝", "ダート"]
+  min_data_coverage: 0.80
+  score_weights:
+    model_confidence: 0.30
+    value_opportunity: 0.25
+    data_quality: 0.20
+    field_size: 0.15
+    historical_accuracy: 0.10
+  target_purchase_rate: 0.30
+
+strategy_1_value_betting:
+  enabled: true
+  bet_types: ["単勝", "複勝"]
+  min_expected_value: 1.25
+  min_model_probability: 0.08
+  odds_range: [2.0, 50.0]
+  min_horse_count: 8
+  max_targets_per_race: 3
+  kelly_fraction: 0.25
+  max_bet_pct: 0.05
+  win_ev_threshold: 1.30
+  place_ev_threshold: 1.15
+
+strategy_2_multi_combo:
+  enabled: true
+  bet_types: ["三連複"]
+  axis_min_top3_probability: 0.50
+  partner_min_top3_probability: 0.20
+  max_axis: 2
+  max_partners: 5
+  max_combinations: 20
+  min_composite_odds: 15.0
+  min_horse_count: 10
+  max_favorite_probability: 0.35
+  bet_pct: 0.02
+
+strategy_3_hybrid:
+  enabled: true
+  allocation:
+    複勝: 0.40
+    単勝: 0.20
+    馬連: 0.20
+    三連複: 0.20
+  min_confidence_score: 0.70
+  min_active_bet_types: 2
+  bet_pct: 0.03
+  daily_loss_stop_pct: 0.10
+
+strategy_4_upset_hunter:
+  enabled: true
+  bet_types: ["単勝", "複勝", "ワイド"]
+  min_popularity_rank: 6
+  min_odds: 10.0
+  model_vs_market_ratio: 2.0
+  min_top3_probability: 0.20
+  min_favorite_odds: 2.5
+  min_horse_count: 12
+  max_races_per_day: 5
+  bet_pct: 0.01
+  allocation:
+    単勝: 0.30
+    複勝: 0.30
+    ワイド: 0.40

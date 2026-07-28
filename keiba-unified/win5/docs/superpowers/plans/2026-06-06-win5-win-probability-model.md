@@ -70,7 +70,7 @@ git commit -m "chore(win5): import popularity package from onedrive (P2 baseline
 
 ---
 
-## Task 1: 時系列OOS分割（oos_split）
+## Task 1: 時系列OOS分割（oos_split.py）
 
 **Files:**
 - Create: `src/model/oos_split.py`
@@ -459,7 +459,7 @@ data/*.parquet
 data/_smoke.parquet
 ```
 
-- [ ] **Step 5: Commit（スカリ とロヨヨの如かみ）**
+- [ ] **Step 5: Commit（スクリプトとignoreのみ）**
 
 ```bash
 git add scripts/build_training_data.py win5/.gitignore
@@ -477,10 +477,10 @@ git commit -m "feat(win5-model): add training-data builder script"
 
 `scripts/train_win_model.py`:
 ```python
-"""較正済み1着確烇モデルを学習しOOSで人気ベースラインと比較する。
+"""較正済み1着確率モデルを学習し、OOSで人気ベースラインと比較する。
 
-合格条件(spec §6/§7 P2): OOSで モデル が ベースラインを Brier・LogLoss で下回り、
-かつ race-level top1_hit_rate で上回ること。&���たさなければ「ベースライン採用/撤退」を明示。
+合格条件(spec §6/§7 P2): OOSで モデルが ベースライン を Brier・LogLoss で下回り、
+かつ race-level top1_hit_rate で上回ること。満たさなければ「ベースライン採用/撤退」を明示。
 
 使い方:
   PYTHONPATH=src python scripts/train_win_model.py \
@@ -559,9 +559,9 @@ Run:
 ```bash
 PYTHONPATH=src python scripts/train_win_model.py --train data/features_train.parquet --oos data/features_oos.parquet
 ```
-Expected: 指標の比較表と `RESULT: PASS` または `RESULT: FAIL`。
+Expected: 4指標の比較表と `RESULT: PASS` または `RESULT: FAIL`。
 
-- [ ] **Step 3: 結果の美夎(合格ゲート）**
+- [ ] **Step 3: 結果の解釈（合格ゲート）**
 
 - `PASS` の場合: モデルはOOSで人気を上回る。次工程（P3: WIN5買い目最適化＋バックテスト）へ進める。
 - `FAIL` の場合: **これは失敗ではなく正直な発見**。spec §6 の通り「人気ベースライン採用」または「機械学習による妙味なし＝WIN5は実弾時期尚早」を結論として記録する。安易にOOS期間や指標を都合よく変えて`PASS`を捏造しないこと。
@@ -604,7 +604,7 @@ PYTHONPATH=src python scripts/train_win_model.py
 ```
 
 合格条件: OOSで Brier・LogLoss がベースライン未満かつ top1 的中率がベースライン以上。
-満そさなければ「ベースライン採用 or 撤退」を正直な結論とする（spec §6）。
+満たさなければ「ベースライン採用 or 撤退」を正直な結論とする（spec §6）。
 ```
 
 - [ ] **Step 3: Commit**
@@ -630,7 +630,7 @@ PASS なら P3（WIN5買い目最適化＋バックテスト）プランを作�
 ## Self-Review メモ（spec照合）
 
 - spec §6 確率較正必須 → Task 3 CalibratedWinModel
-- spec §6 ウォークフォード/OOSのみで評価 → Task 1 time_split + Task 5 OOS評価
+- spec §6 ウォークフォワード/OOSのみで評価 → Task 1 time_split + Task 5 OOS評価
 - spec §6 人気ベースライン超えを合格条件 → Task 2 + Task 5 比較ゲート
 - spec §7 P2 合格基準（OOS Brier/LogLoss較正OK・人気超え）→ Task 5 Step 2/3
 - spec §3 popularity の取込（P2前提）→ Task 0
