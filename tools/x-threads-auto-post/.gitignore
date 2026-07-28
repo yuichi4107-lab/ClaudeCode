@@ -1,0 +1,41 @@
+# Secrets / API Keys
+.env
+.env.local
+.env.*.local
+secrets/
+*.secret
+
+# .env.example は公開する（値なしのテンプレート）
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Claude Code 内部ファイル（コミット不要・機密）
+.claude/
+.agent-trace/
+.workflow_state.json
+SESSION_HANDOFF.md
+
+# 生成物・一時出力
+skills/nanobanana2/
+media/
+queue/
+
+# 内部ドキュメント・システム設定
+要件定義書_X投稿スキル.md
+.mcp.json
+skills/ナレッジ/
+.collaborator
