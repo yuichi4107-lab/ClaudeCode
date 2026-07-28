@@ -3,7 +3,8 @@
 Google Drive 上の作業ディレクトリ `YNFactory-cc`（Claude Code / Codex の共有作業場所）の内容を、このリポジトリに共有するためのインデックス。
 
 - Drive フォルダ: [YNFactory-cc](https://drive.google.com/drive/folders/1pTrN2vTBHiHLeYGt31zWSIofwgFjqF9M)
-- スナップショット取得日: 2026-07-27
+- スナップショット取得日: 2026-07-27（コード本体の取り込み: 2026-07-28）
+- **2026-07-28 更新**: 下記の全プロジェクトのコード・テキストファイルをこのリポジトリ直下に取り込み済み（画像・動画・DB・キャッシュ・`.env`等の秘匿ファイルは Drive 側のみ）。各ファイルは Drive の fileSize とのバイト数一致で検証済み
 - 同フォルダのルール本体はこのディレクトリ内の [`CLAUDE.md`](./CLAUDE.md) / [`AGENTS.md`](./AGENTS.md) / [`gitignore`](./gitignore)（Drive の `.gitignore` のコピー）を参照
 
 ## 運用ポリシー（Drive 側 CLAUDE.md より要約)
