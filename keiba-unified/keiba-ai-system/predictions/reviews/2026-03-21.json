@@ -89,13 +89,13 @@
       "pred_name": "ホクセイソウダネー",
       "pred_num": 3,
       "pred_rank_result": 4,
-      "winner_name": "ホクセイソウ�",
+      "winner_name": "ホクセイソウリ",
       "winner_num": 6,
       "hit": false
     },
     {
       "race_no": "7",
-      "pred_name": "アカイテイコウ",
+      "pred_name": "アルイテイコウ",
       "pred_num": 2,
       "pred_rank_result": 4,
       "winner_name": "サクラダイヤモンド",
@@ -104,10 +104,10 @@
     },
     {
       "race_no": "8",
-      "pred_name": "イノサケ",
+      "pred_name": "イノスケ",
       "pred_num": 6,
       "pred_rank_result": 1,
-      "winner_name": "イノサケ",
+      "winner_name": "イノスケ",
       "winner_num": 6,
       "hit": true
     },
@@ -122,7 +122,7 @@
     },
     {
       "race_no": "10",
-      "pred_name": "タカラウンカイ",
+      "pred_name": "タカラウンカヤ",
       "pred_num": 7,
       "pred_rank_result": 7,
       "winner_name": "コーワホープ",
@@ -140,10 +140,10 @@
     },
     {
       "race_no": "12",
-      "pred_name": "スターイチバン",
+      "pred_name": "スターフェニックス",
       "pred_num": 4,
       "pred_rank_result": 8,
-      "winner_name": "ジェイファイター",
+      "winner_name": "ジェイフェニックス",
       "winner_num": 3,
       "hit": false
     }
