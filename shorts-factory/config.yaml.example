@@ -59,4 +59,17 @@ seedance:
   model: fast                   # std ($0.112/s) | fast ($0.09/s)
   resolution: 720p
   ratio: "9:16"
-  audio_mode: voicevox          # voicevox=日本語TTSで差し替え
+  audio_mode: voicevox          # voicevox=日本語TTSで差し替える | native=Seedance音声を使う
+  generate_audio: false         # 音声はVOICEVOXで差し替え、Seedance音声は使わない
+  voicevox_speaker_id: 13       # 青山龍星（ノーマル）
+  voicevox_speaker_credit: "VOICEVOX:青山龍星"
+  watermark: false
+  seed: 42                      # 固定するとカット間のスタイル一貫性が上がる
+  cut_duration_sec: 10
+  poll_interval_sec: 15
+  timeout_sec: 1800             # 1カットあたりのポーリングタイムアウト（秒）
+  monthly_budget_usd: 130.0     # 月間上限。超過したら自動でcard版へフォールバック
+  max_cost_per_video_usd: 10.0  # 1本あたりの上限（異常値の暴走防止）
+  cer_line_max: 0.30            # native音声時の許容値。voicevox時は通常verify閾値を使う
+  cer_avg_max: 0.18
+  remake_max_attempts: 1        # CER不合格時の再生成は1回のみ。それでも不合格ならフォールバック
