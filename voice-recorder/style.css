@@ -1,0 +1,528 @@
+/* ===================================
+   CSS カスタムプロパティ（ライトモード）
+   =================================== */
+:root {
+  --color-bg: #f5f6fa;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f0f1f5;
+  --color-border: #d1d5db;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-secondary: #6b7280;
+  --color-secondary-hover: #4b5563;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fca5a5;
+  --color-error-text: #991b1b;
+  --color-rec: #ef4444;
+  --color-wave: #3b82f6;
+  --color-wave-paused: #9ca3af;
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --transition: 0.2s ease;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ダークモード */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #111827;
+    --color-surface: #1f2937;
+    --color-surface-alt: #374151;
+    --color-border: #374151;
+    --color-text: #f9fafb;
+    --color-text-muted: #9ca3af;
+    --color-primary: #60a5fa;
+    --color-primary-hover: #3b82f6;
+    --color-danger: #f87171;
+    --color-danger-hover: #ef4444;
+    --color-secondary: #9ca3af;
+    --color-secondary-hover: #d1d5db;
+    --color-error-bg: #2d1515;
+    --color-error-border: #7f1d1d;
+    --color-error-text: #fca5a5;
+    --color-wave: #60a5fa;
+    --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ===================================
+   リセット・ベース
+   =================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+/* ===================================
+   エラーバナー
+   =================================== */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-error-text);
+  font-size: 0.9rem;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.error-banner.hidden {
+  display: none;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--color-error-text);
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+
+.error-close:hover,
+.error-close:focus-visible {
+  background: rgba(239, 68, 68, 0.15);
+  outline: 2px solid var(--color-error-border);
+}
+
+/* ===================================
+   レイアウト
+   =================================== */
+.app-container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.app-header {
+  text-align: center;
+  padding: 24px 0 16px;
+}
+
+.app-header h1 {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* カード共通 */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ===================================
+   デバイス選択セクション
+   =================================== */
+.device-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.device-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#mic-select {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-family: var(--font);
+  appearance: auto;
+}
+
+#mic-select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* ===================================
+   録音コントロールセクション
+   =================================== */
+.recorder-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* タイマー */
+.timer-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+}
+
+.rec-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-rec);
+  animation: blink 1s step-start infinite;
+}
+
+.rec-dot.hidden {
+  display: none;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 波形キャンバス */
+.visualizer-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  height: 120px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  overflow: hidden;
+}
+
+#visualizer {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.visualizer-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+
+.visualizer-hint.hidden {
+  display: none;
+}
+
+/* ボタン群 */
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* 録音状態ラベル */
+.recording-status {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  min-height: 1.4em;
+  text-align: center;
+}
+
+/* ===================================
+   ボタン共通
+   =================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), opacity var(--transition), box-shadow var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* バリアント */
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+}
+
+.btn-secondary {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+/* サイズ */
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 0.82rem;
+}
+
+.btn-record {
+  padding: 14px 28px;
+  font-size: 1.05rem;
+  border-radius: 999px;
+}
+
+.btn-icon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.btn-icon.rename-btn {
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  background: none;
+  border: 1px solid var(--color-border);
+}
+
+/* ===================================
+   録音リストセクション
+   =================================== */
+.list-section {
+  margin-bottom: 32px;
+}
+
+.list-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.recordings-count {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.recording-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-message {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  padding: 32px 0;
+}
+
+/* 録音リスト項目 */
+.recording-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recording-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.name-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recording-name {
+  font-weight: 600;
+  font-size: 1rem;
+  word-break: break-all;
+}
+
+.rename-btn {
+  font-size: 0.85rem;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.rename-btn:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+.name-edit {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.name-edit.hidden {
+  display: none;
+}
+
+.rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-family: var(--font);
+}
+
+.rename-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.recording-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+}
+
+/* オーディオプレーヤー */
+.recording-player {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  accent-color: var(--color-primary);
+}
+
+/* 録音操作ボタン群 */
+.recording-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ===================================
+   レスポンシブ（モバイル）
+   =================================== */
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .controls {
+    width: 100%;
+  }
+
+  .btn-record {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-primary,
+  .btn-danger,
+  .btn-secondary {
+    /* 操作しやすいタップターゲット */
+    min-height: 44px;
+  }
+
+  .recording-actions {
+    flex-direction: column;
+  }
+
+  .recording-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
