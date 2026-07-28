@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* Leaflet地図がボトムナビの下に隠れないように調整 */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* BottomSheet のオーバーレイ */
+.bottom-sheet-overlay {
+  z-index: 40;
+}
+
+/* PWA: セーフエリア対応 */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}

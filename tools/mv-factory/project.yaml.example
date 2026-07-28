@@ -23,8 +23,8 @@ song_source: "suno_bridge"           # suno_api | suno_bridge | manual
 
 # song_source: suno_api の場合の設定 (Suno公式パートナーAPIキー到着後に確定させる)
 suno_api:
-  theme: ""                         # 未指定ならの theme を使う
-  lyrics_prompt: ""                  # 歌詞生成方闝(任意、空ならSuno任せ)
+  theme: ""                          # 未指定なら上の theme を使う
+  lyrics_prompt: ""                  # 歌詞生成方針(任意、空ならSuno任せ)
   style_tags: []                     # 例: ["シティポップ", "80年代", "女性ボーカル"]
   instrumental: false                # true ならボーカルなしインスト生成
 
@@ -32,9 +32,9 @@ suno_api:
 # (opensuno Bridge Mode、.agents/skills/suno-music-gen/ と同じ仕組み)
 suno_bridge:
   title: ""                          # 未指定なら上の title を使う
-  theme: ""                          # 未指定ならの theme を使う(参考情報として保存のみ)
-  lyrics: ""                         # 歌詞を直接記載(複数行可、YAMSの | ブロックを推婨)
-  lyrics_file: ""                    # または歌詞テキストファイルへの相対パス(lyricsより優先庤低)
+  theme: ""                          # 未指定なら上の theme を使う(参考情報として保存のみ)
+  lyrics: ""                         # 歌詞を直接記載(複数行可、YAMLの | ブロックを推奨)
+  lyrics_file: ""                    # または歌詞テキストファイルへの相対パス(lyricsより優先度低)
   style_tags: []                     # 例: ["J-POP", "キャッチー", "女性ボーカル", "夏"]
   instrumental: false                # true ならボーカルなしインスト生成
   model: "chirp-crow"                # chirp-crow(v5) / chirp-auk(v4.5) 等
@@ -42,14 +42,14 @@ suno_bridge:
 # song_source: manual の場合の設定
 manual_audio:
   audio_path: "input/song.mp3"       # プロジェクトディレクトリからの相対パス (mp3/wav)
-  lyrics_path: "input/lyrics.txt"    # 歌詞テキストファイル(UTF-8、行匲切り
+  lyrics_path: "input/lyrics.txt"    # 歌詞テキストファイル(UTF-8、行区切り)
 
-# --- 尺ゃアÂ�ガ (2バージェン固定) ---
+# --- 尺・アスペクト比 (2バージョン固定) ---
 versions:
   short:
     duration_sec: 60
     aspect_ratio: "9:16"
-    clip_duration_sec: 5             # 1クリップの長さ(4〜15秒、Seedance仕晘)
+    clip_duration_sec: 5             # 1クリップの長さ(4〜15秒、Seedance仕様)
   full:
     duration_sec: 180
     aspect_ratio: "16:9"
@@ -57,12 +57,12 @@ versions:
 
 # --- 参照画像 (工程4、任意) ---
 reference_images:
-  enabled: true                     # false ならテキストのみtext-to-video
-  characters:                        # キャラクター設定(複数叫)
+  enabled: true                     # false ならテキストのみでtext-to-video
+  characters:                        # キャラクター設定(複数可)
     - name: "主人公"
-      description: "20代女性、コョートヘア、革�8ャケット、都会的な雰囲気"
+      description: "20代女性、ショートヘア、革ジャケット、都会的な雰囲気"
   world:
-    description: "深夜のネオン街、雨上がりの路面反射、サイバーパンク寄りの色彩"
+    description: "深夜のネオン街、雨上がりの路反射、サイバーパンク寄りの色彩"
   provider: "nanobanana2"            # nanobanana2 | openai_web (手動)
 
 # --- キャラクターシート (工程3、必須。2026-07-05パイロットのオーナー指摘で追加) ---

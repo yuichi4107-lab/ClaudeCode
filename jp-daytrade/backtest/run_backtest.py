@@ -1,7 +1,7 @@
 """
 バックテスト CLI。
 
-全期間バックテストを 1 コマンドで実行して、レポート（Markdown + CSV）を生成する。
+全期間バックテストを 1 コマンドで実行し、レポート（Markdown + CSV）を生成する。
 
 使い方:
     python -m jp-daytrade.backtest.run_backtest
@@ -159,11 +159,11 @@ def generate_report(result: BacktestResult, df_trades: pd.DataFrame, monthly: pd
         f"| シャープレシオ（年換算） | {result.sharpe_ratio:.3f} | ≥ 0.8 | {'✓' if criteria['シャープ ≥ 0.8'] else '✗'} |",
         f"| 最大ドローダウン | {result.max_drawdown*100:.2f}% | ≤ -20% | {'✓' if criteria['最大DD ≤ 20%'] else '✗'} |",
         f"| 期待値（1取引あたり） | {result.expected_value*100:.4f}% | - | - |",
-        f"| 寄り天発生率 | {result.yori_ten_rate*100:.2f}% | ≤ 30% | {'✓' if criteria['寄り天発生率イ 30%'] else '✗'} |",
+        f"| 寄り天発生率 | {result.yori_ten_rate*100:.2f}% | ≤ 30% | {'✓' if criteria['寄り天発生率 ≤ 30%'] else '✗'} |",
         f"| 最終資産 | {result.final_capital:,.0f}円 | - | - |",
-        f"| 紏収玆 | {result.final_capital - 1_000_000:+,.0f}円 | - | - |",
+        f"| 総収益 | {result.final_capital - 1_000_000:+,.0f}円 | - | - |",
         "",
-        f"**総合判定**: {'✓ 合格（全垺溦クリア）' if all_pass else '✗ 不合格（下記叁暩{、"}",
+        f"**総合判定**: {'✓ 合格（全基準クリア）' if all_pass else '✗ 不合格（下記原因分析を参照）'}",
         "",
     ]
 
@@ -238,7 +238,7 @@ def generate_report(result: BacktestResult, df_trades: pd.DataFrame, monthly: pd
         "",
         "- J-Quants Free プランは**日足のみ**提供。8:59 時点の買気配・板は利用不可。",
         "- F1(GAP率）は本来「8:59 買気配 / 前日終値」だが、日足では寄り付き価格（Open）で代用している。",
-        "  この代用により、ライブでは GAP を事前（寄り前）に確認できないケースを除外できないめの",
+        "  この代用により、ライブでは GAP を事前（寄り前）に確認できないケースを除外できないう、",
         "  実戦パファーマンスはバックテスト値より住くなる可能性がある。",
         "- TP/SL 到達ズイビングの先彼梢亂は日足では不明。**保守的評価（LowₒHigh 栆）** を採用。",
         "  実戦パフォーマンスは採用の方力してないケースもあるため、バックテスト値は過悲観の可能性がある。",
@@ -265,52 +265,4 @@ def generate_report(result: BacktestResult, df_trades: pd.DataFrame, monthly: pd
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    """バックテストを実行してレポートを生成する。""
-    _RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-
-    logger.info("=== JP-DAYTRADE-v1 バックテスト開始 ===")
-
-    # スクリーニングパイプライン
-    logger.info("Step 1: スクリーニングパイプライン実行中...")
-    prices_all, trading_days, eligible_codes = run_screening_pipeline()
-
-    logger.info("Step 2: バックテスト実行中（%d 冶業日�).…", len(trading_days))
-    result = run_backtest(
-        prices_all=prices_all,
-        trading_days=trading_days,
-        eligible_codes=eligible_codes,
-    )
-
-    logger.info("Step 3: 結果を出力中...")
-
-    # CSV 出力
-    df_trades = trades_to_dataframe(result.trades)
-    df_trades.to_csv(_TRADES_PATH, index=False, encoding="utf-8-sig")
-    logger.info("trades CSV: %s (%d rows)", _TRADES_PATH, len(df_trades))
-
-    # 月次集計
-    monthly = compute_monthly_pnl(df_trades) if not df_trades.empty else pd.DataFrame()
-
-    # Markdown レポート
-    report_md = generate_report(result, df_trades, monthly)
-    _REPORT_PATH.write_text(report_md, encoding="utf-8")
-    logger.info("report MD: %s", _REPORT_PATH)
-
-    # サマリー出力
-    print("\n" + "=" * 60)
-    print("JP-DAYTRADE-v1 バックテスト完了")
-    print("=" * 60)
-    print(f"総取引数: {result.total_trades}")
-    print(f"勝率    : {result.win_rate*100:.2f}%  (基準: ≥55%)")
-    print(f"PF      : {result.profit_factor:.3f}  (基準: ≥1.3)")
-    print(f"シャープ: {result.sharpe_ratio:.3f}  (基準: ≥0.8)")
-    print(f"最大DD  : {result.max_drawdown*100:.2f}%  (基準: ≤-20%)")
-    print(f"寄り天率: {result.yori_ten_rate*100:.2f}%  (基準: ≤30%)")
-    print(f"最終資瓣: {result.final_capital:,.0f}円")
-    print(f"\nレポート: {_REPORT_PATH}")
-    print(f"取引CSV : {_TRADES_PATH}")
-    print("=" * 60)
-
-
-if __name__ == "__main__":
-    main()
+    """バックテストを実行してレポートを生成する。"" ��$U5T�E5�D�"�ֶF�"�&V�G3�G'VR�W��7E����G'VR�����vvW"��f�#�����D�E$DR�c8988>8*�88n8+�88��h�Zx����"���28+�8*�8:�8;�88�8;>8+898*N89~8:�8*N8;0���vvW"��f�%7FW�8+�8*�8:�8;�88�8;>8+898*N89~8:�8*N8;>Z����K�����"��&�6W5����G&F��u�F�2�VƖv�&�U�6�FW2�'V��67&VV��u��VƖ�R������vvW"��f�%7FW#�8988>8*�88n8+�88�Z����K���ȂVBYknjZ�iz^�Ȓ���"��V�G&F��u�F�2���&W7V�B�'V��&6�FW7B��&�6W5����&�6W5�����G&F��u�F�3�G&F��u�F�2��VƖv�&�U�6�FW3�VƖv�&�U�6�FW2�������vvW"��f�%7FW3�{Yi��8).X{�X��K�����"���255bX{�X���Fe�G&FW2�G&FW5�F��FFg&�R�&W7V�B�G&FW2��Fe�G&FW2�F��77b��E$DU5�D����FW��f�6R�V�6�F��s�'WFbӂ�6�r"����vvW"��f�'G&FW255c�W2�VB&�w2�"��E$DU5�D���V�Fe�G&FW2����2iȎj���n�������F�ǒ�6��WFU����F�Ǖ��Fe�G&FW2��b��BFe�G&FW2�V�G�V�6RB�FFg&�R����2�&�F�v�8:�89�8;�88��&W�'E��B�vV�W&FU�&W�'B�&W7V�B�Fe�G&FW2����F�ǒ���$U�%E�D��w&�FU�FW�B�&W�'E��B�V�6�F��s�'WFbӂ"����vvW"��f�'&W�'B�C�W2"��$U�%E�D����28+^89�8:�8;�X{�X���&��B�%��"�#�"�c��&��B�$��D�E$DR�c8988>8*�88n8+�88�Z��K�b"��&��B�#�"�c��&��B�b.{x�X�n[�^i[��&W7V�B�F�F��G&FW7�"��&��B�b.X��x�r��&W7V�B�v���&FR���&g�R�Y��k�c�(�SSRR�"��&��B�b%b��&W7V�B�&�f�E�f7F�#��6g��Y��k�c�(�S�2�"��&��B�b.8+~8:>8;�89s��&W7V�B�6�'U�&F���6g��Y��k�c�(�Sを"��&��B�b.i�ZJtDB��&W7V�B����G&vF�v���&g�R�Y��k�c�(�B�#R�"��&��B�b.Z�N8(�ZJ�8r��&W7V�B��&��FV��&FR���&g�R�Y��k�c�(�C3R�"��&��B�b.i�{X.�8~yJ3��&W7V�B�f����6�Fâ��g�Xhb"��&��B�b%��8:�89�8;�88����$U�%E�D��"��&��B�b.X�n[�T55b���E$DU5�D��"��&��B�#�"�c�����b����U����%�������#����ₐ

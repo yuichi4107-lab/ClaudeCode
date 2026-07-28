@@ -1,0 +1,15 @@
+📰 AIニュースダイジェスト（2026年04月01日）
+
+■ Claude Codeのフォーク「OpenCode」登場――GPT・Gemini・DeepSeekなど200以上のLLMに対応
+Anthropicが開発したAIコーディングツール「Claude Code」のソースコードがnpmパッケージ経由で流出した件を受け、開発者コミュニティがこれをフォークし「OpenCode」として公開した。OpenAI互換APIシム（中継層）を追加することで、GPT-4o、DeepSeek、Gemini、Llama、Ollamaなど200以上のモデルで動作可能になっている。Claude CodeはApache 2.0ライセンスで公開されており、フォーク自体はライセンス上合法であるとの見解が広まっている。
+🔗 https://twitter.com/i/web/status/2039236964705308987
+🔗 https://twitter.com/i/web/status/2039063488468000835
+🔗 https://twitter.com/i/web/status/2039239334520582308
+
+■ Anthropic、Claude Codeのソースコードをnpm経由で意図せず公開
+AnthropicがClaude Codeのソースコード全体をnpmパッケージとして誤って公開ししまったことが判明した。このリークが上記のOpenCodeフォークプロジェクトのきっかけとなった。AI企業のコード管理体制について議論を呼んでいる。
+🔗 https://twitter.com/i/web/status/2038982118689366448
+
+■ 2026年版エンジニア高報酬企業ランキング――OpenAI・Anthropic・Google DeepMindが最上位
+2026年のエンジニア向け高報酬企業ランキングが公開された。最上位の「S+」ティアにはOpenAI、Anthropic、Google DeepMind、xAIといったAI企業に加え、Jane Street、Citadel Securitiesなどのクオンツ系金融企業が名を連ねている。AI業界がトップクラスの報酬水準で人材獲得競争を展開している状況が改めて浮き彫りとなった。
+🔗 https://twitter.com/i/web/status/2038953656314466609

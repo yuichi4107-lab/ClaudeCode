@@ -8,5 +8,5 @@ PyYAML>=6.0
 openai>=1.0
 
 # 動画生成(Atlas Cloud)・ダウンロードはurllib標準ライブラリのみで完結し、
-# 追加パッケージ不要。ffmpeg/ffprobeはOSに別途インストールしておくこ
-  (macOS: brew install ffmpeg)。
+# 追加パッケージ不要。ffmpeg/ffprobeはOSに別途インストールしておくこと
+# (macOS: brew install ffmpeg)。

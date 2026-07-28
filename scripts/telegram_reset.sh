@@ -2,7 +2,7 @@
 # Claude Code Channels (Telegram) リセットスクリプト
 set -u
 echo "==========================================="
-echo "Claude Code Telegram Channel リセットト"
+echo "Claude Code Telegram Channel リセット"
 echo "==========================================="
 TG_DIR="$HOME/.claude/channels/telegram"
 echo ""
@@ -13,7 +13,7 @@ else
   echo "  ディレクトリが存在しません（初回設定状態）"
 fi
 echo ""
-echo "[2/4] ペアリング情報・トークンを削除"
+echo "[2/4] ペアリング情報・トーワンを削除"
 for f in .env state.json access.json; do
   if [ -f "$TG_DIR/$f" ]; then
     rm -f "$TG_DIR/$f"
