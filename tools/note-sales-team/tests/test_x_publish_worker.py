@@ -59,7 +59,7 @@ class XPublishWorkerTest(unittest.TestCase):
             "legacy_history_path": ".company/outputs/note-articles/history.json",
             "default_account_id": "you-ai-dx",
             "default_theme_id": "ai-utilization",
-            "_account": {"user_id": "12345", "username": "testuser"},
+            "x_account": {"user_id": "12345", "username": "testuser"},
             "article_defaults": {"approval_granularity": "chapter", "quality_gate": 85},
             "product_profiles": {
                 "free-standard": {"chapter_range": [4, 7]},
@@ -323,10 +323,10 @@ class XPublishWorkerTest(unittest.TestCase):
         self.assertEqual(post_one.call_count, 2)
         state = note_team.load_state(self.root, self.run_id)
         self.assertEqual(
-            state["stages"]["x-publish"]["status"], "reconciliation_required"
+            state["stages"]["x_publish"]["status"], "reconciliation_required"
         )
         self.assertEqual(
-            state["stages"]["x-publish"]["components"]["main"]["tweet_id"],
+            state["stages"]["x_publish"]["components"]["main"]["tweet_id"],
             "100001",
         )
         with self.assertRaisesRegex(note_team.NoteTeamError, "本投稿は既に確定済み"):
@@ -334,7 +334,7 @@ class XPublishWorkerTest(unittest.TestCase):
                 self.root,
                 self.run_id,
                 "x_publish",
-                "APIでリプ不存在を랊認",
+                "APIでリプ不存在を確認",
                 owner_session_confirmed=True,
             )
         unchanged = note_team.load_state(self.root, self.run_id)
@@ -347,10 +347,10 @@ class XPublishWorkerTest(unittest.TestCase):
             "x_publish",
             "csrf-test",
             unchanged["stages"]["x_publish"]["claim_id"],
-            unchanged["stages"]["x-publish"],
+            unchanged["stages"]["x_publish"],
         )
         self.assertIn("本投稿は確定済み", controls)
-        self.assertNotIn("結果不存在を確認、再許可待べしへ戻す", controls)
+        self.assertNotIn("結果不存在を確認し、再許可待ちへ戻す", controls)
         with self.assertRaises(note_team.NoteTeamError):
             worker.publish(self.root, self.run_id)
 
@@ -368,7 +368,7 @@ class XPublishWorkerTest(unittest.TestCase):
             note_team.record_external_component(
                 self.root,
                 self.run_id,
-                "x-publish",
+                "x_publish",
                 "main",
                 "100001",
                 "https://x.com/testuser/status/100001",
