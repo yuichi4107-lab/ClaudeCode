@@ -426,7 +426,7 @@ function stopVisualizer() {
   }
 
   if (state.mode === 'idle') {
-    // 録音終了（idle）ならキャンバス゘リアしてヒントを再表示
+    // 録音終了（idle）ならキャンバスをクリアしてヒントを再表示
     const canvas = dom.visualizer();
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
