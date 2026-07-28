@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ynfactory.shorts-drive-mirror</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/yuichi/shorts-factory/.venv/bin/python</string>
+        <string>/Users/yuichi/shorts-factory/app/scripts/mirror_to_drive.py</string>
+        <string>--timeout</string>
+        <string>90</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/yuichi/shorts-factory/app</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StartInterval</key>
+    <integer>300</integer>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>StandardOutPath</key>
+    <string>/Users/yuichi/Library/Logs/shorts-drive-mirror.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/yuichi/Library/Logs/shorts-drive-mirror.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/yuichi/.local/bin:/Users/yuichi/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/yuichi</string>
+        <key>PYTHONDONTWRITEBYTECODE</key>
+        <string>1</string>
+        <key>SHORTS_RUNTIME_DIR</key>
+        <string>/Users/yuichi/shorts-factory</string>
+        <key>SHORTS_FACTORY_ROOT</key>
+        <string>/Users/yuichi/shorts-factory/app</string>
+        <key>SHORTS_DRIVE_MIRROR_ROOT</key>
+        <string>/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc</string>
+    </dict>
+</dict>
+</plist>

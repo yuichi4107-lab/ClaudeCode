@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ynfactory.shorts-tiktok-chrome</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/yuichi/shorts-factory/app/scripts/start_chrome_tiktok.sh</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+    <key>StandardOutPath</key>
+    <string>/Users/yuichi/Library/Logs/shorts-tiktok-chrome.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/yuichi/Library/Logs/shorts-tiktok-chrome.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/yuichi</string>
+    </dict>
+</dict>
+</plist>

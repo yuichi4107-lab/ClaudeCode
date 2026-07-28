@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ynfactory.shorts-generate</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/yuichi/shorts-factory/app/scripts/run_generate.sh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>9</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>14</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>19</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+    <key>StandardOutPath</key>
+    <string>/Users/yuichi/Library/Logs/shorts-generate.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/yuichi/Library/Logs/shorts-generate.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/yuichi/.local/bin:/Users/yuichi/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/yuichi</string>
+        <key>SHORTS_RUNTIME_DIR</key>
+        <string>/Users/yuichi/shorts-factory</string>
+        <key>SHORTS_FACTORY_ROOT</key>
+        <string>/Users/yuichi/shorts-factory/app</string>
+    </dict>
+</dict>
+</plist>
