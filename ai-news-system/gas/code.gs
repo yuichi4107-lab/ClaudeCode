@@ -1,7 +1,7 @@
 /**
  * AIニュース配信システム - Google Docs アーカイブ用 GAS Webアプリ
  *
- * POSTリクエストを受け取り、Google Docsを作成して月別フォルダに整理する
+ * POSTリクエストを受け取り、Google Docsを作成して月別フォルダに整理する。
  */
 
 function doPost(e) {

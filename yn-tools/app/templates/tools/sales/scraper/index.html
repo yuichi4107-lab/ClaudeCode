@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}HP一括巡回 - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">HP一括巡回</h1>
+        <p class="text-gray-500 mt-1">企業Webサイトからメールアドレス・お問い合わせフォーム・SNSを自動収集</p>
+    </div>
+    <a href="{{ P }}/" class="text-sm text-gray-600 hover:text-gray-900">ダッシュボード</a>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow-sm border p-5 text-center">
+        <p class="text-3xl font-bold text-gray-900">{{ total }}</p>
+        <p class="text-sm text-gray-500">総企業数</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-5 text-center">
+        <p class="text-3xl font-bold text-green-600">{{ with_url }}</p>
+        <p class="text-sm text-gray-500">URLあり</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-5 text-center">
+        <p class="text-3xl font-bold text-amber-600">{{ uncrawled }}</p>
+        <p class="text-sm text-gray-500">未巡回</p>
+    </div>
+</div>
+
+<!-- Crawl Form -->
+<div class="bg-white rounded-lg shadow-sm border p-6 max-w-lg">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">巡回を開始</h2>
+    <form method="post" action="{{ P }}/scraper/bulk">
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">巡回対象</label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="mode" value="uncrawled" checked class="text-indigo-600">
+                        <span class="text-sm text-gray-700">未巡回のみ（{{ uncrawled }}件）</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="mode" value="all" class="text-indigo-600">
+                        <span class="text-sm text-gray-700">すべて再巡回（{{ with_url }}件）</span>
+                    </label>
+                </div>
+            </div>
+            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-green-700"
+                {% if uncrawled == 0 and with_url == 0 %}disabled class="opacity-50"{% endif %}>
+                巡回開始
+            </button>
+            <p class="text-xs text-gray-400">各サイトのrobots.txtを尊重し、適切な間隔でアクセスします</p>
+        </div>
+    </form>
+</div>
+{% endblock %}

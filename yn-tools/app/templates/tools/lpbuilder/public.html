@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ lp.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hero-section { background-color: {{ lp.hero_bg_color }}; }
+    </style>
+</head>
+<body class="bg-white">
+    <!-- Hero -->
+    <section class="hero-section text-white py-20 px-6">
+        <div class="max-w-3xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-6">{{ lp.hero_title or lp.title }}</h1>
+            {% if lp.hero_subtitle %}
+            <p class="text-lg md:text-xl opacity-90 mb-8">{{ lp.hero_subtitle }}</p>
+            {% endif %}
+            {% if lp.hero_cta_text %}
+            <a href="{{ lp.hero_cta_url or '#' }}" class="inline-block bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition shadow-lg">
+                {{ lp.hero_cta_text }}
+            </a>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Features -->
+    {% if features %}
+    <section class="py-16 px-6">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-center text-gray-900 mb-12">特徴</h2>
+            <div class="grid md:grid-cols-{{ [features|length, 3] | min }} gap-8">
+                {% for feature in features %}
+                <div class="text-center">
+                    <div class="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white" style="background-color: {{ lp.hero_bg_color }}">{{ loop.index }}</div>
+                    <p class="text-gray-700">{{ feature }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- About -->
+    {% if lp.about_text %}
+    <section class="py-16 px-6 bg-gray-50">
+        <div class="max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">詳細</h2>
+            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ lp.about_text }}</p>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- CTA -->
+    <section class="hero-section text-white py-16 px-6">
+        <div class="max-w-3xl mx-auto text-center">
+            <h2 class="text-2xl font-bold mb-4">今すぐ始めましょう</h2>
+            {% if lp.hero_cta_text %}
+            <a href="{{ lp.hero_cta_url or '#' }}" class="inline-block bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition shadow-lg">
+                {{ lp.hero_cta_text }}
+            </a>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 px-6 text-center text-gray-400 text-sm">
+        {{ lp.footer_text or '&copy; ' ~ 'YN Tools LP Builder' }}
+    </footer>
+</body>
+</html>

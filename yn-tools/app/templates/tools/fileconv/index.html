@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}ファイル変換ツール - YN Tools{% endblock %}
+
+{% block head %}
+<!-- HEIC入力デコード用ライブラリ -->
+<script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<!-- HEIC出力エンコード用ライブラリ（WASM版） -->
+<script src="https://unpkg.com/libheif-js@1.18.2/libheif/libheif.js"></script>
+<script>
+let libheifReady = false;
+if (typeof libheif !== 'undefined' && libheif.onRuntimeInitialized !== undefined) {
+    libheif.onRuntimeInitialized = () => { libheifReady = true; };
+} else {
+    libheifReady = true;
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">ファイル変換ツール</h1>
+        <p class="text-gray-500 mt-1">画像・テキスト・データのフォーマットをブラウザ上で変換</p>
+    </div>
+    <a href="/guide#fileconv" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        使い方ガイド
+    </a>
+</div>
+
+<!-- 変換カテゴリ -->
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+    <!-- 画像変換 -->
+    <div class="bg-white rounded-xl shadow-sm border p-6" id="card-image">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <h2 class="font-bold text-gray-900">画像フォーマット変換</h2>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">PNG / JPEG / WebP / HEIC 間で変換</p>
+        <input type="file" id="imgInput" accept="image/*,.heic,.heif,image/heic,image/heif" class="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 mb-3">
+        <div class="flex gap-2 mb-3">
+            <select id="imgFormat" class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                <option value="image/png">PNG</option>
+                <option value="image/jpeg">JPEG</option>
+                <option value="image/webp">WebP</option>
+                <option value="image/heic">HEIC (実験的)</option>
+            </select>
+            <input type="number" id="imgQuality" min="10" max="100" value="90" class="w-20 rounded-lg border border-gray-300 px-3 py-2 text-sm" title="品質 (%)">
+        </div>
+        <button onclick="convertImage()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">変換してダウンロード</button>
+        <p id="imgStatus" class="text-xs text-gray-400 mt-2 text-center"></p>
+    </div>
+
+    <!-- CSV↔JSON -->
+    <div class="bg-white rounded-xl shadow-sm border p-6" id="card-csv">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+            </div>
+            <h2 class="font-bold text-gray-900">CSV ↔ JSON 変換</h2>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">CSVとJSONを相互変換</p>
+        <input type="file" id="csvInput" accept=".csv,.json,.txt" class="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-green-50 file:text-green-700 hover:file:bg-green-100 mb-3">
+        <select id="csvDirection" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3">
+            <option value="csv2json">CSV → JSON</option>
+            <option value="json2csv">JSON → CSV</option>
+        </select>
+        <button onclick="convertCsvJson()" class="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">変換してダウンロード</button>
+        <p id="csvStatus" class="text-xs text-gray-400 mt-2 text-center"></p>
+    </div>
+
+    <!-- テキストエンコーディング -->
+    <div class="bg-white rounded-xl shadow-sm border p-6" id="card-text">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <h2 class="font-bold text-gray-900">テキスト変換</h2>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Base64・URLエンコード・マークダウン→HTML</p>
+        <textarea id="textInput" rows="3" placeholder="テキストを入力..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3"></textarea>
+        <select id="textMode" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm mb-3">
+            <option value="base64enc">テキスト → Base64</option>
+            <option value="base64dec">Base64 → テキスト</option>
+            <option value="urlenc">URLエンコード</option>
+            <option value="urldec">URLデコード</option>
+            <option value="upper">大文字に変換</option>
+            <option value="lower">小文字に変換</option>
+            <option value="half2full">半角 → 全角</option>
+            <option value="full2half">全角 → 半角</option>
+        </select>
+        <button onclick="convertText()" class="w-full bg-purple-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition">変換</button>
+        <textarea id="textOutput" rows="3" readonly class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm mt-3 hidden"></textarea>
+        <button id="textCopyBtn" onclick="copyTextOutput()" class="hidden w-full text-purple-600 border border-purple-300 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-50 transition mt-2">結果をコピー</button>
+    </div>
+</div>
+
+<script>
+/* ===== 画像変換 ===== */
+async function convertImage() {
+    const statusEl = document.getElementById('imgStatus');
+    const input = document.getElementById('imgInput');
+    if (!input.files[0]) { alert('画像を選択してください'); return; }
+    const file = input.files[0];
+    const format = document.getElementById('imgFormat').value;
+    const quality = parseInt(document.getElementById('imgQuality').value) / 100;
+    const qualityPct = parseInt(document.getElementById('imgQuality').value);
+    const extMap = {'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/heic': 'heic'};
+    const ext = extMap[format] || 'png';
+
+    statusEl.textContent = '変換中...';
+
+    try {
+        // HEIC入力判定: MIMEタイプまたはファイル拡張子で判定
+        const isHeicInput = file.type === 'image/heic' || file.type === 'image/heif' ||
+                            /\.(heic|heif)$/i.test(file.name);
+
+        let sourceBlob = file;
+
+        // HEIC入力の場合は heic2any でPNG Blobにデコードする
+        if (isHeicInput) {
+            if (typeof heic2any === 'undefined') {
+                statusEl.textContent = 'エラー: HEICデコードライブラリが読み込まれていません';
+                return;
+            }
+            try {
+                sourceBlob = await heic2any({ blob: file, toType: 'image/png', quality: 1.0 });
+                // heic2any が配列を返す場合があるので最初の要素を使う
+                if (Array.isArray(sourceBlob)) sourceBlob = sourceBlob[0];
+            } catch (decodeErr) {
+                statusEl.textContent = 'エラー: HEICのデコードに失敗しました — ' + decodeErr.message;
+                return;
+            }
+        }
+
+        // Blob を Image に読み込んでキャンバスに描画する
+        const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
+            reader.readAsDataURL(sourceBlob);
+        });
+
+        const img = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error('画像のデコードに失敗しました'));
+            image.src = dataUrl;
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (format === 'image/jpeg') {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0);
+
+        // HEIC出力の場合は libheif-js のエンコーダを使用する（実験的）
+        if (format === 'image/heic') {
+            if (typeof libheif === 'undefined') {
+                statusEl.textContent = 'エラー: HEICエンコードライブラリが読み込まれていません';
+                return;
+            }
+            if (!libheifReady) {
+                statusEl.textContent = 'ライブラリ初期化中です。しばらくお待ちください';
+                return;
+            }
+            try {
+                const encoder = new libheif.HeifEncoder();
+                encoder.setQuality(qualityPct);
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const result = await encoder.encode(imgData);
+                const blob = new Blob([result], {type: 'image/heic'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                const base = file.name.replace(/\.[^.]+$/, '');
+                a.download = `${base}.${ext}`;
+                a.click();
+                const kb = (blob.size / 1024).toFixed(1);
+                statusEl.textContent = `変換完了 (${img.width}x${img.height}, ${kb}KB)`;
+            } catch (encodeErr) {
+                statusEl.textContent = 'エラー: HEICエンコードに対応していません — ' + encodeErr.message;
+            }
+            return;
+        }
+
+        // 通常出力（PNG / JPEG / WebP）: canvas.toBlob 経路
+        const blob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, format, quality);
+        });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const base = file.name.replace(/\.[^.]+$/, '');
+        a.download = `${base}.${ext}`;
+        a.click();
+        const kb = (blob.size / 1024).toFixed(1);
+        statusEl.textContent = `変換完了 (${img.width}x${img.height}, ${kb}KB)`;
+
+    } catch (err) {
+        statusEl.textContent = 'エラー: ' + err.message;
+    }
+}
+
+/* ===== CSV ↔ JSON ===== */
+function convertCsvJson() {
+    const input = document.getElementById('csvInput');
+    if (!input.files[0]) { alert('ファイルを選択してください'); return; }
+    const direction = document.getElementById('csvDirection').value;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            let result, filename, mime;
+            if (direction === 'csv2json') {
+                const lines = e.target.result.trim().split('\n');
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                const data = lines.slice(1).map(line => {
+                    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                    const obj = {};
+                    headers.forEach((h, i) => obj[h] = vals[i] || '');
+                    return obj;
+                });
+                result = JSON.stringify(data, null, 2);
+                filename = 'converted.json';
+                mime = 'application/json';
+            } else {
+                const data = JSON.parse(e.target.result);
+                if (!Array.isArray(data) || !data.length) throw new Error('配列形式のJSONが必要です');
+                const headers = Object.keys(data[0]);
+                const rows = [headers.join(',')];
+                data.forEach(row => rows.push(headers.map(h => `"${(row[h]??'').toString().replace(/"/g,'""')}"`).join(',')));
+                result = rows.join('\n');
+                filename = 'converted.csv';
+                mime = 'text/csv';
+            }
+            const blob = new Blob([result], {type: mime + ';charset=utf-8'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            document.getElementById('csvStatus').textContent = '変換完了';
+        } catch(err) {
+            document.getElementById('csvStatus').textContent = 'エラー: ' + err.message;
+        }
+    };
+    reader.readAsText(input.files[0]);
+}
+
+/* ===== テキスト変換 ===== */
+function convertText() {
+    const input = document.getElementById('textInput').value;
+    if (!input) { alert('テキストを入力してください'); return; }
+    const mode = document.getElementById('textMode').value;
+    let result;
+    try {
+        switch(mode) {
+            case 'base64enc': result = btoa(unescape(encodeURIComponent(input))); break;
+            case 'base64dec': result = decodeURIComponent(escape(atob(input))); break;
+            case 'urlenc': result = encodeURIComponent(input); break;
+            case 'urldec': result = decodeURIComponent(input); break;
+            case 'upper': result = input.toUpperCase(); break;
+            case 'lower': result = input.toLowerCase(); break;
+            case 'half2full': result = input.replace(/[\x21-\x7e]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0)).replace(/ /g, '\u3000'); break;
+            case 'full2half': result = input.replace(/[\uff01-\uff5e]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\u3000/g, ' '); break;
+        }
+    } catch(e) { result = 'エラー: ' + e.message; }
+    const out = document.getElementById('textOutput');
+    out.value = result;
+    out.classList.remove('hidden');
+    document.getElementById('textCopyBtn').classList.remove('hidden');
+}
+
+function copyTextOutput() {
+    const out = document.getElementById('textOutput');
+    navigator.clipboard.writeText(out.value).then(() => showToast('コピーしました', 'success'));
+}
+</script>
+{% endblock %}

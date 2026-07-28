@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}テスト: {{ bot.name }} - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="mb-6">
+        <a href="/tools/chatbot/{{ bot.bot_id }}" class="text-sm text-gray-500 hover:text-gray-700">&larr; {{ bot.name }} に戻る</a>
+        <h1 class="text-2xl font-bold text-gray-900 mt-2">チャットテスト</h1>
+        <p class="text-gray-500 text-sm">このページでボットの動作を確認できます。</p>
+    </div>
+
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden" style="height:600px;display:flex;flex-direction:column">
+            <!-- ヘッダー -->
+            <div class="px-5 py-4 text-white font-semibold flex items-center gap-3" style="background:{{ bot.theme_color }}">
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm">&#x1f916;</div>
+                {{ bot.name }}
+            </div>
+
+            <!-- メッセージ -->
+            <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-3" style="background:#f9fafb">
+                <div class="flex justify-start">
+                    <div class="bg-white rounded-xl rounded-bl-sm px-4 py-2.5 max-w-[80%] text-sm shadow-sm border">
+                        {{ bot.welcome_message }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 入力 -->
+            <div class="border-t p-3 flex gap-2 bg-white">
+                <input id="msg-input" type="text" placeholder="メッセージを入力..." autocomplete="off"
+                       onkeypress="if(event.key==='Enter')sendMessage()"
+                       class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                <button onclick="sendMessage()" id="send-btn" class="text-white px-4 py-2 rounded-lg text-sm font-medium transition" style="background:{{ bot.theme_color }}">
+                    送信
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var sessionId = '';
+var msgs = document.getElementById('messages');
+var input = document.getElementById('msg-input');
+var sendBtn = document.getElementById('send-btn');
+
+function addMsg(role, text) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'flex ' + (role === 'user' ? 'justify-end' : 'justify-start');
+    var bubble = document.createElement('div');
+    bubble.className = 'max-w-[80%] px-4 py-2.5 text-sm whitespace-pre-wrap ' +
+        (role === 'user'
+            ? 'rounded-xl rounded-br-sm text-white'
+            : 'bg-white rounded-xl rounded-bl-sm shadow-sm border text-gray-800');
+    if (role === 'user') bubble.style.background = '{{ bot.theme_color }}';
+    bubble.textContent = text;
+    wrapper.appendChild(bubble);
+    msgs.appendChild(wrapper);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendMessage() {
+    var text = input.value.trim();
+    if (!text) return;
+    addMsg('user', text);
+    input.value = '';
+    sendBtn.disabled = true;
+
+    // typing
+    var typing = document.createElement('div');
+    typing.className = 'flex justify-start';
+    typing.innerHTML = '<div class="bg-white rounded-xl rounded-bl-sm px-4 py-2.5 text-sm shadow-sm border text-gray-400">入力中...</div>';
+    msgs.appendChild(typing);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    try {
+        var fd = new FormData();
+        fd.append('message', text);
+        fd.append('session_id', sessionId);
+        var r = await fetch('/tools/chatbot/api/chat/{{ bot.bot_id }}', {method: 'POST', body: fd});
+        var data = await r.json();
+        typing.remove();
+        if (data.error) { addMsg('bot', 'Error: ' + data.error); }
+        else { sessionId = data.session_id; addMsg('bot', data.reply); }
+    } catch(e) { typing.remove(); addMsg('bot', 'Communication error.'); }
+    sendBtn.disabled = false;
+    input.focus();
+}
+
+input.focus();
+</script>
+{% endblock %}

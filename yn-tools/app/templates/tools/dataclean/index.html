@@ -1,0 +1,628 @@
+{% extends "base.html" %}
+{% block title %}データクリーニングツール - YN Tools{% endblock %}
+
+{% block head %}
+<script>
+// ===== ステップ管理 =====
+let currentStep = 1;
+let jobId = null;
+let uploadedColumns = [];
+let previewHtml = '';
+let rowCount = 0;
+
+function showStep(n) {
+    for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById('step-' + i);
+        if (el) el.classList.add('hidden');
+        const ind = document.getElementById('ind-' + i);
+        if (ind) {
+            ind.classList.remove('bg-blue-600', 'text-white', 'bg-gray-200', 'text-gray-500', 'bg-white', 'text-blue-600', 'border-2', 'border-blue-600', 'ring-2', 'ring-blue-300');
+            if (i < n) {
+                ind.classList.add('bg-blue-600', 'text-white', 'ring-2', 'ring-blue-300');
+            } else if (i === n) {
+                ind.classList.add('bg-white', 'text-blue-600', 'border-2', 'border-blue-600');
+            } else {
+                ind.classList.add('bg-gray-200', 'text-gray-500');
+            }
+        }
+    }
+    const target = document.getElementById('step-' + n);
+    if (target) target.classList.remove('hidden');
+    currentStep = n;
+}
+
+// ===== ステップ1: ファイルアップロード =====
+function setupDrop() {
+    const zone = document.getElementById('drop-zone');
+    const input = document.getElementById('file-input');
+    if (!zone || !input) return;
+
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('border-blue-500', 'bg-blue-50'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('border-blue-500', 'bg-blue-50'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('border-blue-500', 'bg-blue-50');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) handleFile(files[0]);
+    });
+    zone.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => { if (input.files[0]) handleFile(input.files[0]); });
+}
+
+async function handleFile(file) {
+    const status = document.getElementById('upload-status');
+    const previewArea = document.getElementById('preview-area');
+    const nextBtn = document.getElementById('step1-next');
+
+    // バリデーション
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['csv', 'xlsx', 'xls'].includes(ext)) {
+        showUploadError('CSV または Excel ファイルをアップロードしてください。');
+        return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        showUploadError('ファイルサイズが上限（10MB）を超えています。');
+        return;
+    }
+
+    if (status) status.textContent = 'アップロード中...';
+    if (nextBtn) nextBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const resp = await fetch('/tools/dataclean/api/upload', { method: 'POST', body: formData });
+        const data = await resp.json();
+
+        if (data.error) {
+            showUploadError(data.error);
+            return;
+        }
+
+        jobId = data.job_id;
+        uploadedColumns = data.columns;
+        previewHtml = data.preview_html;
+        rowCount = data.row_count;
+
+        // ファイル情報表示
+        if (status) {
+            status.innerHTML = `
+                <div class="flex items-center gap-2 text-green-700">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span class="font-medium">${escapeHtml(file.name)}</span>
+                    <span class="text-xs text-gray-500">${rowCount.toLocaleString()}行 / ${uploadedColumns.length}列 / ${(file.size/1024).toFixed(1)}KB</span>
+                </div>`;
+        }
+
+        // プレビュー表示
+        if (previewArea) {
+            previewArea.innerHTML = '<p class="text-xs text-gray-500 mb-2">先頭10行プレビュー</p>' + data.preview_html;
+            previewArea.classList.remove('hidden');
+        }
+
+        // dedup キー列セレクト更新
+        const dedupSel = document.getElementById('dedup-key-col');
+        if (dedupSel) {
+            dedupSel.innerHTML = '<option value="">全列一致で重複削除</option>';
+            uploadedColumns.forEach(col => {
+                const opt = document.createElement('option');
+                opt.value = col;
+                opt.textContent = col;
+                dedupSel.appendChild(opt);
+            });
+        }
+
+        if (nextBtn) nextBtn.disabled = false;
+
+    } catch (e) {
+        showUploadError('アップロードエラー: ' + e.message);
+    }
+}
+
+function showUploadError(msg) {
+    const status = document.getElementById('upload-status');
+    if (status) status.innerHTML = `<p class="text-red-600 text-sm">${escapeHtml(msg)}</p>`;
+}
+
+// ===== ステップ2: クリーニング設定 =====
+function getSelectedOptions() {
+    const checkboxes = document.querySelectorAll('input[name="clean_option"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function getDedupKeyCol() {
+    const sel = document.getElementById('dedup-key-col');
+    return sel ? sel.value : '';
+}
+
+// ===== ステップ3: 確認 =====
+function showConfirmStep() {
+    const options = getSelectedOptions();
+    const optionLabels = {
+        dedup: '重複行削除',
+        fullhalf: '全角→半角変換',
+        phone: '電話番号フォーマット統一',
+        postal: '郵便番号フォーマット統一',
+        date: '日付フォーマット統一',
+        whitespace: '前後空白削除',
+        empty_col: '空白列削除',
+        name_normalize: '会社名表記揺れ統一'
+    };
+
+    const container = document.getElementById('confirm-options');
+    if (container) {
+        if (options.length === 0) {
+            container.innerHTML = '<p class="text-gray-400 text-sm">クリーニングオプションが選択されていません。</p>';
+        } else {
+            container.innerHTML = options.map(o =>
+                `<div class="flex items-center gap-2 text-sm text-gray-700">
+                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    ${escapeHtml(optionLabels[o] || o)}
+                </div>`
+            ).join('');
+        }
+    }
+
+    const dedupKey = getDedupKeyCol();
+    const dedupNote = document.getElementById('confirm-dedup-note');
+    if (dedupNote) {
+        if (options.includes('dedup') && dedupKey) {
+            dedupNote.textContent = `重複削除キー列: ${dedupKey}`;
+            dedupNote.classList.remove('hidden');
+        } else {
+            dedupNote.classList.add('hidden');
+        }
+    }
+
+    showStep(3);
+}
+
+// ===== ステップ4: 実行 =====
+async function doExecute() {
+    if (!jobId) { alert('ジョブIDが見つかりません。最初からやり直してください。'); return; }
+
+    const options = getSelectedOptions();
+    const dedupKeyCol = getDedupKeyCol() || null;
+    const btn = document.getElementById('execute-btn');
+    const loadingDiv = document.getElementById('execute-loading');
+
+    if (btn) btn.disabled = true;
+    if (loadingDiv) loadingDiv.classList.remove('hidden');
+
+    try {
+        const resp = await fetch(`/tools/dataclean/api/${jobId}/execute`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ options, dedup_key_col: dedupKeyCol }),
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert('エラー: ' + data.error);
+            if (btn) btn.disabled = false;
+            if (loadingDiv) loadingDiv.classList.add('hidden');
+            return;
+        }
+
+        // ステップ4（完了）へ
+        showStep(4);
+        const summary = document.getElementById('execute-summary');
+        if (summary) {
+            summary.innerHTML = `
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="text-2xl font-bold text-blue-700">${data.row_before.toLocaleString()}</div>
+                        <div class="text-xs text-gray-500 mt-1">処理前の行数</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <div class="text-2xl font-bold text-green-700">${data.row_after.toLocaleString()}</div>
+                        <div class="text-xs text-gray-500 mt-1">処理後の行数</div>
+                    </div>
+                    <div class="bg-yellow-50 rounded-lg p-4">
+                        <div class="text-2xl font-bold text-yellow-700">${data.changed_cells.toLocaleString()}</div>
+                        <div class="text-xs text-gray-500 mt-1">変更セル数</div>
+                    </div>
+                </div>`;
+        }
+
+        const resultLink = document.getElementById('result-link');
+        if (resultLink) {
+            resultLink.href = data.redirect_url;
+        }
+
+    } catch (e) {
+        alert('実行エラー: ' + e.message);
+        if (btn) btn.disabled = false;
+        if (loadingDiv) loadingDiv.classList.add('hidden');
+    }
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== 結果画面: ダウンロード =====
+async function downloadFile(jobId, fmt) {
+    window.location.href = `/tools/dataclean/api/${jobId}/download?fmt=${fmt}`;
+}
+
+// ===== 削除 =====
+async function deleteJob(jobId) {
+    if (!confirm('この処理結果を削除しますか？')) return;
+    try {
+        const resp = await fetch(`/tools/dataclean/api/${jobId}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (data.ok) {
+            window.location.href = '/tools/dataclean/';
+        } else {
+            alert('削除に失敗しました: ' + (data.error || ''));
+        }
+    } catch (e) {
+        alert('削除エラー: ' + e.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupDrop();
+    const view = document.getElementById('view-name');
+    if (view && view.value === 'new') showStep(1);
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+
+    <!-- 隠しフィールド（ビュー識別用） -->
+    <input type="hidden" id="view-name" value="{{ view }}">
+
+    <!-- ===== ヘッダー ===== -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+            {% if view == 'dashboard' %}
+            <h1 class="text-2xl font-bold text-gray-900">データクリーニングツール</h1>
+            <p class="text-gray-500 mt-1">CSVやExcelの重複削除・表記揺れ統一を自動処理します</p>
+            {% elif view == 'new' %}
+            <div class="flex items-center gap-2">
+                <a href="/tools/dataclean/" class="text-blue-600 hover:text-blue-800 text-sm">一覧に戻る</a>
+                <span class="text-gray-400">/</span>
+                <h1 class="text-2xl font-bold text-gray-900">新規クリーニング</h1>
+            </div>
+            {% elif view == 'result' %}
+            <div class="flex items-center gap-2">
+                <a href="/tools/dataclean/" class="text-blue-600 hover:text-blue-800 text-sm">一覧に戻る</a>
+                <span class="text-gray-400">/</span>
+                <h1 class="text-2xl font-bold text-gray-900">処理結果</h1>
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="bg-white rounded-lg shadow-sm border px-4 py-2 text-center">
+                <div class="text-lg font-bold {% if monthly_used >= monthly_limit %}text-red-500{% elif monthly_used >= monthly_limit * 0.8 %}text-orange-500{% else %}text-blue-600{% endif %}">{{ monthly_limit - monthly_used }}/{{ monthly_limit }}</div>
+                <div class="text-gray-500 text-xs">今月の残り</div>
+            </div>
+            {% if view == 'dashboard' %}
+            <a href="/tools/dataclean/new" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                + 新規クリーニング
+            </a>
+            {% endif %}
+            <a href="/guide#dataclean" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition self-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                使い方ガイド
+            </a>
+        </div>
+    </div>
+
+
+    <!-- ===== ダッシュボード ===== -->
+    {% if view == 'dashboard' %}
+
+    {% if jobs %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for job in jobs %}
+        <div class="bg-white rounded-xl shadow p-5 border border-gray-100 hover:shadow-md transition">
+            <div class="flex items-start justify-between mb-3">
+                <div class="min-w-0">
+                    <h3 class="font-semibold text-gray-900 text-sm leading-tight truncate">{{ job.original_filename }}</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ job.created_at.strftime('%Y/%m/%d %H:%M') if job.created_at else '-' }}</p>
+                </div>
+                <button onclick="deleteJob({{ job.id }})" class="text-gray-300 hover:text-red-500 transition ml-2 flex-shrink-0" title="削除">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-3 text-xs text-gray-500">
+                <span>{{ job.row_count_before }}行 → {{ job.row_count_after }}行</span>
+                <span class="text-yellow-600 font-medium">変更 {{ job.changed_cells }}セル</span>
+            </div>
+            <div class="flex gap-1.5 flex-wrap mb-3">
+                {% for opt in job.options_list %}
+                <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">{{ opt }}</span>
+                {% endfor %}
+            </div>
+            {% if job.status == 'done' %}
+            <a href="/tools/dataclean/{{ job.id }}/result"
+               class="block w-full text-center bg-blue-50 text-blue-700 rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-blue-100 transition">
+                結果を見る / DL
+            </a>
+            {% else %}
+            <span class="block w-full text-center bg-gray-100 text-gray-400 rounded-lg px-3 py-1.5 text-sm">
+                {{ job.status }}
+            </span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+        <div class="text-5xl mb-4">🧹</div>
+        <h2 class="text-lg font-semibold text-gray-700 mb-2">まだ処理履歴がありません</h2>
+        <p class="text-gray-400 text-sm mb-6">CSVやExcelファイルを読み込んで、重複削除・表記揺れ統一などを自動処理します。</p>
+        <a href="/tools/dataclean/new" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+            最初のファイルをクリーニングする
+        </a>
+    </div>
+    {% endif %}
+
+
+    <!-- ===== 新規クリーニング（ステップUI） ===== -->
+    {% elif view == 'new' %}
+
+    <!-- ステップインジケーター -->
+    <div class="flex items-center justify-center gap-0 mb-8">
+        {% for i, label in [(1, 'ファイル'), (2, '設定'), (3, '確認'), (4, '完了')] %}
+        <div class="flex items-center">
+            <div class="flex flex-col items-center">
+                <div id="ind-{{ i }}" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                    {% if i == 1 %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-500{% endif %}">
+                    {{ i }}
+                </div>
+                <span class="text-xs text-gray-500 mt-1 whitespace-nowrap">{{ label }}</span>
+            </div>
+            {% if i < 4 %}
+            <div class="w-12 sm:w-20 h-0.5 bg-gray-200 mb-4 mx-1"></div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ステップ1: ファイルアップロード -->
+    <div id="step-1">
+        <div class="bg-white rounded-xl shadow p-6 mb-4">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">ファイルをアップロード</h2>
+
+            <div id="drop-zone"
+                 class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition mb-4">
+                <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p class="text-gray-500 text-sm font-medium">ここにファイルをドロップ、またはクリックして選択</p>
+                <p class="text-xs text-gray-400 mt-1">CSV（UTF-8/Shift-JIS）/ Excel(.xlsx/.xls) / 最大10MB</p>
+                <input type="file" id="file-input" class="hidden" accept=".csv,.xlsx,.xls">
+            </div>
+
+            <div id="upload-status" class="mb-4 text-sm text-gray-400">ファイルを選択してください</div>
+
+            <div id="preview-area" class="hidden mb-4 overflow-x-auto rounded-lg border border-gray-100"></div>
+        </div>
+
+        <div class="flex justify-end">
+            <button id="step1-next" onclick="showStep(2)" disabled
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                次へ: クリーニング設定
+            </button>
+        </div>
+    </div>
+
+    <!-- ステップ2: クリーニング設定 -->
+    <div id="step-2" class="hidden">
+        <div class="bg-white rounded-xl shadow p-6 mb-4">
+            <h2 class="text-base font-semibold text-gray-900 mb-1">クリーニングオプションを選択</h2>
+            <p class="text-xs text-gray-400 mb-5">適用したい処理にチェックを入れてください（複数選択可）</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                {% set options_meta = [
+                    ('dedup',          '重複行削除',            '🗑️',  '完全一致する行を除去します（キー列指定も可能）'),
+                    ('fullhalf',       '全角→半角変換',          '🔤',  '全角英数字・記号を半角に統一します'),
+                    ('phone',          '電話番号統一',           '📞',  'ハイフン区切り形式（000-0000-0000）に統一します'),
+                    ('postal',         '郵便番号統一',           '📮',  'ハイフン区切り形式（000-0000）に統一します'),
+                    ('date',           '日付フォーマット統一',    '📅',  'YYYY/MM/DD 形式に統一します'),
+                    ('whitespace',     '前後空白削除',           '✂️',  'セル値の先頭・末尾の空白や改行を削除します'),
+                    ('empty_col',      '空白列削除',             '🧹',  '全セルが空の列を削除します'),
+                    ('name_normalize', '会社名表記揺れ統一',     '🏢',  '(株)→株式会社 など固定ルールで統一します'),
+                ] %}
+
+                {% for slug, label, icon, desc in options_meta %}
+                <label class="flex items-start gap-3 border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="checkbox" name="clean_option" value="{{ slug }}" class="mt-0.5 accent-blue-600 w-4 h-4 flex-shrink-0">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-lg">{{ icon }}</span>
+                            <span class="font-semibold text-gray-800 text-sm">{{ label }}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ desc }}</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <!-- dedup キー列選択 -->
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-1">重複削除のキー列（任意）</label>
+                <p class="text-xs text-gray-400 mb-2">指定なしの場合は全列一致で重複削除します</p>
+                <select id="dedup-key-col" class="w-full sm:w-64 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    <option value="">全列一致で重複削除</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex justify-between">
+            <button onclick="showStep(1)"
+                    class="border border-gray-300 text-gray-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+                戻る
+            </button>
+            <button onclick="showConfirmStep()"
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                次へ: 実行確認
+            </button>
+        </div>
+    </div>
+
+    <!-- ステップ3: 実行確認 -->
+    <div id="step-3" class="hidden">
+        <div class="bg-white rounded-xl shadow p-6 mb-4">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">実行内容の確認</h2>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">適用するクリーニング処理</p>
+                    <div id="confirm-options" class="space-y-1"></div>
+                    <p id="confirm-dedup-note" class="text-xs text-gray-500 mt-2 hidden"></p>
+                </div>
+                <div class="pt-4 border-t border-gray-100">
+                    <p class="text-xs text-gray-400">処理を実行すると1回の利用としてカウントされます。</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="execute-loading" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-xl p-8 text-center">
+                <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <p class="text-gray-700 font-medium">クリーニング処理中...</p>
+                <p class="text-gray-400 text-sm mt-1">しばらくお待ちください</p>
+            </div>
+        </div>
+
+        <div class="flex justify-between">
+            <button onclick="showStep(2)"
+                    class="border border-gray-300 text-gray-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+                戻る
+            </button>
+            <button id="execute-btn" onclick="doExecute()"
+                    class="bg-blue-600 text-white px-8 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                クリーニングを実行する
+            </button>
+        </div>
+    </div>
+
+    <!-- ステップ4: 完了 -->
+    <div id="step-4" class="hidden">
+        <div class="bg-white rounded-xl shadow p-6 mb-4 text-center">
+            <div class="text-5xl mb-4">✅</div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">クリーニング完了！</h2>
+            <p class="text-gray-500 text-sm mb-6">処理結果の確認とダウンロードができます</p>
+            <div id="execute-summary" class="mb-6"></div>
+            <a id="result-link" href="#"
+               class="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl text-base font-semibold hover:bg-blue-700 transition">
+                差分プレビュー・ダウンロードへ
+            </a>
+        </div>
+    </div>
+
+
+    <!-- ===== 結果画面 ===== -->
+    {% elif view == 'result' %}
+
+    <!-- サマリーバッジ -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow p-5 text-center">
+            <div class="text-2xl font-bold text-blue-700">{{ job.row_count_before }}</div>
+            <div class="text-xs text-gray-500 mt-1">処理前の行数</div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-5 text-center">
+            <div class="text-2xl font-bold text-green-700">{{ job.row_count_after }}</div>
+            <div class="text-xs text-gray-500 mt-1">処理後の行数</div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-5 text-center">
+            <div class="text-2xl font-bold text-yellow-600">{{ job.changed_cells }}</div>
+            <div class="text-xs text-gray-500 mt-1">変更セル数</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- 左カラム: アクション -->
+        <div class="lg:col-span-1 space-y-4">
+            <div class="bg-white rounded-xl shadow p-5">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">ダウンロード</h2>
+                <div class="space-y-2">
+                    <button onclick="downloadFile({{ job.id }}, 'csv')"
+                            class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                        CSV でダウンロード（UTF-8 BOM）
+                    </button>
+                    <button onclick="downloadFile({{ job.id }}, 'xlsx')"
+                            class="w-full border border-blue-600 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition">
+                        Excel でダウンロード
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-5">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">処理情報</h2>
+                <dl class="space-y-2 text-sm">
+                    <div>
+                        <dt class="text-xs text-gray-400">ファイル名</dt>
+                        <dd class="font-medium text-gray-800 text-xs break-all">{{ job.original_filename }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-gray-400">処理日時</dt>
+                        <dd class="font-medium text-gray-800 text-xs">{{ job.created_at.strftime('%Y/%m/%d %H:%M') if job.created_at else '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-gray-400">適用オプション</dt>
+                        <dd class="flex flex-wrap gap-1 mt-1">
+                            {% for opt in job_options_list %}
+                            <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">{{ opt }}</span>
+                            {% endfor %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-5">
+                <div class="space-y-2">
+                    <a href="/tools/dataclean/new"
+                       class="block w-full text-center border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+                        新規クリーニング
+                    </a>
+                    <button onclick="deleteJob({{ job.id }})"
+                            class="w-full border border-red-200 text-red-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition">
+                        削除
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右カラム: 差分プレビュー -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <h2 class="text-base font-semibold text-gray-900">差分プレビュー</h2>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                        黄色 = 変更されたセル
+                    </span>
+                    <span class="text-xs text-gray-400">（最大100行表示）</span>
+                </div>
+                {% if diff_html %}
+                <div class="overflow-x-auto rounded-lg border border-gray-100">
+                    {{ diff_html | safe }}
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm">差分プレビューを生成できませんでした。ダウンロードしてご確認ください。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}

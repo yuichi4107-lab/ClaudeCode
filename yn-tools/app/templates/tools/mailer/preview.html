@@ -1,0 +1,27 @@
+{% extends "tools/mailer/base_mailer.html" %}
+{% block title %}プレビュー - メール送信 - YN Tools{% endblock %}
+
+{% block mailer_content %}
+<h1 class="text-xl font-bold mb-6">送信プレビュー</h1>
+
+<div class="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+    <dl class="space-y-2 text-sm">
+        <div class="flex"><dt class="w-24 text-gray-500 font-medium">宛先</dt><dd>{{ recipient_email }}{% if recipient_name %} ({{ recipient_name }}){% endif %}</dd></div>
+        <div class="flex"><dt class="w-24 text-gray-500 font-medium">件名</dt><dd>{{ subject }}</dd></div>
+        {% if attachment_names %}
+        <div class="flex"><dt class="w-24 text-gray-500 font-medium">添付</dt><dd>{{ attachment_names | join(', ') }}</dd></div>
+        {% endif %}
+    </dl>
+    <hr>
+    <div class="whitespace-pre-wrap text-sm font-mono bg-gray-50 p-4 rounded-lg">{{ body }}</div>
+
+    <div class="flex gap-3 mt-4">
+        <form action="/tools/mailer/send" method="post">
+            <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition" onclick="return confirm('このメールを送信しますか？')">
+                送信する
+            </button>
+        </form>
+        <a href="/tools/mailer/" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">戻る</a>
+    </div>
+</div>
+{% endblock %}

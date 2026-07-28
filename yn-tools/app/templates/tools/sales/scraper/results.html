@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}巡回結果 - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{{ P }}/scraper" class="text-sm text-gray-500 hover:text-gray-700">&larr; HP一括巡回</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-1">巡回結果</h1>
+</div>
+
+<!-- Summary -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+        <p class="text-2xl font-bold text-gray-900">{{ result.total }}</p>
+        <p class="text-xs text-gray-500">対象企業</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+        <p class="text-2xl font-bold text-green-600">{{ result.crawled }}</p>
+        <p class="text-xs text-gray-500">巡回成功</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+        <p class="text-2xl font-bold text-gray-400">{{ result.skipped }}</p>
+        <p class="text-xs text-gray-500">スキップ</p>
+    </div>
+</div>
+
+<!-- Results Table -->
+{% if result.results %}
+<div class="bg-white rounded-lg shadow-sm border overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-gray-500 border-b bg-gray-50">
+                <th class="px-4 py-3 font-medium">企業名</th>
+                <th class="px-4 py-3 font-medium">ステータス</th>
+                <th class="px-4 py-3 font-medium">ページ数</th>
+                <th class="px-4 py-3 font-medium">メール</th>
+                <th class="px-4 py-3 font-medium">フォーム</th>
+                <th class="px-4 py-3 font-medium">スコア</th>
+                <th class="px-4 py-3 font-medium">備考</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in result.results %}
+            <tr class="border-b last:border-0 hover:bg-gray-50">
+                <td class="px-4 py-3">
+                    <a href="{{ P }}/companies/{{ r.id }}" class="text-indigo-600 hover:underline font-medium">{{ r.name }}</a>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded-full text-xs
+                        {% if r.status == 'crawled' %}bg-green-100 text-green-800
+                        {% elif r.status == 'skipped' %}bg-gray-100 text-gray-600
+                        {% else %}bg-red-100 text-red-800{% endif %}">{{ r.status }}</span>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ r.pages or '-' }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ r.emails or '-' }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ r.forms or '-' }}</td>
+                <td class="px-4 py-3 font-medium">{{ r.score or '-' }}</td>
+                <td class="px-4 py-3 text-xs text-gray-500">{{ r.reason or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="mt-6 flex gap-3">
+    <a href="{{ P }}/scraper" class="px-4 py-2 text-sm border rounded-lg text-gray-600 hover:bg-gray-50">もう一度巡回</a>
+    <a href="{{ P }}/crm" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">CRM管理へ</a>
+    <a href="{{ P }}/campaigns" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">メール送信へ</a>
+</div>
+{% endblock %}

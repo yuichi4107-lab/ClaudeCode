@@ -1,0 +1,38 @@
+{% extends "tools/mailer/base_mailer.html" %}
+{% block title %}一括送信プレビュー - YN Tools{% endblock %}
+
+{% block mailer_content %}
+<h1 class="text-xl font-bold mb-6">一括送信プレビュー（{{ preview_items | length }}件）</h1>
+
+<div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-6">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+            <tr>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">名前</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">メール</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">件名</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">本文（抜粋）</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for item in preview_items %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">{{ item.name }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ item.email }}</td>
+                <td class="px-4 py-3">{{ item.subject }}</td>
+                <td class="px-4 py-3 text-gray-400 text-xs">{{ item.body_preview }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="flex gap-3">
+    <form action="/tools/mailer/bulk/send" method="post">
+        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition" onclick="return confirm('{{ preview_items | length }}件のメールを送信しますか？\n送信間隔: {{ delay }}秒')">
+            {{ preview_items | length }}件を送信する
+        </button>
+    </form>
+    <a href="/tools/mailer/bulk" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">戻る</a>
+</div>
+{% endblock %}

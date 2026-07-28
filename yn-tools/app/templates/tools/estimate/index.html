@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}見積書作成 - YN Tools{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script>
+let items = [{name: '', quantity: 1, unit: '', unitPrice: 0, taxRate: 10}];
+
+function renderItems() {
+    const tbody = document.getElementById('items-body');
+    tbody.innerHTML = '';
+    items.forEach((item, i) => {
+        const subtotal = item.quantity * item.unitPrice;
+        tbody.innerHTML += `
+        <tr class="border-b">
+            <td class="py-2 pr-2"><input type="text" value="${item.name}" onchange="items[${i}].name=this.value" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="品目名"></td>
+            <td class="py-2 pr-2"><input type="number" value="${item.quantity}" min="1" onchange="items[${i}].quantity=Number(this.value);updateTotal()" class="w-16 border rounded px-2 py-1.5 text-sm text-right"></td>
+            <td class="py-2 pr-2"><input type="text" value="${item.unit}" onchange="items[${i}].unit=this.value" class="w-14 border rounded px-2 py-1.5 text-sm text-center" placeholder="式"></td>
+            <td class="py-2 pr-2"><input type="number" value="${item.unitPrice}" min="0" onchange="items[${i}].unitPrice=Number(this.value);updateTotal()" class="w-24 border rounded px-2 py-1.5 text-sm text-right"></td>
+            <td class="py-2 pr-2">
+                <select onchange="items[${i}].taxRate=Number(this.value);updateTotal()" class="border rounded px-1 py-1.5 text-xs w-20">
+                    <option value="10" ${item.taxRate===10?'selected':''}>10%</option>
+                    <option value="8" ${item.taxRate===8?'selected':''}>8%\u203b</option>
+                    <option value="0" ${item.taxRate===0?'selected':''}>非課税</option>
+                </select>
+            </td>
+            <td class="py-2 pr-2 text-right text-sm font-medium whitespace-nowrap">&yen;${subtotal.toLocaleString()}</td>
+            <td class="py-2 text-center"><button onclick="removeItem(${i})" class="text-red-400 hover:text-red-600 text-sm">&times;</button></td>
+        </tr>`;
+    });
+    updateTotal();
+}
+
+function addItem() {
+    items.push({name: '', quantity: 1, unit: '', unitPrice: 0, taxRate: 10});
+    renderItems();
+}
+
+function removeItem(i) {
+    if (items.length <= 1) return;
+    items.splice(i, 1);
+    renderItems();
+}
+
+function calcTaxBreakdown() {
+    const breakdown = {};
+    items.forEach(it => {
+        const rate = it.taxRate;
+        if (!breakdown[rate]) breakdown[rate] = { subtotal: 0, tax: 0 };
+        breakdown[rate].subtotal += it.quantity * it.unitPrice;
+    });
+    for (const rate in breakdown) {
+        breakdown[rate].tax = Math.floor(breakdown[rate].subtotal * Number(rate) / 100);
+    }
+    return breakdown;
+}
+
+function updateTotal() {
+    const breakdown = calcTaxBreakdown();
+    let grandSubtotal = 0;
+    let grandTax = 0;
+
+    const bdDiv = document.getElementById('disp-breakdown');
+    bdDiv.innerHTML = '';
+    const rates = Object.keys(breakdown).sort((a, b) => Number(b) - Number(a));
+    rates.forEach(rate => {
+        const b = breakdown[rate];
+        grandSubtotal += b.subtotal;
+        grandTax += b.tax;
+        const rateLabel = Number(rate) === 0 ? '非課税' : `${rate}%${Number(rate) === 8 ? '（※軽減）' : ''}`;
+        bdDiv.innerHTML += `
+            <div class="flex justify-between text-sm text-gray-500">
+                <span>対象（${rateLabel}）</span>
+                <span>&yen;${b.subtotal.toLocaleString()}</span>
+            </div>
+            <div class="flex justify-between text-sm text-gray-500">
+                <span class="pl-3">消費税</span>
+                <span>&yen;${b.tax.toLocaleString()}</span>
+            </div>`;
+    });
+
+    const grandTotal = grandSubtotal + grandTax;
+    document.getElementById('disp-subtotal').textContent = '\u00a5' + grandSubtotal.toLocaleString();
+    document.getElementById('disp-tax').textContent = '\u00a5' + grandTax.toLocaleString();
+    document.getElementById('disp-total').textContent = '\u00a5' + grandTotal.toLocaleString();
+}
+
+async function generatePDF() {
+    const btn = document.getElementById('pdf-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>PDF生成中...';
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    try {
+        const fontUrl = 'https://cdn.jsdelivr.net/gh/nicefont/nicefont@main/font/NotoSansJP-Regular.ttf';
+        const resp = await fetch(fontUrl);
+        const buf = await resp.arrayBuffer();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+        doc.addFileToVFS('NotoSansJP.ttf', base64);
+        doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal');
+        doc.setFont('NotoSansJP');
+    } catch {
+        doc.setFont('Helvetica');
+    }
+
+    const issuer = document.getElementById('issuerName').value || '';
+    const issuerAddr = document.getElementById('issuerAddress').value || '';
+    const client = document.getElementById('clientName').value || '';
+    const estNo = document.getElementById('estimateNo').value || '';
+    const estDate = document.getElementById('estimateDate').value || '';
+    const validDate = document.getElementById('validDate').value || '';
+    const notes = document.getElementById('notes').value || '';
+
+    let y = 20;
+
+    doc.setFontSize(22);
+    doc.text('\u898b\u7a4d\u66f8', 105, y, { align: 'center' });
+    y += 12;
+
+    doc.setFontSize(10);
+    doc.text(`\u898b\u7a4d\u66f8\u756a\u53f7: ${estNo}`, 150, y); y += 6;
+    doc.text(`\u767a\u884c\u65e5: ${estDate}`, 150, y); y += 6;
+    doc.text(`\u6709\u52b9\u671f\u9650: ${validDate}`, 150, y); y += 10;
+
+    doc.setFontSize(12);
+    doc.text(`${client} \u5fa1\u4e2d`, 20, y); y += 10;
+
+    doc.setFontSize(10);
+    doc.text(issuer, 150, y); y += 5;
+    issuerAddr.split('\n').forEach(line => { doc.text(line, 150, y); y += 5; });
+    y += 5;
+
+    const breakdown = calcTaxBreakdown();
+    let grandSubtotal = 0, grandTax = 0;
+    Object.values(breakdown).forEach(b => { grandSubtotal += b.subtotal; grandTax += b.tax; });
+    const grandTotal = grandSubtotal + grandTax;
+
+    doc.setFillColor(245, 245, 250);
+    doc.rect(18, y - 4, 175, 10, 'F');
+    doc.setFontSize(12);
+    doc.text('\u5408\u8a08\u91d1\u984d', 22, y + 2);
+    doc.text('\u00a5' + grandTotal.toLocaleString() + '  \uff08\u7a0e\u8fbc\uff09', 190, y + 2, { align: 'right' });
+    y += 14;
+
+    const colX = [20, 85, 100, 118, 140, 165];
+    doc.setFillColor(240, 240, 245);
+    doc.rect(18, y - 4, 175, 8, 'F');
+    doc.setFontSize(8);
+    doc.text('\u54c1\u76ee', colX[0], y);
+    doc.text('\u6570\u91cf', colX[1], y, { align: 'right' });
+    doc.text('\u5358\u4f4d', colX[2], y);
+    doc.text('\u5358\u4fa1', colX[3], y, { align: 'right' });
+    doc.text('\u7a0e\u7387', colX[4], y);
+    doc.text('\u5c0f\u8a08', colX[5], y, { align: 'right' });
+    y += 8;
+
+    doc.setFontSize(9);
+    items.forEach(it => {
+        const sub = it.quantity * it.unitPrice;
+        const mark = it.taxRate === 8 ? ' \u203b' : '';
+        doc.text(it.name + mark, colX[0], y);
+        doc.text(String(it.quantity), colX[1], y, { align: 'right' });
+        doc.text(it.unit, colX[2], y);
+        doc.text('\u00a5' + it.unitPrice.toLocaleString(), colX[3], y, { align: 'right' });
+        doc.text(it.taxRate === 0 ? '\u975e\u8ab2\u7a0e' : it.taxRate + '%', colX[4], y);
+        doc.text('\u00a5' + sub.toLocaleString(), colX[5], y, { align: 'right' });
+        y += 7;
+    });
+
+    y += 3;
+    doc.line(18, y, 193, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.text('\u5c0f\u8a08\uff08\u7a0e\u629c\uff09:', 130, y, { align: 'right' });
+    doc.text('\u00a5' + grandSubtotal.toLocaleString(), 170, y, { align: 'right' }); y += 6;
+    doc.text('\u6d88\u8cbb\u7a0e\u5408\u8a08:', 130, y, { align: 'right' });
+    doc.text('\u00a5' + grandTax.toLocaleString(), 170, y, { align: 'right' }); y += 6;
+    doc.setFontSize(11);
+    doc.text('\u898b\u7a4d\u91d1\u984d\uff08\u7a0e\u8fbc\uff09:', 130, y, { align: 'right' });
+    doc.text('\u00a5' + grandTotal.toLocaleString(), 170, y, { align: 'right' }); y += 12;
+
+    if (notes) {
+        doc.setFontSize(10);
+        doc.text('\u5099\u8003:', 20, y); y += 6;
+        doc.setFontSize(9);
+        notes.split('\n').forEach(line => { doc.text(line, 20, y); y += 5; });
+    }
+
+    doc.save(`estimate_${estNo || 'draft'}.pdf`);
+
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> PDF\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('estimateDate').value = today;
+    // 有効期限を30日後に設定
+    const valid = new Date();
+    valid.setDate(valid.getDate() + 30);
+    document.getElementById('validDate').value = valid.toISOString().split('T')[0];
+    renderItems();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">見積書作成</h1>
+            <p class="text-gray-500 mt-1">品目・金額を入力するだけで見積書を作成。PDFダウンロード対応。</p>
+        </div>
+        <a href="/guide#estimate" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            使い方ガイド
+        </a>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+        <!-- Left: 基本情報 -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h2 class="text-lg font-semibold mb-4">発行者情報</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">会社名 / 氏名</label>
+                        <input type="text" id="issuerName" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: YN Factory">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">住所・連絡先</label>
+                        <textarea id="issuerAddress" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: 東京都渋谷区...&#10;TEL: 03-xxxx-xxxx"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h2 class="text-lg font-semibold mb-4">見積先・見積情報</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">見積先（宛名）</label>
+                        <input type="text" id="clientName" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: 株式会社サンプル">
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">見積書番号</label>
+                            <input type="text" id="estimateNo" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="EST-001">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">発行日</label>
+                            <input type="date" id="estimateDate" class="w-full border rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">有効期限</label>
+                            <input type="date" id="validDate" class="w-full border rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h2 class="text-lg font-semibold mb-4">備考</h2>
+                <textarea id="notes" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="納期、支払条件等"></textarea>
+            </div>
+        </div>
+
+        <!-- Right: 品目 -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <h2 class="text-lg font-semibold">品目</h2>
+                    <button onclick="addItem()" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">+ 行を追加</button>
+                </div>
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-xs text-gray-500 border-b">
+                            <th class="text-left py-2 font-medium">品目</th>
+                            <th class="text-right py-2 font-medium w-16">数量</th>
+                            <th class="text-center py-2 font-medium w-14">単位</th>
+                            <th class="text-right py-2 font-medium w-24">単価</th>
+                            <th class="text-center py-2 font-medium w-20">税率</th>
+                            <th class="text-right py-2 font-medium w-24">小計</th>
+                            <th class="w-6"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-body"></tbody>
+                </table>
+
+                <div class="mt-4 pt-4 border-t space-y-1">
+                    <div id="disp-breakdown" class="space-y-1 mb-3 pb-3 border-b"></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-500">小計（税抜）</span><span id="disp-subtotal" class="font-medium">&yen;0</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-500">消費税合計</span><span id="disp-tax" class="font-medium">&yen;0</span></div>
+                    <div class="flex justify-between text-lg font-bold border-t pt-2"><span>見積金額（税込）</span><span id="disp-total" class="text-indigo-600">&yen;0</span></div>
+                </div>
+            </div>
+
+            <button id="pdf-btn" onclick="generatePDF()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                PDFダウンロード
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

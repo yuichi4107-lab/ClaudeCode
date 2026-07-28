@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  username       String   @unique
+  hashedPassword String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
+
+model Company {
+  id            Int        @id @default(autoincrement())
+  name          String
+  address       String?
+  phone         String?
+  websiteUrl    String?
+  googleMapsUrl String?
+  reviewCount   Int        @default(0)
+  industry      String?
+  region        String?
+  description   String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  contacts      Contact[]
+  crmStatus     CrmStatus?
+  outreachLogs  OutreachLog[]
+}
+
+model Contact {
+  id             Int           @id @default(autoincrement())
+  companyId      Int
+  email          String?
+  emailType      String?       // info, contact, support, other
+  contactFormUrl String?
+  snsInstagram   String?
+  snsTwitter     String?
+  snsFacebook    String?
+  extractedAt    DateTime?
+  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  outreachLogs   OutreachLog[]
+}
+
+model CrmStatus {
+  id            Int      @id @default(autoincrement())
+  companyId     Int      @unique
+  status        String   @default("未営業") // 未営業, 送信済, 返信あり, 商談, 契約
+  score         Int      @default(0)
+  memo          String?
+  isBlacklisted Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id              Int           @id @default(autoincrement())
+  name            String
+  subjectTemplate String
+  bodyTemplate    String
+  status          String        @default("draft") // draft, active, paused, completed
+  createdAt       DateTime      @default(now())
+  outreachLogs    OutreachLog[]
+}
+
+model OutreachLog {
+  id         Int       @id @default(autoincrement())
+  companyId  Int
+  contactId  Int?
+  campaignId Int?
+  type       String    @default("email") // email, form
+  status     String    @default("pending") // pending, sent, failed, replied
+  sentAt     DateTime?
+  repliedAt  DateTime?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contact    Contact?  @relation(fields: [contactId], references: [id])
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+}
+
+model AppSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+}

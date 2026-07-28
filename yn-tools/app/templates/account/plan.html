@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}プラン変更 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-8">
+    <a href="/account" class="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">&larr; アカウントに戻る</a>
+    <h1 class="text-2xl font-bold mb-2">プラン変更</h1>
+    <p class="text-gray-500 text-sm mb-6">利用するツールやプランを変更できます。</p>
+
+    <!-- 現在のプラン -->
+    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+        <p class="text-sm text-gray-500">現在のプラン</p>
+        <p class="font-bold text-lg">
+            {% if user.is_in_trial %}Freeプラン（{{ user.trial_ends_at.strftime('%Y年%m月%d日') }} まで）
+            {% elif user.plan == "all_tools" %}全ツールプラン（&yen;2,000/月）
+            {% elif user.plan == "pro" %}Pro プラン（&yen;500/月）
+            {% elif user.plan == "per_tool" %}従量制プラン（&yen;{{ subscribed_slugs | length * 100 }}/月）
+            {% else %}Free（期限切れ）
+            {% endif %}
+        </p>
+        {% if pending_downgrade %}
+        <div class="mt-2 bg-amber-50 border border-amber-200 rounded p-2">
+            <p class="text-amber-700 text-xs">次回更新時にプラン変更予定: &yen;{{ "{:,}".format(pending_downgrade.new_cost) }}/月</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- プラン選択フォーム -->
+    {% set form_action = "/billing/change-plan" if user.stripe_subscription_id else "/billing/checkout/tools" %}
+    <form action="{{ form_action }}" method="post" id="plan-form" class="bg-white rounded-xl shadow-sm border p-6">
+
+        <p class="text-sm font-medium text-gray-700 mb-3">利用するツールを選択</p>
+        <div class="space-y-3 mb-4">
+            {% for tool in tools %}
+            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition tool-label" data-price="{{ tool.monthly_price }}">
+                <input type="checkbox" name="tool_slugs" value="{{ tool.slug }}"
+                       class="w-4 h-4 text-indigo-600 rounded tool-cb"
+                       {{ 'checked' if tool.slug in subscribed_slugs else '' }}>
+                <div class="ml-3 flex-1">
+                    <span class="font-medium text-gray-800">{{ tool.name }}</span>
+                </div>
+                <span class="text-gray-400 text-sm">&yen;{{ tool.monthly_price }}/月</span>
+            </label>
+            {% endfor %}
+        </div>
+
+        <!-- 区切り -->
+        <div class="relative my-5">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+            <div class="relative flex justify-center"><span class="bg-white px-3 text-xs text-gray-400">または</span></div>
+        </div>
+
+        <!-- すべてのサービス -->
+        <label class="flex items-center p-4 border-2 border-indigo-200 rounded-lg cursor-pointer hover:bg-indigo-50 transition" data-price="2000">
+            <input type="checkbox" id="all-tools-cb" class="w-5 h-5 text-indigo-600 rounded"
+                   {{ 'checked' if user.plan in ('all_tools', 'pro') else '' }}>
+            <div class="ml-3 flex-1">
+                <span class="font-bold text-indigo-700">すべてのサービス</span>
+                <span class="ml-2 bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded">おすすめ</span>
+                <p class="text-gray-500 text-xs mt-1">全ツール使い放題＋今後追加されるツールも含む</p>
+            </div>
+            <span class="text-indigo-600 font-bold">&yen;2,000<span class="text-xs font-normal text-gray-400">/月</span></span>
+        </label>
+
+        <!-- 合計・差額表示 -->
+        <div class="bg-gray-50 rounded-lg p-4 mt-6 mb-2 space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600 text-sm font-medium">変更後の月額</span>
+                <div>
+                    <span class="text-2xl font-bold text-gray-900" id="total-price">&yen;0</span>
+                    <span class="text-gray-500 text-sm">/月</span>
+                </div>
+            </div>
+            <div id="change-info" class="text-sm hidden">
+                <div id="upgrade-info" class="text-green-700 hidden">
+                    追加分 <span id="upgrade-diff" class="font-bold"></span> を即時請求します
+                </div>
+                <div id="downgrade-info" class="text-amber-700 hidden">
+                    削除ツールは次回更新日まで利用可能。更新時に自動で解除されます
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="plan_type" id="plan-type-field" value="per_tool">
+
+        <button type="submit" id="submit-btn"
+                class="w-full mt-4 bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled>
+            プランを変更する
+        </button>
+    </form>
+
+    <p class="text-gray-400 text-xs text-center mt-4">
+        追加ツールは即時反映（追加分を請求）。削除ツールは次回更新日まで利用可能です。
+    </p>
+</div>
+
+<script>
+(function() {
+    const toolCbs = document.querySelectorAll('.tool-cb');
+    const allCb = document.getElementById('all-tools-cb');
+    const totalEl = document.getElementById('total-price');
+    const submitBtn = document.getElementById('submit-btn');
+    const planTypeField = document.getElementById('plan-type-field');
+    const form = document.getElementById('plan-form');
+    const changeInfo = document.getElementById('change-info');
+    const upgradeInfo = document.getElementById('upgrade-info');
+    const downgradeInfo = document.getElementById('downgrade-info');
+    const upgradeDiff = document.getElementById('upgrade-diff');
+    const ALL_PRICE = 2000;
+    const CURRENT_COST = {{ current_cost | default(0) }};
+    const CURRENT_PLAN = '{{ user.plan }}';
+    const HAS_SUBSCRIPTION = {{ 'true' if user.stripe_subscription_id else 'false' }};
+
+    // 現在契約中のツールslug一覧
+    const SUBSCRIBED = new Set([{% for s in subscribed_slugs %}'{{ s }}',{% endfor %}]);
+
+    function update() {
+        const isAll = allCb.checked;
+        let total = 0;
+        let addedCost = 0;
+        let addedCount = 0;
+        let removedCount = 0;
+
+        if (isAll) {
+            toolCbs.forEach(cb => { cb.checked = false; cb.disabled = true; });
+            total = ALL_PRICE;
+            planTypeField.value = 'all_tools';
+            if (!HAS_SUBSCRIPTION) {
+                form.action = '/billing/checkout';
+            }
+        } else {
+            toolCbs.forEach(cb => { cb.disabled = false; });
+            toolCbs.forEach(cb => {
+                const slug = cb.value;
+                const price = parseInt(cb.closest('.tool-label').dataset.price);
+                if (cb.checked) {
+                    total += price;
+                    if (!SUBSCRIBED.has(slug)) {
+                        addedCost += price;
+                        addedCount++;
+                    }
+                } else {
+                    if (SUBSCRIBED.has(slug)) {
+                        removedCount++;
+                    }
+                }
+            });
+            planTypeField.value = 'per_tool';
+            if (!HAS_SUBSCRIPTION) {
+                form.action = '/billing/checkout/tools';
+            }
+        }
+
+        totalEl.textContent = '\u00a5' + total.toLocaleString();
+        submitBtn.disabled = total === 0;
+
+        if (!HAS_SUBSCRIPTION) {
+            // 新規契約の場合はシンプル
+            changeInfo.classList.add('hidden');
+            submitBtn.textContent = 'プランを申し込む';
+            return;
+        }
+
+        // プラン変更の表示
+        const isUpgradeToAll = isAll && CURRENT_PLAN !== 'all_tools';
+        const isDowngradeFromAll = !isAll && CURRENT_PLAN === 'all_tools';
+        const hasAdded = addedCount > 0;
+        const hasRemoved = removedCount > 0;
+        const noChange = !isUpgradeToAll && !isDowngradeFromAll && !hasAdded && !hasRemoved;
+
+        if (noChange || total === 0) {
+            changeInfo.classList.add('hidden');
+            submitBtn.textContent = 'プランを変更する';
+            submitBtn.disabled = true;
+            return;
+        }
+
+        changeInfo.classList.remove('hidden');
+
+        if (isUpgradeToAll) {
+            // per_tool → all_tools
+            const diff = ALL_PRICE - CURRENT_COST;
+            upgradeInfo.classList.remove('hidden');
+            downgradeInfo.classList.add('hidden');
+            upgradeDiff.textContent = '\u00a5' + diff.toLocaleString();
+            submitBtn.textContent = '全ツールプランにアップグレード（\u00a5' + diff.toLocaleString() + ' 請求）';
+        } else if (isDowngradeFromAll) {
+            // all_tools → per_tool
+            upgradeInfo.classList.add('hidden');
+            downgradeInfo.classList.remove('hidden');
+            submitBtn.textContent = 'ダウングレードを予約する';
+        } else if (hasAdded && hasRemoved) {
+            // 追加 + 削除
+            upgradeInfo.classList.remove('hidden');
+            downgradeInfo.classList.remove('hidden');
+            upgradeDiff.textContent = '\u00a5' + addedCost.toLocaleString();
+            submitBtn.textContent = 'ツールを変更する（追加分 \u00a5' + addedCost.toLocaleString() + ' 請求）';
+        } else if (hasAdded) {
+            // 追加のみ
+            upgradeInfo.classList.remove('hidden');
+            downgradeInfo.classList.add('hidden');
+            upgradeDiff.textContent = '\u00a5' + addedCost.toLocaleString();
+            submitBtn.textContent = 'ツールを追加する（\u00a5' + addedCost.toLocaleString() + ' 請求）';
+        } else if (hasRemoved) {
+            // 削除のみ
+            upgradeInfo.classList.add('hidden');
+            downgradeInfo.classList.remove('hidden');
+            submitBtn.textContent = 'ツール削除を予約する';
+        }
+    }
+
+    toolCbs.forEach(cb => cb.addEventListener('change', update));
+    allCb.addEventListener('change', update);
+    update();
+})();
+</script>
+{% endblock %}

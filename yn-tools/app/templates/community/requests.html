@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}アプリリクエスト - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">アプリリクエスト</h1>
+    <p class="text-gray-500 mt-1">欲しい機能を提案して、みんなで投票しよう</p>
+</div>
+
+<!-- Sort & Status -->
+<div class="flex flex-wrap items-center justify-between mb-6">
+    <div class="flex gap-2">
+        <a href="/community/requests?sort=votes&status={{ current_status }}"
+           class="px-3 py-1.5 rounded-full text-sm {% if current_sort == 'votes' %}bg-indigo-600 text-white{% else %}border text-gray-600 hover:bg-gray-50{% endif %}">人気順</a>
+        <a href="/community/requests?sort=new&status={{ current_status }}"
+           class="px-3 py-1.5 rounded-full text-sm {% if current_sort == 'new' %}bg-indigo-600 text-white{% else %}border text-gray-600 hover:bg-gray-50{% endif %}">新着順</a>
+    </div>
+    <div class="flex gap-1 mt-2 sm:mt-0">
+        <a href="/community/requests?sort={{ current_sort }}"
+           class="px-2 py-1 rounded text-xs {% if not current_status %}bg-gray-800 text-white{% else %}border text-gray-500 hover:bg-gray-50{% endif %}">すべて</a>
+        {% for key, label in request_statuses.items() %}
+        <a href="/community/requests?sort={{ current_sort }}&status={{ key }}"
+           class="px-2 py-1 rounded text-xs {% if current_status == key %}bg-gray-800 text-white{% else %}border text-gray-500 hover:bg-gray-50{% endif %}">
+            {{ label }} ({{ status_counts.get(key, 0) }})
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Requests List -->
+    <div class="lg:col-span-2 space-y-3">
+        {% for ar in app_requests %}
+        {% set author = user_map.get(ar.user_id) %}
+        <div class="bg-white rounded-lg shadow-sm border p-4 flex gap-4">
+            <!-- Vote -->
+            <div class="flex flex-col items-center min-w-[50px]">
+                {% if user %}
+                <form method="post" action="/community/requests/{{ ar.id }}/vote">
+                    <button type="submit" class="flex flex-col items-center group">
+                        {% if ar.id in my_votes %}
+                        <span class="text-indigo-600 text-xl">&#9650;</span>
+                        {% else %}
+                        <span class="text-gray-400 group-hover:text-indigo-600 text-xl">&#9650;</span>
+                        {% endif %}
+                        <span class="text-lg font-bold {% if ar.id in my_votes %}text-indigo-600{% else %}text-gray-700{% endif %}">{{ ar.vote_count }}</span>
+                    </button>
+                </form>
+                {% else %}
+                <span class="text-gray-400 text-xl">&#9650;</span>
+                <span class="text-lg font-bold text-gray-700">{{ ar.vote_count }}</span>
+                {% endif %}
+            </div>
+            <!-- Content -->
+            <div class="flex-1">
+                <div class="flex items-start justify-between">
+                    <h3 class="font-semibold text-gray-900">{{ ar.title }}</h3>
+                    <span class="px-2 py-0.5 rounded-full text-xs shrink-0 ml-2
+                        {% if ar.status == 'open' %}bg-gray-100 text-gray-600
+                        {% elif ar.status == 'planned' %}bg-blue-100 text-blue-700
+                        {% elif ar.status == 'building' %}bg-amber-100 text-amber-700
+                        {% elif ar.status == 'released' %}bg-green-100 text-green-700
+                        {% else %}bg-red-100 text-red-700{% endif %}">{{ request_statuses.get(ar.status, ar.status) }}</span>
+                </div>
+                <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ ar.description[:150] }}{% if ar.description|length > 150 %}...{% endif %}</p>
+                <div class="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                    <span>{{ author.name if author else '匿名' }}</span>
+                    <span>{{ ar.created_at.strftime('%Y-%m-%d') if ar.created_at else '' }}</span>
+                </div>
+                {% if ar.admin_note and user and user.is_admin %}
+                <div class="mt-2 p-2 bg-yellow-50 rounded text-xs text-yellow-800">管理メモ: {{ ar.admin_note }}</div>
+                {% endif %}
+                <!-- Admin Status Change -->
+                {% if user and user.is_admin %}
+                <form method="post" action="/community/requests/{{ ar.id }}/status" class="mt-2 flex gap-2">
+                    <select name="new_status" class="rounded border-gray-300 text-xs px-2 py-1">
+                        {% for key, label in request_statuses.items() %}
+                        <option value="{{ key }}" {% if ar.status == key %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="admin_note" placeholder="管理メモ" class="rounded border-gray-300 text-xs px-2 py-1">
+                    <button type="submit" class="text-xs text-indigo-600 hover:underline">更新</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% if not app_requests %}
+        <div class="bg-white rounded-lg shadow-sm border p-8 text-center text-gray-400">
+            リクエストはまだありません。最初のリクエストを投稿しましょう！
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Submit Form -->
+    {% if user %}
+    <div class="bg-white rounded-lg shadow-sm border p-6 h-fit">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">新しいリクエスト</h2>
+        <form method="post" action="/community/requests">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">タイトル</label>
+                    <input type="text" name="title" required placeholder="欲しい機能を一言で..."
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">説明</label>
+                    <textarea name="description" rows="5" required placeholder="どんな機能で、どう使いたいですか？"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">投稿（自動で1票）</button>
+            </div>
+        </form>
+        <p class="text-xs text-gray-400 mt-3">投稿すると自動で1票入ります。他の人のリクエストにも投票できます。</p>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-sm border p-6 h-fit text-center">
+        <p class="text-gray-500 text-sm mb-3">リクエストや投票にはログインが必要です</p>
+        <a href="/auth/login" class="text-indigo-600 hover:underline text-sm">ログイン</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

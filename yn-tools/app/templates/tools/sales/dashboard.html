@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex items-start justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">営業自動化ダッシュボード</h1>
+        <p class="text-gray-500 mt-1">企業リスト・HP巡回・メール営業を一括管理</p>
+    </div>
+    <a href="/guide#sales" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        使い方ガイド
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <p class="text-xs text-gray-500">総企業数</p>
+        <p class="text-2xl font-bold text-gray-900">{{ total_companies }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <p class="text-xs text-gray-500">メールあり</p>
+        <p class="text-2xl font-bold text-indigo-600">{{ total_with_email }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <p class="text-xs text-gray-500">フォームあり</p>
+        <p class="text-2xl font-bold text-green-600">{{ total_with_form }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <p class="text-xs text-gray-500">平均スコア</p>
+        <p class="text-2xl font-bold text-amber-600">{{ avg_score }}</p>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+    <a href="{{ P }}/companies/search" class="bg-indigo-600 text-white rounded-lg p-3 text-center text-sm font-medium hover:bg-indigo-700">企業を検索・追加</a>
+    <a href="{{ P }}/scraper" class="bg-green-600 text-white rounded-lg p-3 text-center text-sm font-medium hover:bg-green-700">HP一括巡回</a>
+    <a href="{{ P }}/campaigns" class="bg-purple-600 text-white rounded-lg p-3 text-center text-sm font-medium hover:bg-purple-700">メールメール送信</a>
+    <a href="{{ P }}/crm" class="bg-gray-700 text-white rounded-lg p-3 text-center text-sm font-medium hover:bg-gray-800">CRM管理</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Pipeline -->
+    <div class="bg-white rounded-lg shadow-sm border p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">営業パイプライン</h2>
+        <div class="space-y-3">
+            {% for s in statuses %}
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">{{ s }}</span>
+                <div class="flex items-center gap-2">
+                    <div class="w-32 bg-gray-200 rounded-full h-2">
+                        {% set pct = (status_counts[s] / total_companies * 100) if total_companies > 0 else 0 %}
+                        <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ pct|round }}%"></div>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900 w-8 text-right">{{ status_counts[s] }}</span>
+                </div>
+            </div>
+            {% endfor %}
+            <div class="flex items-center justify-between pt-2 border-t">
+                <span class="text-sm text-gray-400">ブラックリスト</span>
+                <span class="text-sm text-gray-400">{{ blacklist_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crawl & Campaign Stats -->
+    <div class="bg-white rounded-lg shadow-sm border p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">巡回・送信状況</h2>
+        <div class="space-y-4">
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">HP巡回済み</span>
+                    <span class="font-medium">{{ crawled_count }} / {{ with_url }}</span>
+                </div>
+                {% set crawl_pct = (crawled_count / with_url * 100) if with_url > 0 else 0 %}
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ crawl_pct|round }}%"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 pt-2">
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <p class="text-2xl font-bold text-purple-600">{{ total_campaigns }}</p>
+                    <p class="text-xs text-gray-500">メール送信</p>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <p class="text-2xl font-bold text-blue-600">{{ total_sent }}</p>
+                    <p class="text-xs text-gray-500">送信済みメール</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Companies -->
+{% if top_companies %}
+<div class="bg-white rounded-lg shadow-sm border p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-900">スコア上位10社</h2>
+        <a href="{{ P }}/crm?sort=score_desc" class="text-sm text-indigo-600 hover:underline">すべて見る</a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-gray-500 border-b">
+                    <th class="pb-2 font-medium">企業名</th>
+                    <th class="pb-2 font-medium">業種</th>
+                    <th class="pb-2 font-medium">ステータス</th>
+                    <th class="pb-2 font-medium text-right">スコア</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in top_companies %}
+                <tr class="border-b last:border-0 hover:bg-gray-50">
+                    <td class="py-2"><a href="{{ P }}/companies/{{ c.id }}" class="text-indigo-600 hover:underline">{{ c.name }}</a></td>
+                    <td class="py-2 text-gray-600">{{ c.industry or '-' }}</td>
+                    <td class="py-2">
+                        <span class="px-2 py-0.5 rounded-full text-xs
+                            {% if c.status == '契約' %}bg-green-100 text-green-800
+                            {% elif c.status == '商談' %}bg-blue-100 text-blue-800
+                            {% elif c.status == '返信あり' %}bg-purple-100 text-purple-800
+                            {% elif c.status == '送信済' %}bg-amber-100 text-amber-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">{{ c.status }}</span>
+                    </td>
+                    <td class="py-2 text-right font-medium">{{ c.score }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Export -->
+<div class="bg-white rounded-lg shadow-sm border p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">データエクスポート</h2>
+    <div class="flex gap-3">
+        <a href="{{ P }}/export/csv" class="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">CSV ダウンロード</a>
+        <a href="{{ P }}/export/excel" class="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Excel ダウンロード</a>
+    </div>
+</div>
+{% endblock %}

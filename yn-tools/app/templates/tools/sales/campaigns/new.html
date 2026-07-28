@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}新規メール送信 - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{{ P }}/campaigns" class="text-sm text-gray-500 hover:text-gray-700">&larr; メール送信一覧</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-1">新規メール送信作成</h1>
+</div>
+
+<div class="bg-white rounded-lg shadow-sm border p-6 max-w-3xl">
+    <form method="post" action="{{ P }}/campaigns/new">
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">メール送信名</label>
+                <input type="text" name="name" required placeholder="例: 初回営業メール"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">件名テンプレート</label>
+                <input type="text" name="subject_template" required placeholder="例: $company_name様へのご提案"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <p class="text-xs text-gray-400 mt-1">$company_name, $industry, $region が使えます</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">本文テンプレート</label>
+                <textarea name="body_template" rows="12" required placeholder="$company_name 様&#10;&#10;突然のご連絡失礼いたします。&#10;..."
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm font-mono focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                <p class="text-xs text-gray-400 mt-1">$company_name, $address, $industry, $region, $email が使えます</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700">作成</button>
+                <a href="{{ P }}/campaigns" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">キャンセル</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

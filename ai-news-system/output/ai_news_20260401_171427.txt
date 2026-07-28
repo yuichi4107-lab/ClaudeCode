@@ -7,7 +7,7 @@ Anthropicが開発したAIコーディングツール「Claude Code」のソー�
 🔗 https://twitter.com/i/web/status/2039239334520582308
 
 ■ Anthropic、Claude Codeのソースコードをnpm経由で意図せず公開
-AnthropicがClaude Codeのソースコード全体をnpmパッケージとして誤って公開ししまったことが判明した。このリークが上記のOpenCodeフォークプロジェクトのきっかけとなった。AI企業のコード管理体制について議論を呼んでいる。
+AnthropicがClaude Codeのソースコード全体をnpmパッケージとして誤って公開してしまったことが判明した。このリークが上記のOpenCodeフォークプロジェクトのきっかけとなった。AI企業のコード管理体制について議論を呼んでいる。
 🔗 https://twitter.com/i/web/status/2038982118689366448
 
 ■ 2026年版エンジニア高報酬企業ランキング――OpenAI・Anthropic・Google DeepMindが最上位

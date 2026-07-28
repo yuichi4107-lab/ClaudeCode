@@ -5,3 +5,7 @@ __pycache__/
 dist/
 build/
 .env
+
+# 秘密鍵ファイル
+yn-tools/keys.json
+yn-tools/keys.txt

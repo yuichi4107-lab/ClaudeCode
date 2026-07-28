@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}Markdownビューアー - YN Tools{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css" id="hljs-light">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" id="hljs-dark" disabled>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<style>
+/* ドロップゾーン */
+.drop-zone { border: 2px dashed #d1d5db; border-radius: 1rem; padding: 3rem 1.5rem; text-align: center; transition: all .2s; cursor: pointer; }
+.drop-zone:hover, .drop-zone.drag-over { border-color: #6366f1; background: #eef2ff; }
+.drop-zone.drag-over .drop-icon { transform: scale(1.1); }
+.drop-icon { transition: transform .2s; }
+
+/* プレビュー領域 */
+.md-preview { max-width: 100%; line-height: 1.8; color: #1f2937; word-wrap: break-word; overflow-wrap: break-word; }
+.md-preview h1 { font-size: 2em; font-weight: 700; margin: 1.2em 0 .6em; padding-bottom: .3em; border-bottom: 1px solid #e5e7eb; }
+.md-preview h2 { font-size: 1.5em; font-weight: 700; margin: 1em 0 .5em; padding-bottom: .25em; border-bottom: 1px solid #e5e7eb; }
+.md-preview h3 { font-size: 1.25em; font-weight: 600; margin: .8em 0 .4em; }
+.md-preview h4 { font-size: 1em; font-weight: 600; margin: .6em 0 .3em; }
+.md-preview p { margin: .6em 0; }
+.md-preview ul, .md-preview ol { margin: .5em 0; padding-left: 2em; }
+.md-preview li { margin: .25em 0; }
+.md-preview blockquote { margin: .8em 0; padding: .5em 1em; border-left: 4px solid #6366f1; background: #f8fafc; color: #475569; border-radius: 0 .5rem .5rem 0; }
+.md-preview code { background: #f1f5f9; padding: .15em .4em; border-radius: .25rem; font-size: .875em; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; }
+.md-preview pre { margin: .8em 0; border-radius: .75rem; overflow-x: auto; }
+.md-preview pre code { display: block; padding: 1em 1.25em; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .75rem; font-size: .85em; line-height: 1.6; }
+.md-preview table { border-collapse: collapse; width: 100%; margin: .8em 0; font-size: .9em; }
+.md-preview th, .md-preview td { border: 1px solid #e5e7eb; padding: .5em .75em; text-align: left; }
+.md-preview th { background: #f8fafc; font-weight: 600; }
+.md-preview tr:nth-child(even) { background: #fafafa; }
+.md-preview img { max-width: 100%; border-radius: .5rem; margin: .5em 0; }
+.md-preview a { color: #4f46e5; text-decoration: underline; }
+.md-preview hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5em 0; }
+.md-preview input[type="checkbox"] { margin-right: .4em; }
+
+/* ダークモード */
+.dark .md-preview { color: #e5e7eb; }
+.dark .md-preview h1, .dark .md-preview h2 { border-bottom-color: #374151; }
+.dark .md-preview blockquote { background: #1e293b; color: #94a3b8; border-left-color: #818cf8; }
+.dark .md-preview code { background: #1e293b; color: #e2e8f0; }
+.dark .md-preview pre code { background: #0f172a; border-color: #334155; }
+.dark .md-preview th { background: #1e293b; }
+.dark .md-preview td, .dark .md-preview th { border-color: #374151; }
+.dark .md-preview tr:nth-child(even) { background: #111827; }
+.dark .md-preview a { color: #818cf8; }
+.dark .md-preview hr { border-top-color: #374151; }
+.dark .drop-zone { border-color: #4b5563; background: #111827; }
+.dark .drop-zone:hover, .dark .drop-zone.drag-over { border-color: #818cf8; background: #1e1b4b; }
+.dark .bg-white { background: #1f2937 !important; }
+.dark .text-gray-900 { color: #f3f4f6 !important; }
+.dark .text-gray-500 { color: #9ca3af !important; }
+.dark .text-gray-400 { color: #6b7280 !important; }
+.dark .border { border-color: #374151 !important; }
+
+/* 印刷スタイル */
+@media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 2rem; }
+    .no-print { display: none !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Markdownビューアー</h1>
+        <p class="text-gray-500 mt-1">Markdownファイルを美しくレンダリング表示・PDF出力</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <!-- テーマ切替 -->
+        <button id="themeToggle" onclick="toggleTheme()" class="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition" title="テーマ切替">
+            <svg id="iconLight" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <svg id="iconDark" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+        <a href="/guide#mdviewer" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            使い方ガイド
+        </a>
+    </div>
+</div>
+
+<!-- アップロードエリア -->
+<div id="uploadArea" class="mb-6 no-print">
+    <div id="dropZone" class="drop-zone" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-icon mb-3">
+            <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        </div>
+        <p class="text-gray-600 font-medium mb-1">ファイルをドラッグ&ドロップ</p>
+        <p class="text-gray-400 text-sm">またはクリックして選択（.md / .markdown / .txt）</p>
+    </div>
+    <input type="file" id="fileInput" accept=".md,.markdown,.txt,.text" class="hidden">
+</div>
+
+<!-- ファイル情報バー -->
+<div id="fileInfo" class="hidden mb-4 no-print">
+    <div class="bg-white rounded-xl shadow-sm border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+                <p id="fileName" class="font-medium text-gray-900 text-sm"></p>
+                <p id="fileMeta" class="text-xs text-gray-400"></p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="exportPDF()" class="flex items-center gap-1.5 px-3 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                PDF出力
+            </button>
+            <button onclick="printPreview()" class="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                印刷
+            </button>
+            <button onclick="resetViewer()" class="flex items-center gap-1.5 px-3 py-2 text-sm text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                閉じる
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- プレビューエリア -->
+<div id="previewContainer" class="hidden">
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div id="printArea" class="md-preview p-6 sm:p-8 lg:p-10"></div>
+    </div>
+</div>
+
+<script>
+/* ===== marked 設定 ===== */
+marked.setOptions({
+    breaks: true,
+    gfm: true,
+    highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+            try { return hljs.highlight(code, { language: lang }).value; } catch(e) {}
+        }
+        try { return hljs.highlightAuto(code).value; } catch(e) {}
+        return code;
+    }
+});
+
+/* ===== ドラッグ&ドロップ ===== */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+['dragenter', 'dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag-over'); });
+});
+['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); });
+});
+
+dropZone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+});
+
+fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+/* ===== ページ全体のドロップ対応 ===== */
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+});
+
+/* ===== ファイル処理 ===== */
+function handleFile(file) {
+    const validExts = ['.md', '.markdown', '.txt', '.text'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!validExts.includes(ext)) {
+        showToast('対応形式: .md / .markdown / .txt', 'error');
+        return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        showToast('ファイルサイズは10MB以内にしてください', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const content = e.target.result;
+        renderMarkdown(content, file);
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function renderMarkdown(content, file) {
+    const html = marked.parse(content);
+    document.getElementById('printArea').innerHTML = html;
+
+    // コードブロックのハイライト再適用
+    document.querySelectorAll('#printArea pre code').forEach(block => {
+        hljs.highlightElement(block);
+    });
+
+    // ファイル情報
+    document.getElementById('fileName').textContent = file.name;
+    const sizeKB = (file.size / 1024).toFixed(1);
+    const lines = content.split('\n').length;
+    const chars = content.length;
+    document.getElementById('fileMeta').textContent = `${sizeKB} KB / ${lines.toLocaleString()} 行 / ${chars.toLocaleString()} 文字`;
+
+    // 表示切替
+    document.getElementById('uploadArea').classList.add('hidden');
+    document.getElementById('fileInfo').classList.remove('hidden');
+    document.getElementById('previewContainer').classList.remove('hidden');
+}
+
+/* ===== リセット ===== */
+function resetViewer() {
+    document.getElementById('printArea').innerHTML = '';
+    document.getElementById('uploadArea').classList.remove('hidden');
+    document.getElementById('fileInfo').classList.add('hidden');
+    document.getElementById('previewContainer').classList.add('hidden');
+    fileInput.value = '';
+}
+
+/* ===== PDF出力 ===== */
+function exportPDF() {
+    window.print();
+}
+
+/* ===== 印刷 ===== */
+function printPreview() {
+    window.print();
+}
+
+/* ===== テーマ切替 ===== */
+let isDark = false;
+
+function toggleTheme() {
+    isDark = !isDark;
+    document.body.classList.toggle('dark', isDark);
+
+    // highlight.js テーマ切替
+    document.getElementById('hljs-light').disabled = isDark;
+    document.getElementById('hljs-dark').disabled = !isDark;
+
+    // アイコン切替
+    document.getElementById('iconLight').classList.toggle('hidden', isDark);
+    document.getElementById('iconDark').classList.toggle('hidden', !isDark);
+
+    // 背景色
+    document.body.style.backgroundColor = isDark ? '#111827' : '';
+}
+</script>
+{% endblock %}

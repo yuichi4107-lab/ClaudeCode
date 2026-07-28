@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }} - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <a href="{{ P }}/companies" class="text-sm text-gray-500 hover:text-gray-700">&larr; 企業リスト</a>
+        <h1 class="text-2xl font-bold text-gray-900 mt-1">{{ company.name }}</h1>
+    </div>
+    <div class="flex gap-2">
+        {% if company.website_url %}
+        <form method="post" action="{{ P }}/companies/{{ company.id }}/crawl">
+            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">HP巡回</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Basic Info -->
+    <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">基本情報</h2>
+            <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <dt class="text-gray-500">住所</dt>
+                    <dd class="text-gray-900 mt-0.5">{{ company.address or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">電話番号</dt>
+                    <dd class="text-gray-900 mt-0.5">{{ company.phone or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Webサイト</dt>
+                    <dd class="mt-0.5">
+                        {% if company.website_url %}
+                        <a href="{{ company.website_url }}" target="_blank" class="text-indigo-600 hover:underline break-all">{{ company.website_url }}</a>
+                        {% else %}-{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Google Maps</dt>
+                    <dd class="mt-0.5">
+                        {% if company.google_maps_url %}
+                        <a href="{{ company.google_maps_url }}" target="_blank" class="text-indigo-600 hover:underline">開く</a>
+                        {% else %}-{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">業種</dt>
+                    <dd class="text-gray-900 mt-0.5">{{ company.industry or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">地域</dt>
+                    <dd class="text-gray-900 mt-0.5">{{ company.region or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">レビュー数</dt>
+                    <dd class="text-gray-900 mt-0.5">{{ company.review_count or 0 }}</dd>
+                </div>
+            </dl>
+            {% if company.description %}
+            <div class="mt-4 pt-4 border-t">
+                <dt class="text-sm text-gray-500">説明</dt>
+                <dd class="text-sm text-gray-700 mt-1">{{ company.description }}</dd>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Contacts -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">連絡先情報</h2>
+            {% if company.contacts %}
+            <div class="space-y-3">
+                {% for ct in company.contacts %}
+                <div class="p-3 bg-gray-50 rounded-lg text-sm">
+                    {% if ct.email %}
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-gray-500">Email:</span>
+                        <a href="mailto:{{ ct.email }}" class="text-indigo-600 hover:underline">{{ ct.email }}</a>
+                        {% if ct.email_type %}
+                        <span class="text-xs text-gray-400">({{ ct.email_type }})</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if ct.contact_form_url %}
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-gray-500">フォーム:</span>
+                        <a href="{{ ct.contact_form_url }}" target="_blank" class="text-indigo-600 hover:underline break-all text-xs">{{ ct.contact_form_url[:60] }}</a>
+                    </div>
+                    {% endif %}
+                    {% if ct.sns_instagram or ct.sns_twitter or ct.sns_facebook %}
+                    <div class="flex items-center gap-3 mt-1">
+                        {% if ct.sns_instagram %}<a href="{{ ct.sns_instagram }}" target="_blank" class="text-pink-500 hover:underline text-xs">Instagram</a>{% endif %}
+                        {% if ct.sns_twitter %}<a href="{{ ct.sns_twitter }}" target="_blank" class="text-blue-400 hover:underline text-xs">Twitter</a>{% endif %}
+                        {% if ct.sns_facebook %}<a href="{{ ct.sns_facebook }}" target="_blank" class="text-blue-600 hover:underline text-xs">Facebook</a>{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-400 text-sm">連絡先が未取得です。{% if company.website_url %}「HP巡回」を実行すると自動収集します。{% endif %}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar: CRM -->
+    <div class="space-y-6">
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">CRM情報</h2>
+            {% if company.crm_status %}
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm text-gray-500">ステータス</label>
+                    <form method="post" action="{{ P }}/crm/{{ company.id }}/status" class="mt-1">
+                        <select name="new_status" onchange="this.form.submit()"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            {% for s in ['未営業', '送信済', '返信あり', '商談', '契約'] %}
+                            <option value="{{ s }}" {% if company.crm_status.status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-500">スコア</label>
+                    <p class="text-2xl font-bold text-indigo-600 mt-1">{{ company.crm_status.score }}</p>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-500">メモ</label>
+                    <form method="post" action="{{ P }}/crm/{{ company.id }}/memo" class="mt-1">
+                        <textarea name="memo" rows="3"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ company.crm_status.memo or '' }}</textarea>
+                        <button type="submit" class="mt-1 text-sm text-indigo-600 hover:underline">保存</button>
+                    </form>
+                </div>
+                <div class="pt-2 border-t">
+                    <form method="post" action="{{ P }}/crm/{{ company.id }}/blacklist">
+                        {% if company.crm_status.is_blacklisted %}
+                        <button type="submit" class="text-sm text-green-600 hover:underline">ブラックリストから解除</button>
+                        {% else %}
+                        <button type="submit" class="text-sm text-red-500 hover:underline">ブラックリストに追加</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-gray-400 text-sm">CRMステータスがありません</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

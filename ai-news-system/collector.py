@@ -24,7 +24,7 @@ def fetch_tweets(max_results: int = 50) -> list[dict]:
     """X API v2 で最新ツイートを検索・取得する
 
     Returns:
-        list[dict]: ツイートのリスト. 各要素は {id, text, author_id, created_at, url} を含む。
+        list[dict]: ツイートのリスト。各要素は {id, text, author_id, created_at, url} を含む。
     """
     bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
     if not bearer_token:

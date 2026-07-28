@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{{ P }}/campaigns" class="text-sm text-gray-500 hover:text-gray-700">&larr; メール送信一覧</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-1">{{ campaign.name }}</h1>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Edit Form -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">テンプレート編集</h2>
+            <form method="post" action="{{ P }}/campaigns/{{ campaign.id }}/edit">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">メール送信名</label>
+                            <input type="text" name="name" value="{{ campaign.name }}" required
+                                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ステータス</label>
+                            <select name="status" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="draft" {% if campaign.status == 'draft' %}selected{% endif %}>下書き</option>
+                                <option value="active" {% if campaign.status == 'active' %}selected{% endif %}>アクティブ</option>
+                                <option value="paused" {% if campaign.status == 'paused' %}selected{% endif %}>一時停止</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">件名テンプレート</label>
+                        <input type="text" name="subject_template" value="{{ campaign.subject_template }}" required
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">本文テンプレート</label>
+                        <textarea name="body_template" rows="10" required
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:ring-indigo-500 focus:border-indigo-500">{{ campaign.body_template }}</textarea>
+                    </div>
+                    <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar: Send & Stats -->
+    <div class="space-y-6">
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">送信</h2>
+            <div class="grid grid-cols-2 gap-3 mb-4 text-center">
+                <div class="p-2 bg-green-50 rounded-lg">
+                    <p class="text-lg font-bold text-green-700">{{ sent_count }}</p>
+                    <p class="text-xs text-gray-500">送信済み</p>
+                </div>
+                <div class="p-2 bg-red-50 rounded-lg">
+                    <p class="text-lg font-bold text-red-700">{{ failed_count }}</p>
+                    <p class="text-xs text-gray-500">失敗</p>
+                </div>
+            </div>
+            <form method="post" action="{{ P }}/campaigns/{{ campaign.id }}/send" class="space-y-3">
+                <div>
+                    <select name="mode" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                        <option value="dry_run">プレビュー（送信しない）</option>
+                        <option value="send">本送信</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700">一括送信</button>
+            </form>
+            <p class="text-xs text-gray-400 mt-2">未営業ステータスの企業に送信します</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-sm font-semibold text-gray-900 mb-2">変数一覧</h2>
+            <ul class="text-xs text-gray-500 space-y-1">
+                <li><code class="bg-gray-100 px-1 rounded">$company_name</code> 企業名</li>
+                <li><code class="bg-gray-100 px-1 rounded">$address</code> 住所</li>
+                <li><code class="bg-gray-100 px-1 rounded">$industry</code> 業種</li>
+                <li><code class="bg-gray-100 px-1 rounded">$region</code> 地域</li>
+                <li><code class="bg-gray-100 px-1 rounded">$email</code> メールアドレス</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Send Logs -->
+{% if logs %}
+<div class="bg-white rounded-lg shadow-sm border p-6 mt-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">送信履歴（直近100件）</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-gray-500 border-b">
+                    <th class="pb-2 font-medium">日時</th>
+                    <th class="pb-2 font-medium">企業ID</th>
+                    <th class="pb-2 font-medium">タイプ</th>
+                    <th class="pb-2 font-medium">ステータス</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in logs %}
+                <tr class="border-b last:border-0">
+                    <td class="py-2 text-gray-600">{{ l.sent_at.strftime('%Y-%m-%d %H:%M') if l.sent_at else l.created_at.strftime('%Y-%m-%d %H:%M') if l.created_at else '-' }}</td>
+                    <td class="py-2"><a href="{{ P }}/companies/{{ l.company_id }}" class="text-indigo-600 hover:underline">{{ l.company_id }}</a></td>
+                    <td class="py-2 text-gray-600">{{ l.type }}</td>
+                    <td class="py-2">
+                        <span class="px-2 py-0.5 rounded-full text-xs {% if l.status == 'sent' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">{{ l.status }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

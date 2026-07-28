@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}プラン変更完了 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-12 animate-fade-in">
+
+    {% if result.type == "upgrade" %}
+    {# per_tool → all_tools アップグレード #}
+    <div class="bg-white rounded-xl shadow-sm border p-8 text-center">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">&#x2705;</div>
+        <h1 class="text-2xl font-bold mb-2">アップグレード完了</h1>
+        <p class="text-gray-600 mb-4">全ツールプランに変更されました。</p>
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-sm">
+            <div class="flex justify-between mb-2">
+                <span class="text-gray-500">変更前</span>
+                <span class="font-medium">&yen;{{ "{:,}".format(result.old_cost) }}/月</span>
+            </div>
+            <div class="flex justify-between mb-2">
+                <span class="text-gray-500">変更後</span>
+                <span class="font-bold text-indigo-600">&yen;{{ "{:,}".format(result.new_cost) }}/月</span>
+            </div>
+            {% if result.charged > 0 %}
+            <div class="border-t pt-2 mt-2 flex justify-between">
+                <span class="text-gray-500">今回の請求額（差額）</span>
+                <span class="font-bold">&yen;{{ "{:,}".format(result.charged) }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <a href="/dashboard" class="inline-block bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition">
+            ダッシュボードへ
+        </a>
+    </div>
+
+    {% elif result.type == "downgrade" %}
+    {# all_tools → per_tool ダウングレード #}
+    <div class="bg-white rounded-xl shadow-sm border p-8 text-center">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">&#x1f4c5;</div>
+        <h1 class="text-2xl font-bold mb-2">プラン変更を予約しました</h1>
+        <p class="text-gray-600 mb-4">次の更新日から新しいプランが適用されます。</p>
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-sm">
+            <div class="flex justify-between mb-2">
+                <span class="text-gray-500">現在のプラン</span>
+                <span class="font-medium">&yen;{{ "{:,}".format(result.old_cost) }}/月</span>
+            </div>
+            <div class="flex justify-between mb-2">
+                <span class="text-gray-500">変更後のプラン</span>
+                <span class="font-bold text-indigo-600">&yen;{{ "{:,}".format(result.new_cost) }}/月</span>
+            </div>
+            <div class="border-t pt-2 mt-2 flex justify-between">
+                <span class="text-gray-500">適用日</span>
+                <span class="font-bold">{{ result.effective_date }}</span>
+            </div>
+        </div>
+        <p class="text-gray-400 text-xs mb-4">それまでは現在のプランのまま全機能をご利用いただけます。</p>
+        <a href="/dashboard" class="inline-block bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition">
+            ダッシュボードへ
+        </a>
+    </div>
+
+    {% elif result.type in ("add", "remove", "mixed") %}
+    {# per_tool ツール追加/削除 #}
+    <div class="bg-white rounded-xl shadow-sm border p-8 text-center">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">&#x2705;</div>
+        <h1 class="text-2xl font-bold mb-2">ツール変更完了</h1>
+
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-sm text-left space-y-3">
+            {% if result.added %}
+            <div>
+                <p class="text-green-700 font-medium mb-1">追加（即時利用可能）</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for slug in result.added %}
+                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">{{ slug }}</span>
+                    {% endfor %}
+                </div>
+                {% if result.charged > 0 %}
+                <p class="text-gray-500 text-xs mt-1">請求額: &yen;{{ "{:,}".format(result.charged) }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if result.removed %}
+            <div>
+                <p class="text-amber-700 font-medium mb-1">削除予約（{{ result.removal_date }} まで利用可能）</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for slug in result.removed %}
+                    <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs">{{ slug }}</span>
+                    {% endfor %}
+                </div>
+                <p class="text-gray-400 text-xs mt-1">次回更新日に自動で削除されます</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <a href="/dashboard" class="inline-block bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition">
+            ダッシュボードへ
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

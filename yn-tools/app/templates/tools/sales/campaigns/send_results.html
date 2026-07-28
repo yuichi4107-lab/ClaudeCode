@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}送信結果 - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{{ P }}/campaigns/{{ campaign_id }}" class="text-sm text-gray-500 hover:text-gray-700">&larr; メール送信詳細</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-1">
+        {% if result.dry_run %}プレビュー結果{% else %}送信結果{% endif %}
+    </h1>
+    <p class="text-gray-500 mt-1">メール送信: {{ result.campaign }}</p>
+</div>
+
+<!-- Summary -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+        <p class="text-2xl font-bold text-gray-900">{{ result.total }}</p>
+        <p class="text-xs text-gray-500">対象企業</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+        <p class="text-2xl font-bold text-green-600">{{ result.sent }}</p>
+        <p class="text-xs text-gray-500">{% if result.dry_run %}プレビュー{% else %}送信成功{% endif %}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+        <p class="text-2xl font-bold text-red-600">{{ result.failed }}</p>
+        <p class="text-xs text-gray-500">失敗</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4 text-center">
+        <p class="text-2xl font-bold text-gray-400">{{ result.skipped }}</p>
+        <p class="text-xs text-gray-500">スキップ</p>
+    </div>
+</div>
+
+{% if result.dry_run %}
+<div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-sm text-amber-800">
+    これはプレビューです。実際のメール送信は行われていません。本送信はメール送信詳細画面から実行してください。
+</div>
+{% endif %}
+
+<!-- Results -->
+{% if result.results %}
+<div class="bg-white rounded-lg shadow-sm border overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-gray-500 border-b bg-gray-50">
+                <th class="px-4 py-3 font-medium">企業名</th>
+                <th class="px-4 py-3 font-medium">送信先</th>
+                <th class="px-4 py-3 font-medium">件名</th>
+                <th class="px-4 py-3 font-medium">ステータス</th>
+                <th class="px-4 py-3 font-medium">備考</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in result.results %}
+            <tr class="border-b last:border-0 hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ r.company }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ r.to or '-' }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ r.subject or '-' }}</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded-full text-xs
+                        {% if r.status == 'sent' or r.status == 'preview' %}bg-green-100 text-green-800
+                        {% elif r.status == 'skipped' %}bg-gray-100 text-gray-600
+                        {% else %}bg-red-100 text-red-800{% endif %}">{{ r.status }}</span>
+                </td>
+                <td class="px-4 py-3 text-xs text-gray-500">{{ r.reason or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="mt-6 flex gap-3">
+    <a href="{{ P }}/campaigns/{{ campaign_id }}" class="px-4 py-2 text-sm border rounded-lg text-gray-600 hover:bg-gray-50">メール送信詳細</a>
+    <a href="{{ P }}/crm" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">CRM管理</a>
+</div>
+{% endblock %}

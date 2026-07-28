@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}検索結果 - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">検索結果</h1>
+    <p class="text-gray-500 mt-1">「{{ query }}」{% if region %} / {{ region }}{% endif %} — {{ companies|length }} 件追加しました</p>
+</div>
+
+{% if companies %}
+<div class="bg-white rounded-lg shadow-sm border overflow-x-auto mb-6">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-gray-500 border-b bg-gray-50">
+                <th class="px-4 py-3 font-medium">企業名</th>
+                <th class="px-4 py-3 font-medium">住所</th>
+                <th class="px-4 py-3 font-medium">電話番号</th>
+                <th class="px-4 py-3 font-medium">Webサイト</th>
+                <th class="px-4 py-3 font-medium">レビュー数</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in companies %}
+            <tr class="border-b last:border-0 hover:bg-gray-50">
+                <td class="px-4 py-3">
+                    <a href="{{ P }}/companies/{{ c.id }}" class="text-indigo-600 hover:underline font-medium">{{ c.name }}</a>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ c.address or '-' }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ c.phone or '-' }}</td>
+                <td class="px-4 py-3">
+                    {% if c.website_url %}
+                    <a href="{{ c.website_url }}" target="_blank" class="text-indigo-500 hover:underline text-xs">{{ c.website_url[:40] }}...</a>
+                    {% else %}-{% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ c.review_count or 0 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="bg-white rounded-lg shadow-sm border p-8 text-center text-gray-400 mb-6">
+    該当する企業が見つかりませんでした。
+</div>
+{% endif %}
+
+<div class="flex gap-3">
+    <a href="{{ P }}/scraper" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">HP一括巡回へ</a>
+    <a href="{{ P }}/companies/search" class="px-4 py-2 text-sm border rounded-lg text-gray-600 hover:bg-gray-50">再検索</a>
+    <a href="{{ P }}/companies" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">企業リストへ</a>
+</div>
+{% endblock %}

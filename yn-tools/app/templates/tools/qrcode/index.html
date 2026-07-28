@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}QRコードジェネレーター - YN Tools{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">QRコードジェネレーター</h1>
+        <p class="text-gray-500 mt-1">URL・テキストからQRコードを即座に生成</p>
+    </div>
+    <a href="/guide#qrcode" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        使い方ガイド
+    </a>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6">
+    <!-- 入力エリア -->
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h2 class="font-bold text-gray-900 mb-4">QRコード設定</h2>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">内容</label>
+                <textarea id="qrContent" rows="3" placeholder="URLまたはテキストを入力..."
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">https://</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">サイズ</label>
+                    <select id="qrSize" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                        <option value="4">小 (132px)</option>
+                        <option value="6" selected>中 (198px)</option>
+                        <option value="8">大 (264px)</option>
+                        <option value="12">特大 (396px)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">誤り訂正レベル</label>
+                    <select id="qrErrorLevel" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                        <option value="L">L (7%)</option>
+                        <option value="M" selected>M (15%)</option>
+                        <option value="Q">Q (25%)</option>
+                        <option value="H">H (30%)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">前景色</label>
+                    <input type="color" id="qrFg" value="#000000" class="w-full h-9 rounded-lg border border-gray-300 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">背景色</label>
+                    <input type="color" id="qrBg" value="#ffffff" class="w-full h-9 rounded-lg border border-gray-300 cursor-pointer">
+                </div>
+            </div>
+
+            <button onclick="generateQR()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                QRコードを生成
+            </button>
+        </div>
+
+        <!-- プリセット -->
+        <div class="mt-6 border-t pt-4">
+            <p class="text-xs font-medium text-gray-500 mb-2">クイックプリセット</p>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="setPreset('url')" class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition">URL</button>
+                <button onclick="setPreset('email')" class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition">メール</button>
+                <button onclick="setPreset('tel')" class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition">電話番号</button>
+                <button onclick="setPreset('wifi')" class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition">Wi-Fi</button>
+                <button onclick="setPreset('vcard')" class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition">連絡先</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- プレビュー -->
+    <div class="bg-white rounded-xl shadow-sm border p-6 flex flex-col items-center justify-center">
+        <div id="qrPreview" class="mb-4">
+            <div class="w-32 h-32 sm:w-48 sm:h-48 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                プレビュー
+            </div>
+        </div>
+        <canvas id="qrCanvas" class="hidden"></canvas>
+        <div id="qrActions" class="hidden space-y-2 w-full max-w-xs">
+            <button onclick="downloadQR('png')" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                PNG でダウンロード
+            </button>
+            <button onclick="downloadQR('svg')" class="w-full bg-white text-indigo-600 border border-indigo-600 py-2 rounded-lg text-sm font-medium hover:bg-indigo-50 transition">
+                SVG でダウンロード
+            </button>
+            <button onclick="copyQR()" class="w-full bg-white text-gray-600 border border-gray-300 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+                クリップボードにコピー
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+const ERROR_MAP = {L: 1, M: 0, Q: 3, H: 2};
+
+function generateQR() {
+    const content = document.getElementById('qrContent').value.trim();
+    if (!content) { alert('内容を入力してください'); return; }
+
+    const size = parseInt(document.getElementById('qrSize').value);
+    const errLevel = document.getElementById('qrErrorLevel').value;
+    const fg = document.getElementById('qrFg').value;
+    const bg = document.getElementById('qrBg').value;
+
+    const qr = qrcode(0, errLevel);
+    qr.addData(content);
+    qr.make();
+
+    const moduleCount = qr.getModuleCount();
+    const cellSize = size;
+    const totalSize = moduleCount * cellSize;
+
+    const canvas = document.getElementById('qrCanvas');
+    canvas.width = totalSize;
+    canvas.height = totalSize;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, totalSize, totalSize);
+    ctx.fillStyle = fg;
+
+    for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+                ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            }
+        }
+    }
+
+    const preview = document.getElementById('qrPreview');
+    preview.innerHTML = '';
+    const img = new Image();
+    img.src = canvas.toDataURL('image/png');
+    img.className = 'rounded-xl shadow-md';
+    img.style.maxWidth = '300px';
+    preview.appendChild(img);
+
+    document.getElementById('qrActions').classList.remove('hidden');
+
+    // Store SVG data for SVG download
+    window._qrSvgData = generateSVG(qr, moduleCount, cellSize, fg, bg);
+}
+
+function generateSVG(qr, moduleCount, cellSize, fg, bg) {
+    const size = moduleCount * cellSize;
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+    svg += `<rect width="${size}" height="${size}" fill="${bg}"/>`;
+    for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+                svg += `<rect x="${col*cellSize}" y="${row*cellSize}" width="${cellSize}" height="${cellSize}" fill="${fg}"/>`;
+            }
+        }
+    }
+    svg += '</svg>';
+    return svg;
+}
+
+function downloadQR(format) {
+    const canvas = document.getElementById('qrCanvas');
+    const a = document.createElement('a');
+    if (format === 'svg') {
+        const blob = new Blob([window._qrSvgData], {type: 'image/svg+xml'});
+        a.href = URL.createObjectURL(blob);
+        a.download = 'qrcode.svg';
+    } else {
+        a.href = canvas.toDataURL('image/png');
+        a.download = 'qrcode.png';
+    }
+    a.click();
+}
+
+async function copyQR() {
+    const canvas = document.getElementById('qrCanvas');
+    try {
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+        showToast('クリップボードにコピーしました', 'success');
+    } catch(e) {
+        showToast('コピーに失敗しました', 'error');
+    }
+}
+
+function setPreset(type) {
+    const el = document.getElementById('qrContent');
+    const presets = {
+        url: 'https://example.com',
+        email: 'mailto:info@example.com?subject=お問い合わせ',
+        tel: 'tel:+8190XXXXXXXX',
+        wifi: 'WIFI:T:WPA;S:ネットワーク名;P:パスワード;;',
+        vcard: 'BEGIN:VCARD\nVERSION:3.0\nN:山田;太郎\nTEL:090XXXXXXXX\nEMAIL:taro@example.com\nEND:VCARD',
+    };
+    el.value = presets[type] || '';
+    el.focus();
+}
+
+// Auto-generate on Enter
+document.getElementById('qrContent')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateQR(); }
+});
+</script>
+{% endblock %}

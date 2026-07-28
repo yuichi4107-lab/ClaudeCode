@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}解約 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-8">
+    <a href="/account" class="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">&larr; アカウントに戻る</a>
+    <h1 class="text-2xl font-bold mb-2">サブスクリプションの解約</h1>
+    <p class="text-gray-500 text-sm mb-6">解約すると、現在の請求期間の終了後にツールが利用できなくなります。</p>
+
+    <div class="bg-white rounded-xl shadow-sm border p-6">
+
+        <!-- 現在のプラン -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <p class="text-sm text-gray-500">現在のプラン</p>
+            <p class="font-bold">
+                {% if user.plan == "all_tools" %}全ツールプラン（&yen;2,000/月）
+                {% elif user.plan == "pro" %}Pro プラン（&yen;500/月）
+                {% elif user.plan == "per_tool" %}従量制プラン
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- 注意事項 -->
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <p class="text-amber-800 text-sm font-medium mb-2">解約前にご確認ください</p>
+            <ul class="text-amber-700 text-sm space-y-1">
+                <li>・ 現在の請求期間が終了するまでツールは引き続き利用できます</li>
+                <li>・ データは解約後も保持されます（再契約時に復元可能）</li>
+                <li>・ いつでも再契約してサービスを再開できます</li>
+            </ul>
+        </div>
+
+        <form action="/account/cancel" method="post">
+            <!-- 解約理由（任意） -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">解約の理由を教えてください（任意）</label>
+                <div class="space-y-2">
+                    <label class="flex items-center text-sm text-gray-600">
+                        <input type="radio" name="reason" value="price" class="mr-2 text-indigo-600"> 料金が高い
+                    </label>
+                    <label class="flex items-center text-sm text-gray-600">
+                        <input type="radio" name="reason" value="not_useful" class="mr-2 text-indigo-600"> 使わなくなった
+                    </label>
+                    <label class="flex items-center text-sm text-gray-600">
+                        <input type="radio" name="reason" value="alternative" class="mr-2 text-indigo-600"> 他のサービスに乗り換える
+                    </label>
+                    <label class="flex items-center text-sm text-gray-600">
+                        <input type="radio" name="reason" value="temporary" class="mr-2 text-indigo-600"> 一時的に利用を止める
+                    </label>
+                    <label class="flex items-center text-sm text-gray-600">
+                        <input type="radio" name="reason" value="other" class="mr-2 text-indigo-600"> その他
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <a href="/account" class="flex-1 text-center py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">
+                    やっぱりやめる
+                </a>
+                <button type="submit" class="flex-1 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                    解約する
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
