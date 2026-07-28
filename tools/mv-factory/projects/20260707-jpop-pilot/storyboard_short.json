@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "version": "short",
+  "aspect_ratio": "9:16",
+  "target_duration_sec": 60,
+  "clip_duration_default_sec": 5,
+  "characters": [
+    {
+      "name": "主人公（女子高生〜大学生風）",
+      "description": "Japanese young woman, late teens, shoulder-length black hair with soft bangs, warm friendly smile, casual summer outfit (white shirt + light denim), wearing a small backpack. Consistent across all scenes: same hairstyle, same outfit, same face.\n"
+    }
+  ],
+  "world": {
+    "description": "Bright summer morning in a Japanese suburban town, blue sky with soft white clouds, warm golden sunlight, tree-lined streets, retro-style bicycle, gentle wind, optimistic and nostalgic coming-of-age atmosphere. Color palette: warm yellows, sky blues, soft greens.\n"
+  },
+  "scenes": [
+    {
+      "scene_id": "scene_01",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, warm golden summer morning light streaming through a gap in curtains onto a young Japanese woman waking up in bed — shoulder-length black hair with soft bangs, warm smile, soft morning atmosphere, bright optimistic mood, soft cinematic color grading (warm yellows, sky blues). Slow push-in camera move, she opens her eyes and smiles gently.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_02",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white shirt, light denim) standing at a bright bathroom mirror, warm golden morning light, brushing her hair and smiling at her reflection with quiet confidence, coming-of-age film aesthetic, warm color grading. Static camera, gentle handheld sway.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_03",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, close-up of the same young woman's feet at a Japanese suburban house genkan entrance: her RIGHT foot is already wearing one white canvas sneaker, and she is sliding her LEFT foot into the OTHER matching white canvas sneaker on the floor -- two separate sneakers total, one shoe per foot, anatomically correct feet and toes, warm golden light, small beige backpack visible beside her, optimistic mood, cinematic warm color grading. Low-angle static shot, quick confident motion. Both sneakers clearly visible and correctly paired with each foot, no shared or merged footwear.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_04",
+      "section": "verse1",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) opening a front door and stepping outside into bright summer morning sunlight, tree-lined suburban Japanese street, blue sky with soft white clouds, she takes a deep breath and looks up at the sky, optimistic coming-of-age atmosphere, warm cinematic color grading. Camera pulls back as door opens, wide shot revealing the street. She is wearing a white long-sleeve shirt tucked into light denim jeans and white canvas sneakers (NOT a dress, NOT a one-piece dress, NOT a skirt) throughout this shot, consistent with her established outfit.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_05",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) hopping onto a retro-style bicycle in front of her house, tree-lined Japanese suburban street, warm golden sunlight, gentle wind moving her hair, bright energetic mood, cinematic warm color grading. Camera tracks alongside as she starts pedaling, low tracking shot.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_06",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) riding a bicycle down a sunlit tree-lined street, hair flowing in the wind, wide joyful smile, dappled sunlight through leaves, blue sky, upbeat anthemic mood, warm cinematic color grading. Dynamic side-tracking camera following the bicycle at speed. She is wearing a white long-sleeve shirt tucked into light denim jeans and white canvas sneakers (NOT a dress, NOT a one-piece dress, NOT a skirt) throughout this shot, consistent with her established outfit.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_07",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, low-angle shot of bicycle wheel and pedal spinning fast, golden sunlight flickering through, same young woman's (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) legs pedaling energetically, sense of speed and freedom, warm cinematic color grading, upbeat mood. Close-up dynamic camera, slight motion blur on spokes.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_08",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) riding bicycle down a gentle slope in a Japanese suburban town, arms briefly spread wide with joy, wide blue sky with soft clouds above, warm golden light, exhilarating optimistic mood, cinematic warm color grading. Wide tracking shot from behind and slightly below. She is wearing a white long-sleeve shirt tucked into light denim jeans and white canvas sneakers (NOT a dress, NOT a one-piece dress, NOT a skirt) throughout this shot, consistent with her established outfit.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_09",
+      "section": "verse2",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) riding past a group of friends on a sunlit street corner, waving happily to each other, warm nostalgic summer atmosphere, blue sky, warm cinematic color grading, coming-of-age mood. Medium tracking shot, brief eye contact and smiles exchanged. She is wearing a white long-sleeve shirt tucked into light denim jeans and white canvas sneakers (NOT a dress, NOT a one-piece dress, NOT a skirt) throughout this shot, consistent with her established outfit.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_10",
+      "section": "bridge",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) stopping her bicycle on a hilltop street, looking up at a wide blue sky with soft white clouds drifting, warm golden light, reflective hopeful expression, cinematic warm color grading. Slow upward tilt camera from her face to the open sky. She is wearing a white long-sleeve shirt tucked into light denim jeans and white canvas sneakers (NOT a dress, NOT a one-piece dress, NOT a skirt) throughout this shot, consistent with her established outfit.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_11",
+      "section": "outro",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) pedaling hard with determined joyful expression, sunlight flaring through tree branches overhead, dynamic sense of motion and freedom, upbeat anthemic mood, warm cinematic color grading. Fast forward-tracking camera at eye level, light flare effects. She is wearing a white long-sleeve shirt tucked into light denim jeans and white canvas sneakers (NOT a dress, NOT a one-piece dress, NOT a skirt) throughout this shot, consistent with her established outfit.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_12",
+      "section": "outro",
+      "duration_sec": 5,
+      "video_prompt": "Vertical 9:16 photorealistic cinematic live-action music video, shot on real camera, realistic human skin and fabric textures, real actress, documentary-style realism, NOT anime, NOT illustration, NOT cel-shaded, NOT cartoon, NOT 3D animation, NOT CGI render, NOT Pixar-style, NOT video game render, Japanese J-pop music video aesthetic, same young Japanese woman (shoulder-length black hair with soft bangs, white long-sleeve shirt tucked into light denim jeans, small beige backpack, white canvas sneakers one shoe per foot) riding straight toward camera into golden sunlight, warm lens flare, bright blue sky above, radiant optimistic smile, cinematic warm color grading, triumphant uplifting mood as the song reaches its final chorus. Slow-motion frontal tracking shot, warm backlight glow. She is wearing a white long-sleeve shirt tucked into light denim jeans and white canvas sneakers (NOT a dress, NOT a one-piece dress, NOT a skirt) throughout this shot, consistent with her established outfit.",
+      "reference_image_role": "none"
+    }
+  ],
+  "generation_note": "scenesはLLM(Claude Code実行時のエージェント)がsong_structure.jsonのセクション情報をもとに作文すること。各シーンは4〜15秒、video_promptはカメラワーク・画角・雰囲気を含む英語推奨プロンプトとする。",
+  "character_sheet": {
+    "hairstyle": "shoulder-length black hair with soft bangs",
+    "outfit": "white long-sleeve shirt tucked into light denim jeans, small beige backpack",
+    "shoes": "white canvas sneakers, one shoe per foot",
+    "build": "slim build, young adult Japanese woman, late teens to early twenties"
+  }
+}

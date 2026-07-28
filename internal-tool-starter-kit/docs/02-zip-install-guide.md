@@ -122,7 +122,7 @@ Codexを再起動する。
 
 ## 6. 動作確認する
 
-Codexで以下のように依頼する
+Codexで以下のように依頼する。
 
 ```text
 internal-tool-requirements を使って、この社内ツールの要件定義をしてください。

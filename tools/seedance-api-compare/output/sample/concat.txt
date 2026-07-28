@@ -1,0 +1,4 @@
+file '/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/seedance-api-compare/output/sample/cut1_hook.mp4'
+file '/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/seedance-api-compare/output/sample/cut2_tip1.mp4'
+file '/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/seedance-api-compare/output/sample/cut3_tip2.mp4'
+file '/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/seedance-api-compare/output/sample/cut4_cta.mp4'

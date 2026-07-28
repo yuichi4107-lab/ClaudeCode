@@ -62,7 +62,7 @@ reference_images:
     - name: "主人公"
       description: "20代女性、ショートヘア、革ジャケット、都会的な雰囲気"
   world:
-    description: "深夜のネオン街、雨上がりの路反射、サイバーパンク寄りの色彩"
+    description: "深夜のネオン街、雨上がりの路面反射、サイバーパンク寄りの色彩"
   provider: "nanobanana2"            # nanobanana2 | openai_web (手動)
 
 # --- キャラクターシート (工程3、必須。2026-07-05パイロットのオーナー指摘で追加) ---

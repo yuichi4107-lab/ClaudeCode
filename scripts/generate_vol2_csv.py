@@ -13,13 +13,13 @@ import os
 # outfit_presets の description マッピング
 OUTFIT_PRESETS = {
     "misaki_casual": "ボーダー柄（白と紺）のカットソーにデニムパンツ、白いスニーカー（自宅・外出・育児中の普段着）",
-    "misaki_work_home": "グレーのスウェット上下、髪を緩くまとめ、素足（深夜〜早朝のPC作業生集中タイム）",
+    "misaki_work_home": "グレーのスウェット上下、髪を緩くまとめ、素足（深夜〜早朝のPC作業・在宅集中タイム）",
     "misaki_formal": "紺のジャケットに白ブラウス、黒いスラックス、パンプス（OL時代・退職日・過去回想シーン）",
     "takuya_zoom_mentor": "白い無地のTシャツ、自室の白い壁を背景（Zoom・ウェビナー画面越しの指導シーン）",
     "takuya_casual": "薄いグレーのカジュアルシャツにチノパン、黒い革靴（対面・外出時の普段着）",
     "kenta_work_casual": "白い無地のシャツにベージュのチノパン、茶色の革靴（仕事帰り・夜の帰宅シーン）",
     "kenta_casual": "ネイビーのカジュアルシャツにグレーのスラックス、スニーカー（休日・自宅くつろぎシーン）",
-    "yamada_suit": "紺色のスーツに白いYシャツ、紺ストライプネクツ（OL時代の上司として過去回想シーンに登場）",
+    "yamada_suit": "紺色のスーツに白いYシャツ、紺ストライプネクタイ（OL時代の上司として過去回想シーンに登場）",
 }
 
 # 作画スタイル共通部分
@@ -27,7 +27,7 @@ DRAW_STYLE = "ジャンル: 副業に最適化した統一スタイル / 作画�
 
 # キャラ外見指定（PNG参照）
 CHAR_APPEARANCE = {
-    "ミサキ": "ミサキ.pngと100%同一の外見で描画",
+    "ミサキ": "ミサキは添付のミサキ.pngと100%同一の外見で描画",
     "ひなた": "ひなた（2歳期）は添付のひなた_2歳期.pngと100%同一の外見で描画",
     "ケンタ": "ケンタは添付のケンタ.pngと100%同一の外見で描画",
     "タクヤ": "タクヤは添付のタクヤ.pngと100%同一の外見で描画",
@@ -328,7 +328,7 @@ def main():
         130: 131, # P130 → P131の冒頭に
         136: 134, # P136 → P134+P135マージ後に吸収
         140: 137, # P140 → P137+P138マージ後に吸収
-        152: 153, # P152 → P157の前段に
+        152: 153, # P152 → P153の前段に
         158: 157, # P158 → P157末尾に
         169: 166, # P169 → P166+P167マージ後に吸収
     }
@@ -400,7 +400,7 @@ def main():
         outfit_id = get_outfit_id(old_pn)
 
         if template == "テキストページ":
-            # テキストページはプロンプトをそのまま使用、outfit_id空文字
+            # テキストページはプロンプトをそのまま使用、outfit_id=空文字
             return {
                 'template': template,
                 'prompt': p['prompt'],
@@ -411,7 +411,7 @@ def main():
         # プロンプト更新（服装記述をoutfit_id版に変更）
         updated_prompt = update_single_prompt_outfit(p['prompt'], outfit_id)
 
-        # テンプレ剉更がある場合はコマ構成行も更新
+        # テンプレ変更がある場合はコマ構成行も更新
         if template_override and template_override != p['template']:
             lines = updated_prompt.split('\n')
             new_lines = []
@@ -463,7 +463,7 @@ def main():
         # プロンプト統合
         merged_prompt = build_merged_prompt(src_pages, old_pn1, old_pn2, new_template, outfit_id)
 
-        # テキストJSOM結合
+        # テキストJSON統合
         text_json_data = []
         try:
             t1 = json.loads(p1['text_json']) if p1['text_json'].strip() not in ['', '[]'] else []
@@ -497,7 +497,7 @@ def main():
     # 全181ページを処理
     for old_pn in range(1, 182):
         if old_pn in consumed_pages:
-            # このページは4k他のページに統合・吸収された
+            # このページは他のページに統合・吸収された
             continue
 
         if old_pn in all_merges:
@@ -557,7 +557,7 @@ def main():
     # CSV出力
     with open(out_path, 'w', encoding='utf-8', newline='') as f:
         writer = csv.writer(f, quoting=csv.QUOTE_ALL)
-        writer.writerow(['ページ番号', '使用するコマ別テンプレ', '淫画作成のプロンプト', 'コマ別テキストJSON', 'outfit_id'])
+        writer.writerow(['ページ番号', '使用するコマ割りテンプレ', '漫画作成のプロンプト', 'コマ別テキストJSON', 'outfit_id'])
         for r in output_rows:
             writer.writerow([
                 r['page_num'],

@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "version": "full",
+  "aspect_ratio": "16:9",
+  "target_duration_sec": 180,
+  "clip_duration_default_sec": 5,
+  "characters": [
+    {
+      "name": "主人公（女子高生〜大学生風）",
+      "description": "Japanese young woman, late teens, shoulder-length black hair with soft bangs, warm friendly smile, casual summer outfit (white shirt + light denim), wearing a small backpack. Consistent across all scenes: same hairstyle, same outfit, same face.\n"
+    }
+  ],
+  "world": {
+    "description": "Bright summer morning in a Japanese suburban town, blue sky with soft white clouds, warm golden sunlight, tree-lined streets, retro-style bicycle, gentle wind, optimistic and nostalgic coming-of-age atmosphere. Color palette: warm yellows, sky blues, soft greens.\n"
+  },
+  "scenes": [
+    {
+      "scene_id": "scene_01",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), close-up of her waking up in bed as warm morning light streams through curtain gap, slow push-in, she smiles gently.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_02",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she sits up and stretches, sunlight filling the room, medium shot, calm and quiet mood.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_03",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she looks at new white sneakers waiting by the door, medium shot, hopeful expression.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_04",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she stands at the bathroom mirror brushing her hair, quiet confidence, static camera with gentle handheld sway.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_05",
+      "section": "verse1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), low-angle close-up of her feet sliding into white sneakers at the genkan entrance, quick confident motion.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_06",
+      "section": "verse1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she picks up her small backpack and slings it over one shoulder, medium shot, determined smile.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_07",
+      "section": "verse1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she opens the front door, warm sunlight flooding in, camera pulls back to reveal the street.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_08",
+      "section": "verse1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide shot of her stepping outside onto a tree-lined suburban street, deep breath, looking up at the sky.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_09",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she hops onto a retro-style bicycle in front of her house, low tracking shot as she starts pedaling.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_10",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide side-tracking shot of her riding down a sunlit tree-lined street, hair flowing in the wind, joyful smile.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_11",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), low-angle close-up of the bicycle wheel and pedals spinning fast, golden dappled sunlight, sense of speed.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_12",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide tracking shot from behind as she rides down a gentle slope, arms briefly spread with joy, blue sky above.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_13",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), medium shot, camera circles around her mid-ride, radiant happy expression, wind in her hair.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_14",
+      "section": "verse2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), medium tracking shot of her riding past a row of shops waking up for the day, warm morning atmosphere.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_15",
+      "section": "verse2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she waves happily to a group of friends on a sunlit street corner, brief eye contact and smiles exchanged.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_16",
+      "section": "verse2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide shot of her riding alongside a river path lined with trees, calm reflective mood.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_17",
+      "section": "verse2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), close-up of her face in profile while riding, thoughtful nostalgic expression, golden backlight.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_18",
+      "section": "chorus2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she stands up on the bicycle pedals cresting a small hill, energetic triumphant motion, wide sky above.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_19",
+      "section": "chorus2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), dynamic forward-tracking shot at eye level as she picks up speed, sunlight flaring through tree branches.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_20",
+      "section": "chorus2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide side shot of her riding through a tunnel of cherry-blossom-green trees, dappled light patterns.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_21",
+      "section": "chorus2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), low-angle shot of spinning bicycle wheel again intercut with her smiling face, upbeat anthemic energy.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_22",
+      "section": "chorus2",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide aerial-feel tracking shot following her along a scenic suburban street, blue sky and soft clouds.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_23",
+      "section": "bridge",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she stops the bicycle on a hilltop street, looking up at a wide blue sky with drifting clouds, reflective mood.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_24",
+      "section": "bridge",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), medium close-up, slow upward tilt from her face to the open sky, hopeful contemplative expression.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_25",
+      "section": "bridge",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she closes her eyes briefly in the warm sun, gentle wind moving her hair, quiet determination.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_26",
+      "section": "bridge",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide shot of her standing beside the bicycle on the hilltop, small figure against a vast sky, golden light.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_27",
+      "section": "outro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), she gets back on the bicycle and pushes off with renewed energy, medium tracking shot, determined joyful smile.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_28",
+      "section": "outro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), fast forward-tracking shot at eye level, sunlight flaring through branches, dynamic sense of freedom.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_29",
+      "section": "outro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide shot riding straight toward camera into golden sunlight, warm lens flare, radiant optimistic smile.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_30",
+      "section": "outro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), medium shot from the side, hair and shirt fluttering in the wind, triumphant uplifting mood.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_31",
+      "section": "outro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), slow-motion frontal tracking shot as she rides into warm backlight glow, cinematic finale energy.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_32",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), wide shot of her riding through golden light with the whole street bathed in warm color, euphoric mood.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_33",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), close-up of her joyful laughing face while riding, wind-blown hair, warm cinematic glow.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_34",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), slow-motion wide shot as she raises one arm briefly in a small triumphant gesture while riding.",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_35",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Horizontal 16:9 cinematic shot, Japanese anime-style live-action-look music video, warm golden summer morning light, bright optimistic mood, coming-of-age film aesthetic, soft cinematic color grading (warm yellows, sky blues), same young Japanese woman protagonist (shoulder-length black hair with soft bangs, warm smile, white shirt with light denim, small backpack), final wide shot, she rides off into the golden horizon on the tree-lined street, blue sky above, gentle fade-out mood.",
+      "reference_image_role": "none"
+    }
+  ],
+  "generation_note": "scenesはLLM(Claude Code実行時のエージェント)がsong_structure.jsonのセクション情報をもとに作文すること。各シーンは4〜15秒、video_promptはカメラワーク・画角・雰囲気を含む英語推奨プロンプトとする。"
+}

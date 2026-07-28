@@ -13,7 +13,7 @@
      references/*.png として保存する(README.md参照)。
   4. references/*.png が既に揃っている場合はスキップ(60秒版・3分版の共用、
      重複生成回避)。
-  5. reference_images.enabled=false の場合は空マニフォールバックを返し、
+  5. reference_images.enabled=false の場合は空マニフェストを返し、
      工程5はtext-to-videoにフォールバックする。
 """
 from __future__ import annotations

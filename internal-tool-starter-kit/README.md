@@ -39,7 +39,7 @@ AGENTS.md
 docs/
 ```
 
-Codexスキルとして使う場合は、`skills/` 配下を `~/.codex/skills/` カピーします。
+Codexスキルとして使う場合は、`skills/` 配下を `~/.codex/skills/` にコピーします。
 
 ```bash
 mkdir -p ~/.codex/skills
@@ -66,7 +66,7 @@ internal-tool-handoff
   作業終了時に変更内容、確認結果、残リスク、次アクションを残す。
 
 internal-tool-scaffolder
-  新しい社内ツールの安全な雛形を作る　
+  新しい社内ツールの安全な雛形を作る。
 ```
 
 ## 注意事項

@@ -1,0 +1,4 @@
+file '/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/mv-factory/projects/20260707-test-dummy-mv/short/_normalized/norm_000.mp4'
+file '/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/mv-factory/projects/20260707-test-dummy-mv/short/_normalized/norm_001.mp4'
+file '/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/mv-factory/projects/20260707-test-dummy-mv/short/_normalized/norm_002.mp4'
+file '/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/mv-factory/projects/20260707-test-dummy-mv/short/_normalized/norm_003.mp4'

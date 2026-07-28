@@ -9,7 +9,7 @@ description: Use this skill when creating a new internal business tool project s
 
 新しい社内ツールのプロジェクト雛形を作るときに使う。
 
-既存プロジェクトに導入する場合も使えるが、既存ファイルを無条件に上書くない。
+既存プロジェクトに導入する場合も使えるが、既存ファイルを無条件に上書きしない。
 
 ## 基本方針
 
@@ -33,7 +33,7 @@ description: Use this skill when creating a new internal business tool project s
    - `tests/`
 
 3. 上書きリスクを判定する。
-   - 既存ファイルがある場合は、勝手に上書くない
+   - 既存ファイルがある場合は、勝手に上書きしない
    - 統合が必要な場合は差分を説明する
    - `.env` は作成・上書きしない
 
@@ -77,8 +77,8 @@ description: Use this skill when creating a new internal business tool project s
 8. 最後に品質確認する。
    - 実シークレットが入っていない
    - `.env` 本体が入っていない
-   - 既存ファイルを勝手に上書くていない
-   - 起動・テスト扉順の空欄が残っている場合は明記する
+   - 既存ファイルを勝手に上書きしていない
+   - 起動・テスト手順の空欄が残っている場合は明記する
 
 ## 出力形式
 

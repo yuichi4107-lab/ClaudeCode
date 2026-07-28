@@ -96,7 +96,7 @@ def mux_with_music(
     vf = ",".join(video_filters)
 
     audio_fade_out_start = max(target_dur - audio_fade_out, 0)
-    af = "afade=t=in:st=0:d={audio_fade_in:.3f},afade=t=out:st={audio_fade_out_start:.3f}:d={audio_fade_out:.3f}"
+    af = f"afade=t=in:st=0:d={audio_fade_in:.3f},afade=t=out:st={audio_fade_out_start:.3f}:d={audio_fade_out:.3f}"
 
     cmd = [
         "ffmpeg", "-y",
@@ -135,16 +135,17 @@ def run_step6(
     concatenated = version_dir / f"_concat_{version}.mp4"
     final_path = pdir / out_name
 
-    log(f"{version}] ã‚¯ãƒªãƒƒãƒ—çµåˆä¸­... ({len(clip_paths)}ç¬¬Â‚ŠBˆÛÛ˜Ø]ØÛ\ÊÛ\Ü]Ë\ÜXİÜ˜][ËÛÛ˜Ø][˜]Y
-B‚ˆÙÊˆ–Şİ™\œÚ[ÛŸWH9¦ì¸àj]8àîùl.¹d"8à£øàfù.+K‹‹ˆŠBˆ[™›ÈH]^İÚ]Û]\ÚXÊˆÛÛ˜Ø][˜]Yˆ]Y[×Ü]ˆš[˜[Ü]ˆ]Y[×Ù˜YWÚ[Y›Ø]
-Z^ØÙ™Ë™Ù]
-˜]Y[×Ù˜YWÚ[—ÜÙXÈ‹KŒ
-JKˆ]Y[×Ù˜YWÛİ]Y›Ø]
-Z^ØÙ™Ë™Ù]
-˜]Y[×Ù˜YWÛİ]ÜÙXÈ‹‹Œ
-JKˆšY[×Ù˜YWÛİ]Y›Ø]
-Z^ØÙ™Ë™Ù]
-šY[×Ù˜YWÛİ]ÜÙXÈ‹KŒ
-JKˆ
-BˆÙÊˆ–Şİ™\œÚ[ÛŸWH9k£8àäxà®yaî¹b¥ˆÙš[˜[Ü]H
-Ú[™›ÖÉÙš[˜[Ù\˜][Û—ÜÙXÉ×_\Ë[ÙO^Ú[™›ÖÉÙ\˜][Û—Û[ÙI×_JHŠBˆ™]\›ˆš[˜[Ü]
+    log(f"[{version}] ã‚¯ãƒªãƒƒãƒ—çµåˆä¸­... ({len(clip_paths)}æœ¬)")
+    concat_clips(clip_paths, aspect_ratio, concatenated)
+
+    log(f"[{version}] æ›²ã¨muxãƒ»å°ºåˆã‚ã›ä¸­...")
+    info = mux_with_music(
+        concatenated,
+        audio_path,
+        final_path,
+        audio_fade_in=float(mix_cfg.get("audio_fade_in_sec", 1.0)),
+        audio_fade_out=float(mix_cfg.get("audio_fade_out_sec", 2.0)),
+        video_fade_out=float(mix_cfg.get("video_fade_out_sec", 1.0)),
+    )
+    log(f"[{version}] å®Œãƒ‘ã‚±å‡ºåŠ›: {final_path} ({info['final_duration_sec']}s, mode={info['duration_mode']})")
+    return final_path

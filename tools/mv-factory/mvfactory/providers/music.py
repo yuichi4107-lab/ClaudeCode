@@ -45,12 +45,13 @@ class MusicProvider(ABC):
 class SunoApiProvider(MusicProvider):
     """Suno公式API呼び出しモード。
 
-    2026-07-07時点でSuno公式APIの一般公開エンドポイント・パラメータ・料金�は準備中のため、ズトーに口论しスのにススぉつちい 
-    ここでは呼び出し部分を抽豱化し、実隙のHTTP実装にィーをヰ設定蝾
-    仕様硺定後にプラグインする設計とする。
+    2026-07-07時点でSuno公式APIの一般公開エンドポイント・パラメータ・料金は
+    非公開(限定パートナーベータのみ)。オーナーがAPIキーを準備中のため、
+    ここでは呼び出し部分を抽象化し、実際のHTTP実装はキー到着後・
+    仕様確定後にプラグインする設計とする。
 
-    環境変数 SUNO_API_KEY / SUNO_API_BASE_URL が未設定、ぽたは
-    仕様硺定前は、明蚧なエラーメッセージを出して停止する
+    環境変数 SUNO_API_KEY / SUNO_API_BASE_URL が未設定、または
+    仕様確定前は、明確なエラーメッセージを出して停止する
     (サイレント失敗・ダミー音源の混入を避けるため)。
     """
 
@@ -68,7 +69,7 @@ class SunoApiProvider(MusicProvider):
                 "Suno公式APIが未設定です。\n"
                 f"  - 環境変数 {self.ENV_API_KEY} / {self.ENV_BASE_URL} が"
                 " tools/mv-factory/.env に設定されていません。\n"
-                "  - 2026-07-07時点でSuno公式APIの一般公開��様(�ンポポイント・"
+                "  - 2026-07-07時点でSuno公式APIの一般公開仕様(エンドポイント・"
                 "パラメータ・料金)はオーナー確認待ちです。\n"
                 "  - オーナーがAPIキー・仕様情報を入手し次第、"
                 "mvfactory/providers/music.py の SunoApiProvider.generate() に"
@@ -342,9 +343,9 @@ class ManualAudioProvider(MusicProvider):
             raise MusicProviderError(f"歌詞ファイルが見つかりません: {lyrics_src}")
 
         ext = audio_src.suffix.lower()
-        if ext not in (".mp3", ".wav")):
+        if ext not in (".mp3", ".wav"):
             raise MusicProviderError(
-                f"音源ファイルはmp3/wavのみ対応です(実際: {ext})"
+                f"音源ファイルはmp3/wavのみ対応です(実際の拡張子: {ext})"
             )
 
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -352,7 +353,7 @@ class ManualAudioProvider(MusicProvider):
         dest_lyrics = out_dir / "lyrics.txt"
         shutil.copyfile(audio_src, dest_audio)
         shutil.copyfile(lyrics_src, dest_lyrics)
-        log(f"手動ち音源を抭入しました: {dest_audio.name}")
+        log(f"手持ち音源を投入しました: {dest_audio.name}")
 
         meta = {
             "song_source": "manual",
@@ -361,8 +362,8 @@ class ManualAudioProvider(MusicProvider):
             "audio_file": dest_audio.name,
             "lyrics_file": dest_lyrics.name,
             "copyright_note": (
-                "手持ち音源のため、商用利用另曁は音源の取得元ライセンスに依存する。"
-                "本パイプラインはこの点を検証ヮ保証してください"
+                "手持ち音源のため、商用利用可否は音源の取得元ライセンスに依存する。"
+                "本パイプラインはこの点を検証・保証しない。"
             ),
         }
         write_json(out_dir / "song_meta.json", meta)

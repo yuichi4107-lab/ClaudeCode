@@ -1,13 +1,14 @@
 """工程5: シーン動画生成(Atlas Cloud Seedance 2.0)。
 
-参考実装: tools/seedance-api-compare/compare_seedance.py の Atlas Cloud呼び凷゗、パターン(User-Agentヘッダー必須・非同期ポーリングほ即て一ムウンロード)を踏襲する。
+参考実装: tools/seedance-api-compare/compare_seedance.py の Atlas Cloud呼び出し
+パターン(User-Agentヘッダー必須・非同期ポーリング・即ダウンロード)を踏襲する。
 
-要件定義書 工程5 完了条件への濖応:
+要件定義書 工程5 完了条件への対応:
   - エンドポイント: POST /generateVideo -> GET /prediction/{id}
-  - User-Agentヘッダー必須(Cloudflareがpython模棥指定卐：
+  - User-Agentヘッダー必須(Cloudflareがpython標準UAを403で弾くため)
   - image-to-video: 参照画像を first_frame / first_last_frame として渡す
   - 動画URL失効対策: 生成完了検知後、即座にダウンロード
-  - モデルID夔凬し: project.yaml の video_generation.model (.�nv のATLAS_MODELで上書き可)
+  - モデルID外出し: project.yaml の video_generation.model (.envのATLAS_MODELで上書き可)
   - 残高枯渇検知: 402/403/insufficient balance相当のエラーメッセージを検知して
     明確なエラーを出す
   - リトライ/スキップ方針: max_retries回リトライ、それでも失敗したらそのシーンを

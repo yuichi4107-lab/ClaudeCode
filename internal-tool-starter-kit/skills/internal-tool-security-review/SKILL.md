@@ -55,9 +55,9 @@ description: Use this skill when reviewing internal business tools for security 
    - タイムアウトとエラー処理がある
 
 7. 破壊的操作を確認する。
-   - 削除、一般更新、移行に確認手順がある
+   - 削除、一括更新、移行に確認手順がある
    - バックアップまたはロールバック方法がある
-   - 本番DBや共有スヌレヸを誤って変更ずない
+   - 本番DBや共有ストレージを誤って変更しない
 
 8. 依存関係を確認する。
    - 不要な依存パッケージを追加していない
@@ -68,7 +68,7 @@ description: Use this skill when reviewing internal business tools for security 
 
 重大度を以下で分類する。
 
-- Critical: リリース禁止。秘密情報漏洩、権限バイパス、本番破壈リスク。
+- Critical: リリース禁止。秘密情報漏洩、権限バイパス、本番破壊リスク。
 - High: 修正必須。個人情報漏洩、外部送信不備、重大な入力検証不足。
 - Medium: 修正推奨。運用上の事故や限定的な情報漏洩につながる。
 - Low: 改善推奨。保守性や説明不足。
