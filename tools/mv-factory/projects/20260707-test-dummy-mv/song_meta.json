@@ -1,0 +1,8 @@
+{
+  "song_source": "manual",
+  "original_audio_path": "/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/mv-factory/projects/20260707-test-dummy-mv/input/song.mp3",
+  "original_lyrics_path": "/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/mv-factory/projects/20260707-test-dummy-mv/input/lyrics.txt",
+  "audio_file": "song.mp3",
+  "lyrics_file": "lyrics.txt",
+  "copyright_note": "手持ち音源のため、商用利用可否は音源の取得元ライセンスに依存する。本パイプラインはこの点を検証・保証しない。"
+}

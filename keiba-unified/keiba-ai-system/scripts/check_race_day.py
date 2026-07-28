@@ -51,7 +51,7 @@ FIRST_RACE_TIMES = {
     "twilight": time(13, 0),
 }
 
-# 前半結第1競走30分�、後半7-�P競走2時間後
+# 前半=第1競走30分前、後半=第1競走2時間後
 HALF_OFFSETS = {
     "first": -30,   # 分
     "second": 120,   # 分
@@ -102,7 +102,7 @@ def is_correct_timing(race_type: str, half: str, now_time: time) -> bool:
     if diff <= 10:
         return True
 
-    logger.info("タイミンジ�Mな致: 開催種別=%s, 期待=%s, 現在=%s → スキップ",
+    logger.info("タイミング不一致: 開催種別=%s, 期待=%s, 現在=%s → スキップ",
                 race_type, expected.strftime("%H:%M"), now_time.strftime("%H:%M"))
     return False
 

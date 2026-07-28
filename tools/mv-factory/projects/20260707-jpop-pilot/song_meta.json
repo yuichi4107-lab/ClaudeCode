@@ -1,0 +1,27 @@
+{
+  "song_source": "suno_bridge",
+  "title": "タイムライン",
+  "selected_id": "d620b10a-2beb-4b46-857f-9e3d925fe38a",
+  "selected_duration_sec": 161.76,
+  "selection_reason": "complete ステータスかつ尺が長い方を選択(同尺/不明の場合は先に完了した方)",
+  "audio_file": "song.mp3",
+  "lyrics_file": "lyrics.txt",
+  "alternate_files": [
+    "alt_song_1.mp3"
+  ],
+  "alternate_ids": [
+    "803328fe-bbcd-4c94-b787-c896b5b09118"
+  ],
+  "model": "chirp-crow",
+  "style_tags": [
+    "J-POP",
+    "catchy",
+    "upbeat",
+    "female vocal",
+    "summer",
+    "bright",
+    "anthemic chorus"
+  ],
+  "instrumental": false,
+  "copyright_note": "Suno公式アカウント(opensuno Bridge経由)で生成した楽曲。商用利用可否はSuno社のサービス利用規約・加入プランに従う。収益化・公開前提で使う場合はオーナーの明示承認を得ること(要件定義書6章参照)。本モジュールはこの点を保証しない。"
+}

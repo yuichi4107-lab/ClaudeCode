@@ -1,0 +1,81 @@
+# MV Factory パイロットプロジェクト: J-POP（キャッチー系）女性ボーカル
+# 2026-07-07 オーナー確定事項に基づく60秒/9:16版パイロット
+
+# --- 基本情報 ---
+title: "タイムライン"
+slug: "20260707-jpop-pilot"
+genre: "J-POP / キャッチー / アップテンポ"
+vocal: "female"
+theme: "新しい環境に飛び込む朝、不安を吹っ切って走り出す青春ポジティブソング。夏空・自転車・風がモチーフ。全年齢向けの明るい内容。"
+
+# --- 曲生成モード ---
+song_source: "suno_bridge"
+
+suno_bridge:
+  title: "タイムライン"
+  theme: "新しい一歩を踏み出す朝の高揚感、夏の風、青春ポジティブJ-POP"
+  lyrics_file: "lyrics_draft.txt"
+  style_tags:
+    - "J-POP"
+    - "catchy"
+    - "upbeat"
+    - "female vocal"
+    - "summer"
+    - "bright"
+    - "anthemic chorus"
+  instrumental: false
+  model: "chirp-crow"
+
+# --- 尺・アスペクト比 (2バージョン固定) ---
+versions:
+  short:
+    duration_sec: 60
+    aspect_ratio: "9:16"
+    clip_duration_sec: 5
+  full:
+    duration_sec: 180
+    aspect_ratio: "16:9"
+    clip_duration_sec: 5
+
+# --- 参照画像 (工程4) ---
+# オーナー指示: 今回は enabled=false でスキップ(プロンプト一貫性で担保)
+reference_images:
+  enabled: false
+  characters:
+    - name: "主人公（女子高生〜大学生風）"
+      description: >
+        Japanese young woman, late teens, shoulder-length black hair with
+        soft bangs, warm friendly smile, casual summer outfit (white shirt
+        + light denim), wearing a small backpack. Consistent across all
+        scenes: same hairstyle, same outfit, same face.
+  world:
+    description: >
+      Bright summer morning in a Japanese suburban town, blue sky with
+      soft white clouds, warm golden sunlight, tree-lined streets,
+      vintage bicycle, gentle wind, optimistic and nostalgic
+      coming-of-age atmosphere. Color palette: warm yellows, sky blues,
+      soft greens.
+  provider: "nanobanana2"
+
+# --- 動画生成 (工程5, Atlas Cloud) ---
+video_generation:
+  provider: "atlas_cloud"
+  model: "bytedance/seedance-2.0/text-to-video"
+  resolution: "720p"
+  mode: "std"
+  generate_audio: false
+  watermark: false
+  max_retries: 2
+  retry_backoff_sec: 20
+
+# --- 編集・合成 (工程6) ---
+mix:
+  audio_fade_in_sec: 1.0
+  audio_fade_out_sec: 2.0
+  video_fade_out_sec: 1.0
+  short_duration_mode: "trim_to_music"
+  full_duration_mode: "trim_to_music"
+
+# --- 予算・安全装置 ---
+budget:
+  max_usd_per_run: 12.0

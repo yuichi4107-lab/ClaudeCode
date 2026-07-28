@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "duration_sec": 60.0,
+  "bpm": 120.0,
+  "bpm_confidence": "low",
+  "sections": [
+    {
+      "name": "intro",
+      "start_sec": 0.0,
+      "end_sec": 20.0,
+      "lyrics": [
+        "夜のネオンが滲む窓",
+        "車は静かに滑り出す"
+      ]
+    },
+    {
+      "name": "verse1",
+      "start_sec": 20.0,
+      "end_sec": 40.0,
+      "lyrics": [
+        "サビ サビ サビ サビ",
+        "光の速さで駆け抜ける"
+      ]
+    },
+    {
+      "name": "chorus1",
+      "start_sec": 40.0,
+      "end_sec": 60.0,
+      "lyrics": [
+        "もう一度 あの夜を",
+        "繰り返す景色の中で"
+      ]
+    }
+  ],
+  "word_timestamps": [],
+  "analysis_method": {
+    "duration": "ffprobe",
+    "sections": "rule_based_even_split",
+    "bpm": "default_fallback",
+    "fallback_used": true
+  },
+  "manual_correction_hint": "BPM・セクション境界は簡易推定です。精度が必要な場合はsong_structure.json を直接編集して手動補正してください(sections[].start_sec/end_sec, bpm を上書き可能)。"
+}

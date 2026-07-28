@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# テスト
+.pytest_cache/
+.coverage
+htmlcov/
+
+# データ（大容量バイナリ）
+data/*.parquet
+data/_smoke.parquet
+data/*.db
+data/cache/
+data/export/
+
+# モデル
+models/*.pkl
+models/*.joblib
+models/*.lgb
+models/*.bin
+
+# ログ
+*.log
+
+# OS
+.DS_Store
+desktop.ini
+Thumbs.db

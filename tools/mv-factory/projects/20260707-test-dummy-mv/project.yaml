@@ -1,0 +1,54 @@
+title: "テストダミーMV"
+slug: "20260707-test-dummy-mv"
+genre: "テスト用シンセウェイブ"
+vocal: "female"
+theme: "パイプライン疎通確認用のダミー曲。深夜のドライブがテーマ。"
+
+song_source: "manual"
+
+suno_api:
+  theme: ""
+  lyrics_prompt: ""
+  style_tags: []
+  instrumental: false
+
+manual_audio:
+  audio_path: "input/song.mp3"
+  lyrics_path: "input/lyrics.txt"
+
+versions:
+  short:
+    duration_sec: 20
+    aspect_ratio: "9:16"
+    clip_duration_sec: 5
+  full:
+    duration_sec: 40
+    aspect_ratio: "16:9"
+    clip_duration_sec: 5
+
+reference_images:
+  enabled: false
+  characters: []
+  world:
+    description: ""
+  provider: "nanobanana2"
+
+video_generation:
+  provider: "atlas_cloud"
+  model: "bytedance/seedance-2.0/text-to-video"
+  resolution: "480p"
+  mode: "std"
+  generate_audio: false
+  watermark: false
+  max_retries: 1
+  retry_backoff_sec: 5
+
+mix:
+  audio_fade_in_sec: 1.0
+  audio_fade_out_sec: 2.0
+  video_fade_out_sec: 1.0
+  short_duration_mode: "trim_to_music"
+  full_duration_mode: "trim_to_music"
+
+budget:
+  max_usd_per_run: 1.0

@@ -1,0 +1,508 @@
+{
+  "audit_date": "2026-07-07T21:03:29.584894",
+  "versions": {
+    "short": {
+      "scenes": {
+        "scene_01": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "就寝シーン、パジャマ適切",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "/Users/yuichi/Library/CloudStorage/GoogleDrive-yuichi4107@gmail.com/マイドライブ/YNFactory-cc/tools/mv-factory/projects/20260707-jpop-pilot/logs/contact_sheets/short/scene_01.jpg"
+        },
+        "scene_02": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "白シャツ+デニム一致",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/short/scene_02.jpg"
+        },
+        "scene_03": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。両足それぞれに白いスニーカーが正しく履かれている(片方の靴に両足の破綻は完全解消)",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/short/scene_03.jpg"
+        },
+        "scene_04": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。白シャツ+デニムで一貫、character_sheetと完全一致",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/short/scene_04.jpg"
+        },
+        "scene_05": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "白シャツ+デニム一致、自転車の前進動作も自然",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/short/scene_05.jpg"
+        },
+        "scene_06": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。白シャツ+デニムで一貫、character_sheetと完全一致",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/short/scene_06.jpg"
+        },
+        "scene_07": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "脚のクローズアップ、ペダリング動作自然",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/short/scene_07.jpg"
+        },
+        "scene_08": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。白シャツ+デニムで一貫、character_sheetと完全一致",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/short/scene_08.jpg"
+        },
+        "scene_09": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。白シャツ+デニムで一貫、character_sheetと完全一致",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/short/scene_09.jpg"
+        },
+        "scene_10": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。白シャツ+デニムで一貫、character_sheetと完全一致",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/short/scene_10.jpg"
+        },
+        "scene_11": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。白シャツ+デニムで一貫、character_sheetと完全一致",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/short/scene_11.jpg"
+        },
+        "scene_12": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。白シャツ+デニムで一貫、character_sheetと完全一致",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/short/scene_12.jpg"
+        }
+      },
+      "all_reviewed": true,
+      "all_ok": true
+    },
+    "full": {
+      "scenes": {
+        "scene_01": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_01.jpg"
+        },
+        "scene_02": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_02.jpg"
+        },
+        "scene_03": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_03.jpg"
+        },
+        "scene_04": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_04.jpg"
+        },
+        "scene_05": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。両足それぞれに白いスニーカーが正しく履かれ、全編実写風で統一",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/full/scene_05.jpg"
+        },
+        "scene_06": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_06.jpg"
+        },
+        "scene_07": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_07.jpg"
+        },
+        "scene_08": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_08.jpg"
+        },
+        "scene_09": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_09.jpg"
+        },
+        "scene_10": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_10.jpg"
+        },
+        "scene_11": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "再生成成功。全編実写風で統一、自転車前進動作も自然",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:34:49.899920",
+          "contact_sheet": "logs/contact_sheets/full/scene_11.jpg"
+        },
+        "scene_12": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_12.jpg"
+        },
+        "scene_13": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_13.jpg"
+        },
+        "scene_14": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_14.jpg"
+        },
+        "scene_15": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_15.jpg"
+        },
+        "scene_16": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_16.jpg"
+        },
+        "scene_17": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_17.jpg"
+        },
+        "scene_18": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_18.jpg"
+        },
+        "scene_19": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_19.jpg"
+        },
+        "scene_20": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_20.jpg"
+        },
+        "scene_21": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_21.jpg"
+        },
+        "scene_22": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_22.jpg"
+        },
+        "scene_23": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_23.jpg"
+        },
+        "scene_24": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_24.jpg"
+        },
+        "scene_25": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_25.jpg"
+        },
+        "scene_26": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_26.jpg"
+        },
+        "scene_27": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_27.jpg"
+        },
+        "scene_28": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_28.jpg"
+        },
+        "scene_29": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_29.jpg"
+        },
+        "scene_30": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_30.jpg"
+        },
+        "scene_31": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_31.jpg"
+        },
+        "scene_32": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_32.jpg"
+        },
+        "scene_33": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_33.jpg"
+        },
+        "scene_34": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_34.jpg"
+        },
+        "scene_35": {
+          "status": "ok",
+          "style": "live-action",
+          "character_consistency": "ok",
+          "physical_issues": [],
+          "notes": "",
+          "reviewed_by": "quality-gate-agent",
+          "reviewed_at": "2026-07-07T21:03:29.584894",
+          "contact_sheet": "logs/contact_sheets/full/scene_35.jpg"
+        }
+      },
+      "all_reviewed": true,
+      "all_ok": true
+    }
+  },
+  "blocker_2026-07-07": {
+    "issue": "Atlas Cloud API (generateVideo, prediction/{id}) が両方とも HTTP 404 を返すようになった",
+    "detected_at": "2026-07-07 21:06 JST頃",
+    "affected_scenes": {
+      "short": [
+        "scene_03",
+        "scene_04",
+        "scene_06",
+        "scene_08",
+        "scene_09",
+        "scene_10",
+        "scene_11",
+        "scene_12"
+      ],
+      "full": [
+        "scene_05",
+        "scene_11"
+      ]
+    },
+    "diagnosis": "curlで直接叩いても同一エンドポイントが404。認証(api/v1/のGET)は401(生きている)。過去に成功したjob_idのGET prediction/{id}も404になった。単発の一時障害ではなく持続的(15秒後リトライでも同じ)。エンドポイント仕様変更またはサービス障害の可能性が高い。追加コスト発生なし(全リクエスト即404失敗)"
+  }
+}

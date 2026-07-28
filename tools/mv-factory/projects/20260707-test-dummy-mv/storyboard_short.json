@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "version": "short",
+  "aspect_ratio": "9:16",
+  "target_duration_sec": 20,
+  "clip_duration_default_sec": 5,
+  "characters": [],
+  "world": {
+    "description": ""
+  },
+  "scenes": [
+    {
+      "scene_id": "scene_01",
+      "section": "intro",
+      "duration_sec": 5,
+      "video_prompt": "Cinematic night drive POV, neon city lights blurring past a car window, slow tracking shot, cyberpunk color grade, rain-slicked streets reflecting pink and blue neon",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_02",
+      "section": "verse1",
+      "duration_sec": 5,
+      "video_prompt": "Wide shot of a car driving on an elevated highway at night, city skyline in background, gentle camera pan, synthwave aesthetic, glowing signage",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_03",
+      "section": "chorus1",
+      "duration_sec": 5,
+      "video_prompt": "Close-up dashboard view, hands on steering wheel, neon reflections flickering across the windshield, upbeat energetic camera shake, dynamic lighting",
+      "reference_image_role": "none"
+    },
+    {
+      "scene_id": "scene_04",
+      "section": "outro",
+      "duration_sec": 5,
+      "video_prompt": "Aerial drone shot pulling back from the car as it disappears into a tunnel of neon lights, cinematic fade, dreamy atmosphere",
+      "reference_image_role": "none"
+    }
+  ],
+  "generation_note": "scenesはLLM(Claude Code実行時のエージェント)がsong_structure.jsonのセクション情報をもとに作文すること。各シーンは4〜15秒、video_promptはカメラワーク・画角・雰囲気を含む英語推奨プロンプトとする。"
+}
