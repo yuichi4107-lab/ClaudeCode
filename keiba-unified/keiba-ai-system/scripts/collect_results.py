@@ -1,6 +1,6 @@
 """開催日のレース結果を収集して既存データに追加するスクリプト
 
-開催日�22時にcron�実行し、当日のレース結果を
+開催日の22時にcronで実行し、当日のレース結果を
 data/raw/race_results.csv に追記する。
 
 使い方:
@@ -28,15 +28,15 @@ logger = logging.getLogger(__name__)
 
 
 def collect_and_append(target_date: date) -> bool:
-    """当日かレース結果を取得してCSVに追記する"""
+    """当日のレース結果を取得してCSVに追記する"""
     raw_file = RAW_DATA_DIR / "race_results.csv"
 
-    # 既存データを読み込み、当日のデータが杢にあるかチェック
+    # 既存データを読み込み、当日のデータが既にあるかチェック
     if raw_file.exists():
         existing = pd.read_csv(raw_file)
         date_str = target_date.strftime("%Y-%m-%d")
         if date_str in existing["race_date"].values:
-            logger.info("%s のデータは杢に登録済みです（%d件）",
+            logger.info("%s のデータは既に登録済みです（%d件）",
                         date_str,
                         len(existing[existing["race_date"] == date_str]))
             return False

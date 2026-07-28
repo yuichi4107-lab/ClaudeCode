@@ -1,0 +1,137 @@
+{
+  "_comment": "5アカウント運用テンプレート。実運用時は .company/outputs/note-articles/accounts.json にコピーして note_url を埋める。",
+  "accounts": [
+    {
+      "account_id": "ai",
+      "display_name": "AI活用ノート",
+      "note_url": null,
+      "theme_ids": ["ai-workplace"],
+      "browser_profile": "note-ai",
+      "default_tags": ["ChatGPT", "AI活用", "業務効率化", "生成AI"],
+      "tone": "落ち着いた解説。専門用語は噛み砕く",
+      "persona_file": "references/personas/ai.md",
+      "word_count_target": [3500, 5000],
+      "monetization_default": "free",
+      "status": "setup-required"
+    },
+    {
+      "account_id": "money",
+      "display_name": "お金の整え方",
+      "note_url": null,
+      "theme_ids": ["money-everyday"],
+      "browser_profile": "note-money",
+      "default_tags": ["新NISA", "家計管理", "資産形成", "お金の話"],
+      "tone": "親しみやすいが堅実。数字根拠を必ず添える",
+      "persona_file": "references/personas/money.md",
+      "word_count_target": [2500, 4000],
+      "monetization_default": "free",
+      "status": "setup-required"
+    },
+    {
+      "account_id": "career",
+      "display_name": "キャリアの選びなおし",
+      "note_url": null,
+      "theme_ids": ["career-pivot"],
+      "browser_profile": "note-career",
+      "default_tags": ["キャリア", "転職", "副業", "働き方"],
+      "tone": "ですます調・少しフラット。経験談ベース",
+      "persona_file": "references/personas/career.md",
+      "word_count_target": [3000, 4500],
+      "monetization_default": "free",
+      "status": "setup-required"
+    },
+    {
+      "account_id": "spiritual",
+      "display_name": "整える日々",
+      "note_url": null,
+      "theme_ids": ["spiritual-daily"],
+      "browser_profile": "note-spiritual",
+      "default_tags": ["新月", "満月", "暮らし", "整える"],
+      "tone": "やわらかく余白のある文章。改行多め",
+      "persona_file": "references/personas/spiritual.md",
+      "word_count_target": [1800, 3000],
+      "monetization_default": "free",
+      "status": "setup-required"
+    },
+    {
+      "account_id": "love",
+      "display_name": "続く関係の手前で",
+      "note_url": null,
+      "theme_ids": ["love-partnership"],
+      "browser_profile": "note-love",
+      "default_tags": ["恋愛", "パートナーシップ", "コミュニケーション"],
+      "tone": "等身大の友人トーン。共感→提案の流れ",
+      "persona_file": "references/personas/love.md",
+      "word_count_target": [2000, 3500],
+      "monetization_default": "free",
+      "status": "setup-required"
+    }
+  ],
+  "themes": [
+    {
+      "theme_id": "ai-workplace",
+      "theme_name": "現場のAI活用",
+      "account_id": "ai",
+      "audience": "30-40代の会社員・個人事業主。AI活用に迷っている",
+      "preferred_angles": [
+        "自分の業務で実際に効いた事例",
+        "AIに任せる/人間が残す境界線",
+        "AIエージェント導入のつまずき",
+        "プロンプト設計の現場知"
+      ],
+      "avoid_angles": ["新機能の表面紹介", "煽り見出し"]
+    },
+    {
+      "theme_id": "money-everyday",
+      "theme_name": "派手じゃない着実な資産形成",
+      "account_id": "money",
+      "audience": "20代後半〜40代。投資が怖い層",
+      "preferred_angles": [
+        "新NISAの長期目線シミュレーション",
+        "家計の見直し小ワザ",
+        "金融商品選びの前提整理",
+        "節約と投資の優先順位"
+      ],
+      "avoid_angles": ["短期で増やす", "個別銘柄推奨", "違反表現"]
+    },
+    {
+      "theme_id": "career-pivot",
+      "theme_name": "会社員の出口戦略と選びなおし",
+      "account_id": "career",
+      "audience": "28-42歳。転職・副業・独立を検討中",
+      "preferred_angles": [
+        "転職で給与より優先したもの",
+        "副業を始める前のルール",
+        "社内交渉の工夫",
+        "AI時代の経験の翻訳"
+      ],
+      "avoid_angles": ["説教調", "特定企業の誹謗"]
+    },
+    {
+      "theme_id": "spiritual-daily",
+      "theme_name": "日常で使える整え方",
+      "account_id": "spiritual",
+      "audience": "30-50代女性中心。現実主義もある層",
+      "preferred_angles": [
+        "新月・満月の小さな儀式",
+        "夜の余韻の作り方",
+        "手帳タイムの整え方",
+        "心の置き方の言語化"
+      ],
+      "avoid_angles": ["断定的な開運断言", "医療類似行為", "霊感商法"]
+    },
+    {
+      "theme_id": "love-partnership",
+      "theme_name": "続く関係の小さな技術",
+      "account_id": "love",
+      "audience": "25-38歳女性中心。恋愛・同棲に悩む層",
+      "preferred_angles": [
+        "察してほしいをやめた経験",
+        "言わないと伝わらない事の言語化",
+        "同棲・カップル間の合意形成",
+        "自分軸を保つコミュニケーション"
+      ],
+      "avoid_angles": ["性的描写", "ジェンダー断定", "DV軽視"]
+    }
+  ]
+}
