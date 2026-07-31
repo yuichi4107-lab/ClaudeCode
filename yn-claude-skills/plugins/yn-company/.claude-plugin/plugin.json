@@ -1,0 +1,6 @@
+{
+  "name": "yn-company",
+  "description": "会社運営: 秘書・CEO振り分け・品質ループ(要件定義→実行→品質チェック)・営業ブリーフィング・週次レビュー・セッション引き継ぎ",
+  "version": "1.0.0",
+  "author": { "name": "YN Factory" }
+}

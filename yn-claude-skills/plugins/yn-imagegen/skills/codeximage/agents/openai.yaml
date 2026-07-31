@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Image Queue"
+  short_description: "Process Codex image-generation jobs from .company/codex/queue."
+  default_prompt: ".company/codex/queue/ を確認し、APIキーなしでCodex/ChatGPT画像生成ジョブを処理してください。成果物はdone、元フォルダはarchive_inputへ退避し、最後カqueueを空にしてください。"

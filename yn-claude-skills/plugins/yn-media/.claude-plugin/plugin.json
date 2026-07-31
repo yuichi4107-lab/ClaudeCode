@@ -1,0 +1,6 @@
+{
+  "name": "yn-media",
+  "description": "動画・音楽制作: ショート動画編集(文字起こし→テロップ→BGM→レンダリング)・shorts-factory運用・Instagramリール・Suno楽曲生成",
+  "version": "1.0.0",
+  "author": { "name": "YN Factory" }
+}

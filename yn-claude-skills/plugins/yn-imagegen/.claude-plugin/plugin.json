@@ -1,0 +1,6 @@
+{
+  "name": "yn-imagegen",
+  "description": "画像生成: ChatGPT Images 2.0 ガードレール・Codexキュー処理・NanoBanana2(Gemini) API生成",
+  "version": "1.0.0",
+  "author": { "name": "YN Factory" }
+}
