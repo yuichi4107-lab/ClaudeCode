@@ -61,6 +61,12 @@ def parse_api_program(program_json: dict, url_meta: dict) -> dict:
             "age": normalize.parse_int(row.get("age")),
             "rate2": normalize.parse_float(row.get("rate2")),
             "rate3": normalize.parse_float(row.get("rate3")),
+            # 以下は事前予想(当日出走表からの推論)用の追加情報。
+            # DBの race_entries 更新には使わない(結果APIが正となるため)
+            "player_name": _clean_str(row.get("playerName")),
+            "handicap": normalize.parse_int(row.get("handicap")),
+            "trial_time": normalize.parse_float(row.get("trialRunTime")),
+            "is_absent": 1 if _clean_str(row.get("absent")) else 0,
         })
 
     if not entries:

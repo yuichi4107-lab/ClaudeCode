@@ -2,7 +2,8 @@
 
 南関東圏外の5場(川口・伊勢崎・浜松・山陽・飯塚)を対象としたオートレース選手能力評価システム。
 autorace.jp からレース結果をスクレイピングして SQLite に蓄積し、3つの統計的指標で選手の
-「地力」を縮約したスコアとして提示する。
+「地力」を縮約したスコアとして提示する。さらにこれらの指標を特徴量として着順を予想する
+学習済みモデル(train-model / predict / backtest-model)も備える。
 
 ## システム概要
 
@@ -178,14 +179,22 @@ TREE=$(printf '100644 blob %s\tautorace.db.gz\n' "$BLOB" | git mktree)
 git push -f origin "$(git commit-tree "$TREE" -m 'initial db snapshot')":refs/heads/autorace-data
 ```
 
-## 予想機能ロードマップ(未実装)
+## 予想モデル
 
-各選手×レースの特徴量として、本システムの4指標(整備力・スタート力・突っ込み度・
-雨適性 — 当日の走路状態で wet_score / mean_st_wet を切り替え)+出走表由来の属性
-(級班・期別・rate2/3・年齢)+直近フォーム(直近10走の期待着順残差移動平均・
-当該会場成績)を組み、LightGBM のランキング学習(lambdarank, group=race_id)で
-着順確率を推定する。レース内で正規化した確率を Harville 近似
-P(i→1着)×P(j→2着|i除外) で2連単の組合せ確率に合成し、収集済み payouts テーブルと
-突き合わせて「予測確率×払戻 > 閾値」の期待値ベット戦略を時系列ウォークフォワード
-(学習=過去9か月、検証=直近3か月)で ROI バックテストする。データは既に
-races / race_entries / payouts に揃っており、新規収集は不要。
+- 実装ファイル: `autorace_evaluator/model/features.py`(特徴量)、`predictor.py`(学習・確率化)、`backtest.py`(ウォークフォワード評価)、`predict_service.py`(当日予想)
+- 特徴量: レース内事前情報(ハンデ・試走タイム・レース内相対試走T・前にいる車数・頭数・レース番号・会場・湿走路フラグ)+出走表由来の選手属性(車級・期別・級班・年齢・連対率)+月初スナップショットの能力指標(整備力・スタート力・突っ込み度・湿走路適性・平均ST等)。**STと着順そのものは特徴量に使わない**(発走前に知り得ないため)
+- 未来リーク防止: 能力指標は「レース日の属する月の初日より前・最大365日」のデータだけで計算した月初スナップショット(SnapshotStore)を使う。学習・バックテスト・当日予想のすべてで同じ規約
+- モデル: LightGBM LGBMRanker(lambdarank, group=race_id, 関連度=8−着順)。lightgbm が無い環境では HistGradientBoostingRegressor にフォールバック
+- 確率化: レース内 softmax(温度は検証期間の1着対数尤度で較正)→ 勝率。2連単は Harville 近似 P(i→j)=P(i)P(j)/(1−P(i))
+- コマンド:
+```bash
+# 学習(モデルは data/models/autorace_rank_model.joblib に保存)
+autorace train-model [--before-date 2026-07-01]
+
+# 当日予想(DBに結果があればDB、なければ出走表APIから取得して予想)
+autorace predict --date 20260721 --venue kawaguchi [--race 5] [--top 5]
+
+# 月次ウォークフォワードの的中率・ROI評価
+autorace backtest-model --test-months 6 [--csv data/reports/backtest_summary.csv]
+```
+- バックテスト指標: win_hit@1(勝率1位の1着的中率、trial_baseline@1=試走タイム最速車ベースラインを併記)、exacta_hit@N / exacta_roi@N(2連単確率上位N点フラット買いの的中率・回収率、payouts テーブルで精算)

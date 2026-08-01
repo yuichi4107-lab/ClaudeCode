@@ -147,6 +147,76 @@ def run_evaluate(args) -> None:
             print(f"新人(2級車)レポートを保存しました: {rookie_csv}")
 
 
+def run_train_model(args) -> None:
+    from autorace_evaluator.model.predict_service import train_and_save
+
+    model = train_and_save(before_date=_parse_date(args.before_date) if args.before_date else None)
+    print(f"train-model done: backend={model.backend} temperature={model.temperature:.2f}")
+
+
+def run_predict(args) -> None:
+    import pandas as pd
+
+    from autorace_evaluator.model.predict_service import predict_day
+
+    date = _parse_date(args.date)
+    result = predict_day(date, args.venue, race_no=args.race,
+                         use_cache=not args.no_cache)
+
+    pd.set_option("display.width", 160)
+    print(f"=== 予想 {date} {args.venue} (データ源: {result['source']}) ===")
+    for race_id, g in result["win"].groupby("race_id", sort=False):
+        race_no = g["race_no"].iloc[0]
+        print(f"\n--- {race_no}R ---")
+        for _, r in g.iterrows():
+            name = r["player_name"] or "-"
+            print(f"  車{int(r['car_no'])} {name}  勝率 {r['p_win']*100:5.1f}%")
+        ex = result["exacta"]
+        top = ex[ex["race_id"] == race_id].head(args.top)
+        combos = [f"{int(r['first'])}-{int(r['second'])} ({r['prob']*100:.1f}%)"
+                  for _, r in top.iterrows()]
+        print(f"  2連単候補: {'  '.join(combos)}")
+
+
+def run_backtest_model(args) -> None:
+    import pandas as pd
+
+    from autorace_evaluator.config import settings
+    from autorace_evaluator.model.backtest import walk_forward
+    from autorace_evaluator.model.predict_service import load_entries_df
+    from autorace_evaluator.storage import database
+
+    conn = database.get_connection(settings.DB_PATH)
+    try:
+        entries = load_entries_df(conn, "1970-01-01", "9999-12-31")
+        payouts = pd.read_sql_query(
+            "SELECT p.race_id, p.bet_type, p.combination, p.payout "
+            "FROM payouts p", conn)
+    finally:
+        conn.close()
+
+    months = sorted({d[:7] for d in entries["race_date"]})
+    test_months = months[-args.test_months:] if args.test_months else months[len(months) // 2:]
+    print(f"テスト対象月: {test_months}")
+
+    result = walk_forward(entries, payouts, test_months)
+    summary = result["summary"]
+    if summary.empty:
+        print("バックテスト対象がありません(学習データ不足)")
+        sys.exit(1)
+        return
+
+    pd.set_option("display.width", 220)
+    fmt = {c: (lambda v: f"{v:.3f}" if isinstance(v, float) else v)
+           for c in summary.columns if c not in ("block", "races", "races_with_payout")}
+    print(summary.to_string(index=False, formatters=fmt))
+
+    if args.csv:
+        Path(args.csv).parent.mkdir(parents=True, exist_ok=True)
+        summary.to_csv(args.csv, index=False)
+        print(f"サマリCSVを保存しました: {args.csv}")
+
+
 _FILENAME_META_RE = re.compile(
     r"(kawaguchi2|kawaguchi|isesaki|hamamatsu|sanyou|iizuka)_(\d{4}-\d{2}-\d{2})_(\d+)"
 )
@@ -349,6 +419,30 @@ def main():
         help="再試走レコードを集計に含める",
     )
 
+    # train-model
+    p_train = sub.add_parser("train-model", help="着順予想モデルを学習して保存する")
+    p_train.add_argument(
+        "--before-date", dest="before_date",
+        help="この日付より前のデータのみで学習(省略時は全期間)")
+
+    # predict
+    p_pred = sub.add_parser("predict", help="指定日・会場の勝率と2連単候補を予想する")
+    p_pred.add_argument("--date", required=True, help="YYYYMMDD または YYYY-MM-DD")
+    p_pred.add_argument(
+        "--venue", required=True,
+        choices=["kawaguchi", "isesaki", "hamamatsu", "sanyou", "iizuka"])
+    p_pred.add_argument("--race", type=int, help="レース番号で絞り込み")
+    p_pred.add_argument("--top", type=int, default=5, help="2連単候補の表示点数")
+    p_pred.add_argument("--no-cache", action="store_true", dest="no_cache")
+
+    # backtest-model
+    p_bt = sub.add_parser(
+        "backtest-model", help="月次ウォークフォワードで的中率・ROIを評価する")
+    p_bt.add_argument(
+        "--test-months", dest="test_months", type=int, default=6,
+        help="直近何か月をテストに使うか(デフォルト: 6)")
+    p_bt.add_argument("--csv", dest="csv", help="サマリCSVの出力パス")
+
     # parse-json
     p_parse = sub.add_parser(
         "parse-json", help="dumpされたAPI応答JSONをパースして確認する")
@@ -368,6 +462,12 @@ def main():
         run_scrape_program(args)
     elif args.command == "evaluate":
         run_evaluate(args)
+    elif args.command == "train-model":
+        run_train_model(args)
+    elif args.command == "predict":
+        run_predict(args)
+    elif args.command == "backtest-model":
+        run_backtest_model(args)
     elif args.command == "parse-json":
         run_parse_json(args)
 

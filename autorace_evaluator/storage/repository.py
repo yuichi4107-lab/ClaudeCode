@@ -106,7 +106,10 @@ def update_entry_program_fields(
     }
     updated = 0
     for entry in entries:
-        data = {**defaults, **entry, "race_id": race_id}
+        # パーサが事前予想用の追加キー(handicap等)を返しても、
+        # ここで更新するのは Program 由来の6列のみに限定する
+        picked = {k: entry.get(k) for k in list(defaults) + ["car_no"]}
+        data = {**defaults, **picked, "race_id": race_id}
         cur = conn.execute(
             """UPDATE race_entries SET
                  bike_class = :bike_class,
