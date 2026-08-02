@@ -62,6 +62,11 @@ autorace scrape --date 20260212 --venue kawaguchi
 # ※結果収集が先。races テーブルに保存済みのレースだけが対象になる
 autorace scrape-program --from-date 2026-01-01 --to-date 2026-07-01
 
+# オッズ(2連単・単勝)を収集して exacta_odds / win_odds に保存
+# ※過去レースでも最終オッズが取れる。中間オッズ(statusCode=0)のときは
+#   完了記録せず、次回実行で最終オッズを取り直す
+autorace scrape-odds --from-date 2026-01-01 --to-date 2026-07-01
+
 # 選手能力評価(整備力・スタート力・突っ込み度の統合レポート)
 autorace evaluate --from-date 2026-01-01 --to-date 2026-07-01
 autorace evaluate --from-date 2026-01-01 --to-date 2026-07-01 --venue kawaguchi --top 30
@@ -161,7 +166,7 @@ API仕様が変わった場合は `parsers/selectors.py` の対応表を修正�
 1. orphan branch `autorace-data` から `autorace.db.gz` を復元
 2. 収集窓 = 前回最終収集日−2日 〜 昨日。`clear_recent_not_found` で
    「結果未確定のうちにデータなし応答を踏んだレース」を再チェック対象に戻す
-3. `scrape` → `scrape-program` を差分実行(HTTPキャッシュは使わず scrape_log で差分判定)
+3. `scrape` → `scrape-program` → `scrape-odds` を差分実行(HTTPキャッシュは使わず scrape_log で差分判定)
 4. 直近365日ローリングで evaluate し、以下を main に差分コミットする:
    - `data/reports/autorace_eval_latest.csv` / `autorace_rookie_latest.csv` —
      **常に最新版**(予想機能はこちらを参照する)
@@ -192,9 +197,12 @@ git push -f origin "$(git commit-tree "$TREE" -m 'initial db snapshot')":refs/he
 autorace train-model [--before-date 2026-07-01]
 
 # 当日予想(DBに結果があればDB、なければ出走表APIから取得して予想)
-autorace predict --date 20260721 --venue kawaguchi [--race 5] [--top 5]
+# 予想時はオッズAPIも叩き、2連単候補に「6-1 (11.1% × 23.1倍 = EV 2.56)」形式で
+# オッズ・期待値を併記する(--ev-threshold 以上は「◎推奨」としてまとめて表示)
+autorace predict --date 20260721 --venue kawaguchi [--race 5] [--top 5] [--ev-threshold 1.2]
 
-# 月次ウォークフォワードの的中率・ROI評価
-autorace backtest-model --test-months 6 [--csv data/reports/backtest_summary.csv]
+# 月次ウォークフォワードの的中率・ROI評価(exacta_odds があればEV評価も含む)
+autorace backtest-model --test-months 6 [--ev-threshold 1.2] [--csv data/reports/backtest_summary.csv]
 ```
 - バックテスト指標: win_hit@1(勝率1位の1着的中率、trial_baseline@1=試走タイム最速車ベースラインを併記)、exacta_hit@N / exacta_roi@N(2連単確率上位N点フラット買いの的中率・回収率、payouts テーブルで精算)
+- 期待値ベット指標: exacta_odds にデータがある場合、`ev_bets`(model_prob × 最終オッズ ≥ 閾値の買い目を全て100円ずつ買ったときの総購入点数)、`ev_hit_rate`(購入点数あたり的中率)、`ev_roi`(回収率)を併せて出す

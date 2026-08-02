@@ -83,6 +83,110 @@ def test_month_start():
     assert month_start("2026-07-15") == "2026-07-01"
 
 
+# --------------------------------------------------------- EVバックテスト
+
+def _ev_block_fixture():
+    """1レース(3車)の合成予測。Harville 確率は手計算できる値にする。
+
+    p_win = 1:0.5, 2:0.3, 3:0.2 → 2連単確率
+      1-2=0.30  1-3=0.20  2-1=0.30*0.5/0.7  2-3=0.30*0.2/0.7
+      3-1=0.125 3-2=0.075
+    着順は 2着車が1着・1着車が2着(= 実際の組み合わせは "2-1")。
+    """
+    pred = pd.DataFrame({
+        "race_id": ["r1"] * 3,
+        "car_no": [1, 2, 3],
+        "p_win": [0.5, 0.3, 0.2],
+        "finish_pos": [2, 1, 3],
+        "trial_time": [3.35, 3.36, 3.40],
+    })
+    # EV = prob × odds。閾値1.2以上は 1-2(1.50)・2-1(1.286)・2-3(1.714)の3点
+    odds_map = {"r1": {
+        (1, 2): 5.0, (1, 3): 4.0,
+        (2, 1): 6.0, (2, 3): 20.0,
+        (3, 1): 8.0, (3, 2): 10.0,
+    }}
+    payout_map = {"r1": {"2-1": 600.0}}
+    return pred, odds_map, payout_map
+
+
+def test_ev_backtest_matches_hand_calculation():
+    pred, odds_map, payout_map = _ev_block_fixture()
+    row = bt._evaluate_block("T", pred, payout_map, odds_map, ev_threshold=1.2)
+    assert row["ev_bets"] == 3            # 1-2, 2-1, 2-3
+    assert row["ev_hit_rate"] == 1 / 3    # 的中は 2-1 のみ
+    assert row["ev_roi"] == 600.0 / 300   # 払戻600円 ÷ 購入300円
+
+
+def test_ev_backtest_threshold_filters_bets():
+    pred, odds_map, payout_map = _ev_block_fixture()
+    # 閾値を上げると 2-3(EV 1.714)のみ購入 → 的中0・回収0
+    row = bt._evaluate_block("T", pred, payout_map, odds_map, ev_threshold=1.7)
+    assert row["ev_bets"] == 1
+    assert row["ev_hit_rate"] == 0.0
+    assert row["ev_roi"] == 0.0
+    # 到達不能な閾値なら購入0点で NaN
+    row = bt._evaluate_block("T", pred, payout_map, odds_map, ev_threshold=99)
+    assert row["ev_bets"] == 0
+    assert np.isnan(row["ev_hit_rate"])
+    assert np.isnan(row["ev_roi"])
+
+
+def test_ev_columns_absent_without_odds():
+    """オッズを渡さない従来の呼び出しでは EV 列を追加しない。"""
+    pred, _, payout_map = _ev_block_fixture()
+    row = bt._evaluate_block("T", pred, payout_map)
+    assert "ev_bets" not in row
+    assert "ev_roi" not in row
+
+
+def test_exacta_odds_map_drops_invalid_odds():
+    df = pd.DataFrame({
+        "race_id": ["r1", "r1", "r1"],
+        "first": [1, 1, 2],
+        "second": [2, 3, 1],
+        "odds": [5.0, 0.0, None],
+    })
+    assert bt._exacta_odds_map(df) == {"r1": {(1, 2): 5.0}}
+    assert bt._exacta_odds_map(None) is None
+    assert bt._exacta_odds_map(pd.DataFrame()) == {}
+
+
+def test_walk_forward_includes_ev_columns():
+    """walk_forward に exacta_odds_df を渡すと summary に EV 指標が入る。"""
+    entries, _ = synthetic_league(seed=25, n_players=24, n_races=600)
+    months = sorted({d[:7] for d in entries["race_date"]})
+    # 全レースの全2連単を一律オッズ10倍とし、払戻も同額(=1000円)にする
+    winners = entries[entries["finish_pos"] == 1][["race_id", "car_no"]]
+    seconds = entries[entries["finish_pos"] == 2][["race_id", "car_no"]]
+    combos = winners.merge(seconds, on="race_id", suffixes=("_1", "_2"))
+    payouts = pd.DataFrame({
+        "race_id": combos["race_id"],
+        "bet_type": "2連単",
+        "combination": combos["car_no_1"].astype(str) + "-" + combos["car_no_2"].astype(str),
+        "payout": 1000.0,
+    })
+    odds_rows = []
+    for race_id, g in entries.groupby("race_id"):
+        cars = list(g["car_no"])
+        for i in cars:
+            for j in cars:
+                if i != j:
+                    odds_rows.append({"race_id": race_id, "first": i,
+                                      "second": j, "odds": 10.0})
+    odds_df = pd.DataFrame(odds_rows)
+
+    result = bt.walk_forward(entries, payouts, test_months=months[-1:],
+                             min_train_races=50, exacta_odds_df=odds_df,
+                             ev_threshold=1.2)
+    summary = result["summary"]
+    assert not summary.empty
+    overall = summary[summary["block"] == "ALL"].iloc[0]
+    assert overall["ev_bets"] > 0
+    # 一律10倍・払戻1000円なので ROI = 的中率 × 10
+    assert abs(overall["ev_roi"] - overall["ev_hit_rate"] * 10) < 1e-9
+
+
 # ------------------------------------------------------------ end-to-end
 
 @pytest.mark.slow

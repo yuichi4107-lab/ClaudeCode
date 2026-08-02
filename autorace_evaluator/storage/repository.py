@@ -138,6 +138,67 @@ def upsert_payouts(conn: sqlite3.Connection, race_id: str, payouts: list[dict]) 
     conn.commit()
 
 
+# ------------------------------------------------------------------ odds
+
+def upsert_exacta_odds(conn: sqlite3.Connection, race_id: str, rows: list[dict]) -> int:
+    """2連単オッズを保存する。
+
+    rows = [{"first": int, "second": int, "odds": float}, ...]。
+    status_code / updated_at は行ごとに持たせても、呼び出し側で全行に同じ値を
+    入れてもよい。オッズは常に新しい方が正なので INSERT OR REPLACE する。
+    保存行数を返す。
+    """
+    n = 0
+    for r in rows:
+        conn.execute(
+            """INSERT OR REPLACE INTO exacta_odds
+                (race_id, first, second, odds, status_code, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (race_id, r["first"], r["second"], r.get("odds"),
+             r.get("status_code"), r.get("updated_at")),
+        )
+        n += 1
+    conn.commit()
+    return n
+
+
+def upsert_win_odds(conn: sqlite3.Connection, race_id: str, rows: list[dict]) -> int:
+    """単勝オッズを保存する。rows = [{"car_no": int, "odds": float}, ...]。"""
+    n = 0
+    for r in rows:
+        conn.execute(
+            """INSERT OR REPLACE INTO win_odds
+                (race_id, car_no, odds, status_code, updated_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (race_id, r["car_no"], r.get("odds"),
+             r.get("status_code"), r.get("updated_at")),
+        )
+        n += 1
+    conn.commit()
+    return n
+
+
+def get_exacta_odds(
+    conn: sqlite3.Connection,
+    from_date: str,
+    to_date: str,
+    venue: str | None = None,
+) -> list[sqlite3.Row]:
+    """期間内レースの2連単オッズを races と JOIN して返す。"""
+    sql = """
+    SELECT o.race_id, o.first, o.second, o.odds, o.status_code, o.updated_at
+    FROM exacta_odds o
+    JOIN races r ON o.race_id = r.race_id
+    WHERE r.race_date BETWEEN ? AND ?
+    """
+    params: list = [from_date, to_date]
+    if venue:
+        sql += " AND r.venue = ?"
+        params.append(venue)
+    sql += " ORDER BY o.race_id, o.first, o.second"
+    return conn.execute(sql, params).fetchall()
+
+
 # ------------------------------------------------------------- scrape_log
 
 def log_scrape(

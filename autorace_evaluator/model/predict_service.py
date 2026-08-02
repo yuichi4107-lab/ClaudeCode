@@ -17,6 +17,7 @@ import pandas as pd
 from autorace_evaluator.config import settings
 from autorace_evaluator.model import predictor
 from autorace_evaluator.model.features import SnapshotStore, build_features
+from autorace_evaluator.parsers.odds_parser import parse_api_odds
 from autorace_evaluator.parsers.program_parser import parse_api_program
 from autorace_evaluator.parsers import normalize
 from autorace_evaluator.scraper.base import BaseScraper
@@ -51,9 +52,36 @@ def train_and_save(db_path: str | None = None, before_date: str | None = None,
     return model
 
 
-def _fetch_program_entries(scraper: BaseScraper, venue: str, date: str) -> list[dict]:
-    """Program API を race_no=1 から順に叩き、疑似 entries 行のリストを返す。"""
+def _fetch_odds(scraper: BaseScraper, venue: str, date: str, race_no: int,
+                payload: dict) -> dict | None:
+    """Odds API を1レース分叩いてパース結果を返す。取得できなければ None。"""
+    try:
+        odds_json = scraper.post_json(settings.BASE_URLS["api_odds"], payload)
+    except Exception as exc:  # noqa: BLE001 - オッズ無しでも予想は続行する
+        logger.warning("オッズ取得失敗 %s R%d: %s", venue, race_no, exc)
+        return None
+    if not odds_json:
+        return None
+    meta = {"venue": venue, "date": date, "race_no": race_no}
+    parsed = parse_api_odds(odds_json, meta)
+    if parsed.get("error"):
+        logger.info("オッズ未取得 %s R%d: %s", venue, race_no, parsed["error"])
+        return None
+    return parsed
+
+
+def _fetch_program_entries(
+    scraper: BaseScraper, venue: str, date: str
+) -> tuple[list[dict], dict]:
+    """Program API を race_no=1 から順に叩き、疑似 entries 行とオッズを返す。
+
+    返り値: (rows, odds_by_race)
+    odds_by_race = {race_id: {"status_code", "updated_at",
+                              "exacta": {(first, second): odds},
+                              "win": {car_no: odds}}}
+    """
     rows = []
+    odds_by_race: dict[str, dict] = {}
     for race_no in range(1, settings.MAX_RACE_NO + 1):
         payload = {
             "placeCode": settings.PLACE_CODES[venue],
@@ -80,6 +108,23 @@ def _fetch_program_entries(scraper: BaseScraper, venue: str, date: str) -> list[
         )
 
         race_id = f"{venue}_{date}_{race_no}"
+
+        # オッズAPI(1リクエスト追加)。試走タイムは出走表より新しいので上書きする
+        odds = _fetch_odds(scraper, venue, date, race_no, payload)
+        trial_override = {}
+        if odds:
+            odds_by_race[race_id] = {
+                "status_code": odds.get("status_code"),
+                "updated_at": odds.get("updated_at"),
+                "exacta": {(r["first"], r["second"]): r["odds"]
+                           for r in odds.get("exacta", [])},
+                "win": {r["car_no"]: r["odds"] for r in odds.get("win", [])},
+            }
+            trial_override = {
+                p["car_no"]: p["trial_time"] for p in odds.get("players", [])
+                if p.get("trial_time") is not None
+            }
+
         for e in parsed["entries"]:
             if e.get("is_absent"):
                 continue
@@ -89,7 +134,7 @@ def _fetch_program_entries(scraper: BaseScraper, venue: str, date: str) -> list[
                 "player_no": e.get("player_no"),
                 "player_name": e.get("player_name"),
                 "handicap": e.get("handicap"),
-                "trial_time": e.get("trial_time"),
+                "trial_time": trial_override.get(e["car_no"], e.get("trial_time")),
                 "bike_class": e.get("bike_class"),
                 "graduation_code": e.get("graduation_code"),
                 "player_rank": e.get("player_rank"),
@@ -102,7 +147,23 @@ def _fetch_program_entries(scraper: BaseScraper, venue: str, date: str) -> list[
                 "is_retrial": 0, "race_time": np.nan, "last_lap_time": np.nan,
                 "meeting_id": None, "distance": other_body.get("distance"),
             })
-    return rows
+    return rows, odds_by_race
+
+
+def _load_odds_from_db(conn, date: str, venue: str) -> dict:
+    """DB(exacta_odds)から対象日・会場のオッズを読み、odds_by_race 形式で返す。"""
+    odds_by_race: dict[str, dict] = {}
+    for row in repository.get_exacta_odds(conn, date, date, venue):
+        info = odds_by_race.setdefault(row["race_id"], {
+            "status_code": row["status_code"],
+            "updated_at": row["updated_at"],
+            "exacta": {},
+            "win": {},
+        })
+        odds = row["odds"]
+        if odds is not None and odds > 0:
+            info["exacta"][(row["first"], row["second"])] = odds
+    return odds_by_race
 
 
 def predict_day(date: str, venue: str,
@@ -112,25 +173,31 @@ def predict_day(date: str, venue: str,
                 model_path: str = predictor.MODEL_PATH) -> dict:
     """指定日・会場の予想を返す。
 
-    返り値: {"win": DataFrame, "exacta": DataFrame, "source": "db"|"api"}
+    返り値: {"win": DataFrame, "exacta": DataFrame, "source": "db"|"api",
+             "odds_status": {race_id: {"status_code", "updated_at"}}}
     win: race_id, race_no, car_no, player_name, p_win(レース内降順)
-    exacta: race_id ごとの2連単上位(prob 降順)
+    exacta: race_id ごとの2連単上位(prob 降順)。オッズを取得できた組には
+            odds 列と ev 列(= prob × odds)が入る(欠測は NaN)。
     """
     conn = database.get_connection(db_path or settings.DB_PATH)
     try:
+        database.init_db(conn)  # オッズ表が無い旧DBでも読めるようにする
         # 学習・スナップショット用の過去データ(対象日より前)
         history = load_entries_df(conn, "1970-01-01", "9999-12-31")
         history = history[history["race_date"] < date]
 
         # 対象レース: DBにあればそれを、なければ出走表APIから
         target = load_entries_df(conn, date, date)
-        target = target[target["venue"] == venue]
+        if not target.empty:
+            target = target[target["venue"] == venue]
+        # DB由来(過去レース検証)なら保存済みオッズを使う
+        odds_by_race = _load_odds_from_db(conn, date, venue) if not target.empty else {}
     finally:
         conn.close()
 
     if target.empty:
         scraper = BaseScraper(use_cache=use_cache)
-        rows = _fetch_program_entries(scraper, venue, date)
+        rows, odds_by_race = _fetch_program_entries(scraper, venue, date)
         if not rows:
             raise RuntimeError(
                 f"{date} {venue} の出走表を取得できません(未発表または非開催)")
@@ -158,4 +225,30 @@ def predict_day(date: str, venue: str,
         .sort_values(["race_no", "p_win"], ascending=[True, False]) \
         .reset_index(drop=True)
     exacta = predictor.exacta_probabilities(feats[["race_id", "car_no", "p_win"]])
-    return {"win": win, "exacta": exacta, "source": source}
+    exacta = _attach_odds(exacta, odds_by_race)
+    odds_status = {
+        race_id: {"status_code": info.get("status_code"),
+                  "updated_at": info.get("updated_at")}
+        for race_id, info in odds_by_race.items()
+    }
+    return {"win": win, "exacta": exacta, "source": source,
+            "odds_status": odds_status}
+
+
+def _attach_odds(exacta: pd.DataFrame, odds_by_race: dict) -> pd.DataFrame:
+    """2連単DataFrameに odds 列と ev 列(= prob × odds)を付ける。"""
+    if exacta.empty:
+        exacta = exacta.copy()
+        exacta["odds"] = pd.Series(dtype=float)
+        exacta["ev"] = pd.Series(dtype=float)
+        return exacta
+
+    exacta = exacta.copy()
+    exacta["odds"] = [
+        odds_by_race.get(r.race_id, {}).get("exacta", {}).get(
+            (int(r.first), int(r.second)), np.nan)
+        for r in exacta.itertuples(index=False)
+    ]
+    exacta["odds"] = pd.to_numeric(exacta["odds"], errors="coerce")
+    exacta["ev"] = exacta["prob"] * exacta["odds"]
+    return exacta

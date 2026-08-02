@@ -42,6 +42,10 @@ BASE_URLS = {
     "api_program": "https://autorace.jp/race_info/Program",
     # 出走表の scrape_log キー用疑似URL(一意で安定していればよい)
     "race_program_page": "https://autorace.jp/race_info/RaceProgram/{venue}/{date}_{race_no}",
+    # オッズ JSON API (POST 同上): 2連単(rtw)・単勝(tns)オッズなど
+    "api_odds": "https://autorace.jp/race_info/Odds",
+    # オッズの scrape_log キー用疑似URL(一意で安定していればよい)
+    "race_odds_page": "https://autorace.jp/race_info/RaceOdds/{venue}/{date}_{race_no}",
     # 開催カレンダー JSON API (GET ?date=YYYY-MM)
     "api_calendar": "https://autorace.jp/race_info/XML/Calendar",
     # CSRFトークン取得用ページ
@@ -51,6 +55,12 @@ BASE_URLS = {
 # API 応答の result="Failure" 時のエラーコード
 API_CODE_NO_DATA = "4101"   # レスポンス0件(未開催・存在しないレース番号・未確定)
 API_CODE_CANCELLED = "4200"  # 開催中止
+
+# オッズAPI の statusCode。1=最終オッズ(確定)、0=中間オッズ(発売中)
+ODDS_STATUS_FINAL = 1
+
+# 期待値(EV = 的中確率 × オッズ)ベットの既定閾値。これ以上を「◎推奨」とする
+EV_THRESHOLD = 1.2
 
 RATE_LIMIT_SECONDS = 3.0
 REQUEST_TIMEOUT = 30

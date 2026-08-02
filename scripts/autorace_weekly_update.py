@@ -4,6 +4,7 @@
 2. 収集窓の決定: from = MAX(race_date) − 2日(DBが空なら昨日−7日)、to = 昨日(JST)
 3. clear_recent_not_found: 結果未確定のうちに「データなし」を踏んだレースを再チェック対象に戻す
 4. scrape_races(結果+補足情報)→ scrape_programs(出走表: 車級・期別等)
+   → scrape_odds(最終オッズ: 2連単・単勝。EVバックテスト用に蓄積)
 5. 直近365日ローリングで evaluate → data/reports/autorace_eval_latest.csv /
    autorace_rookie_latest.csv(固定名 = 予想などが参照する最新版)と、
    data/reports/archive/autorace_{eval,rookie}_{評価末日}.csv(蓄積用。
@@ -48,6 +49,7 @@ def main() -> int:
     from autorace_evaluator.metrics import report as report_mod
     from autorace_evaluator.metrics import rookie as rookie_mod
     from autorace_evaluator.metrics.meeting import update_meeting_ids
+    from autorace_evaluator.scraper.race_odds import scrape_odds
     from autorace_evaluator.scraper.race_program import scrape_programs
     from autorace_evaluator.scraper.race_result import scrape_races
     from autorace_evaluator.storage import database, repository
@@ -75,6 +77,12 @@ def main() -> int:
         use_cache=False, progress=False,
     )
     print(f"[weekly] scrape_programs: {pstats}")
+
+    ostats = scrape_odds(
+        from_date, to_date, settings.VENUE_SLUGS,
+        use_cache=False, progress=False,
+    )
+    print(f"[weekly] scrape_odds: {ostats}")
 
     # 直近365日ローリングで評価
     eval_to = to_date
@@ -109,7 +117,7 @@ def main() -> int:
     finally:
         conn.close()
 
-    if stats["errors"] or pstats["errors"]:
+    if stats["errors"] or pstats["errors"] or ostats["errors"]:
         print("[weekly] 一部エラーあり(scrape_log に記録済み、翌週の実行が再試行します)")
     return 0
 

@@ -60,6 +60,25 @@ CREATE TABLE IF NOT EXISTS payouts (
     PRIMARY KEY (race_id, bet_type, combination)
 );
 
+CREATE TABLE IF NOT EXISTS exacta_odds (
+    race_id     TEXT NOT NULL REFERENCES races(race_id),
+    first       INTEGER NOT NULL,
+    second      INTEGER NOT NULL,
+    odds        REAL,
+    status_code INTEGER,           -- 0=中間オッズ, 1=最終オッズ
+    updated_at  TEXT,              -- salesInfo.updateDate
+    PRIMARY KEY (race_id, first, second)
+);
+
+CREATE TABLE IF NOT EXISTS win_odds (
+    race_id     TEXT NOT NULL REFERENCES races(race_id),
+    car_no      INTEGER NOT NULL,
+    odds        REAL,
+    status_code INTEGER,
+    updated_at  TEXT,
+    PRIMARY KEY (race_id, car_no)
+);
+
 CREATE TABLE IF NOT EXISTS scrape_log (
     url         TEXT PRIMARY KEY,
     scraped_at  TEXT,

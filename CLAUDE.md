@@ -83,6 +83,9 @@ autorace.jp を対象としたオートレース選手の能力評価システ�
 # データ収集（カレンダーAPIで開催日を絞り、レースごとにJSON APIを2本叩く）
 python -m autorace_evaluator.cli.main scrape --from-date 2025-07-01 --to-date 2026-07-01
 
+# オッズ収集（2連単・単勝。過去レースの最終オッズもバックフィル可能）
+python -m autorace_evaluator.cli.main scrape-odds --from-date 2025-07-01 --to-date 2026-07-01
+
 # 選手能力評価（整備力・スタート力・突っ込み度 + 総合ランキング、CSV出力）
 python -m autorace_evaluator.cli.main evaluate --from-date 2025-07-01 --to-date 2026-07-01
 
@@ -94,6 +97,13 @@ python -m autorace_evaluator.cli.main parse-json FILE.result.json --json [--save
 - **整備力**: 同一節・前日当日とも良走路(試走時)のときの試走タイム差(前日−当日)。改善率・平均差・スコア
 - **スタート力**: ST統計 + ダッシュ力(競走T−上がりT の序盤ロス残差。※APIに上がりタイムが無いため実データではST成分のみ)
 - **突っ込み度**: 混戦時の期待着順残差(STは説明変数に入れない) + 重ハン時追い抜き量 `passed = 前にいた車数 − 先着された車数`
+
+### オッズと期待値(EV)ベット
+- `POST /race_info/Odds` から 2連単(rtwOddsList)・単勝(tnsOddsList)を収集し `exacta_odds` / `win_odds` に保存
+- `statusCode` は 0=中間 / 1=最終。**最終のときだけ scrape_log に完了記録**し、中間は次回再取得する
+- `predict` は予想時にもオッズAPIを叩き、2連単候補に `6-1 (11.1% × 23.1倍 = EV 2.56)` 形式で併記。
+  `--ev-threshold`(既定1.2)以上を「◎推奨」として表示
+- `backtest-model` は exacta_odds があれば EV ベット戦略(`ev_bets` / `ev_hit_rate` / `ev_roi`)も評価する
 
 ### 設計上の注意
 - **データ源はJSON API**(実サイト検証済み・2026-07): HTMLはJS描画のシェルでデータを含まない。

@@ -84,6 +84,39 @@ def run_scrape_program(args) -> None:
     )
 
 
+def run_scrape_odds(args) -> None:
+    from autorace_evaluator.config import settings
+    from autorace_evaluator.scraper.race_odds import scrape_odds
+
+    if args.date:
+        from_date = to_date = _parse_date(args.date)
+    elif args.from_date and args.to_date:
+        from_date = _parse_date(args.from_date)
+        to_date = _parse_date(args.to_date)
+    else:
+        print("scrape-odds: --date または --from-date/--to-date の両方を指定してください")
+        sys.exit(1)
+        return
+
+    venues = settings.VENUE_SLUGS if args.venue == "all" else [args.venue]
+
+    stats = scrape_odds(
+        from_date=from_date,
+        to_date=to_date,
+        venues=venues,
+        use_cache=not args.no_cache,
+        dump_dir=args.dump_html,
+        progress=True,
+    )
+
+    print(
+        "scrape-odds done: "
+        f"fetched={stats['fetched']} not_found={stats['not_found']} "
+        f"skipped={stats['skipped']} errors={stats['errors']} "
+        f"rows_updated={stats['rows_updated']}"
+    )
+
+
 def run_evaluate(args) -> None:
     import pandas as pd
 
@@ -154,6 +187,28 @@ def run_train_model(args) -> None:
     print(f"train-model done: backend={model.backend} temperature={model.temperature:.2f}")
 
 
+def _format_exacta_candidate(row) -> str:
+    """「6-1 (11.1% × 23.1倍 = EV 2.56)」形式。オッズ欠測なら確率のみ。"""
+    import pandas as pd
+
+    base = f"{int(row['first'])}-{int(row['second'])}"
+    odds = row.get("odds")
+    if odds is None or pd.isna(odds):
+        return f"{base} ({row['prob']*100:.1f}%)"
+    return (f"{base} ({row['prob']*100:.1f}% × {odds:.1f}倍 "
+            f"= EV {row['prob']*odds:.2f})")
+
+
+def _odds_status_label(info: dict) -> str:
+    """オッズの取得状況(最終/中間 + 更新時刻)を1行で表す。"""
+    from autorace_evaluator.config import settings
+
+    kind = ("最終" if info.get("status_code") == settings.ODDS_STATUS_FINAL
+            else "中間")
+    updated = info.get("updated_at") or "-"
+    return f"{kind}オッズ ({updated})"
+
+
 def run_predict(args) -> None:
     import pandas as pd
 
@@ -162,20 +217,35 @@ def run_predict(args) -> None:
     date = _parse_date(args.date)
     result = predict_day(date, args.venue, race_no=args.race,
                          use_cache=not args.no_cache)
+    odds_status = result.get("odds_status", {})
+    ex_all = result["exacta"]
+    has_odds = "odds" in ex_all.columns and ex_all["odds"].notna().any()
 
     pd.set_option("display.width", 160)
     print(f"=== 予想 {date} {args.venue} (データ源: {result['source']}) ===")
+    recommends = []
     for race_id, g in result["win"].groupby("race_id", sort=False):
         race_no = g["race_no"].iloc[0]
         print(f"\n--- {race_no}R ---")
         for _, r in g.iterrows():
             name = r["player_name"] or "-"
             print(f"  車{int(r['car_no'])} {name}  勝率 {r['p_win']*100:5.1f}%")
-        ex = result["exacta"]
-        top = ex[ex["race_id"] == race_id].head(args.top)
-        combos = [f"{int(r['first'])}-{int(r['second'])} ({r['prob']*100:.1f}%)"
-                  for _, r in top.iterrows()]
+        ex = ex_all[ex_all["race_id"] == race_id]
+        top = ex.head(args.top)
+        combos = [_format_exacta_candidate(r) for _, r in top.iterrows()]
         print(f"  2連単候補: {'  '.join(combos)}")
+        if race_id in odds_status:
+            print(f"  オッズ: {_odds_status_label(odds_status[race_id])}")
+        if has_odds and "ev" in ex.columns:
+            for _, r in ex[ex["ev"] >= args.ev_threshold].iterrows():
+                recommends.append((race_no, r))
+
+    if has_odds:
+        print(f"\n=== ◎推奨買い目 (EV >= {args.ev_threshold}) ===")
+        if not recommends:
+            print("  該当なし")
+        for race_no, r in sorted(recommends, key=lambda x: -x[1]["ev"]):
+            print(f"  {int(race_no)}R  {_format_exacta_candidate(r)}")
 
 
 def run_backtest_model(args) -> None:
@@ -186,12 +256,16 @@ def run_backtest_model(args) -> None:
     from autorace_evaluator.model.predict_service import load_entries_df
     from autorace_evaluator.storage import database
 
+    from autorace_evaluator.storage import repository
+
     conn = database.get_connection(settings.DB_PATH)
     try:
+        database.init_db(conn)  # オッズ表が無い旧DBでも読めるようにする
         entries = load_entries_df(conn, "1970-01-01", "9999-12-31")
         payouts = pd.read_sql_query(
             "SELECT p.race_id, p.bet_type, p.combination, p.payout "
             "FROM payouts p", conn)
+        odds_rows = repository.get_exacta_odds(conn, "1970-01-01", "9999-12-31")
     finally:
         conn.close()
 
@@ -199,7 +273,16 @@ def run_backtest_model(args) -> None:
     test_months = months[-args.test_months:] if args.test_months else months[len(months) // 2:]
     print(f"テスト対象月: {test_months}")
 
-    result = walk_forward(entries, payouts, test_months)
+    # exacta_odds にデータがあれば期待値ベットの評価も含める
+    exacta_odds = pd.DataFrame([dict(r) for r in odds_rows]) if odds_rows else None
+    if exacta_odds is not None:
+        print(f"2連単オッズ: {len(exacta_odds)}行 "
+              f"({exacta_odds['race_id'].nunique()}レース) "
+              f"→ EV評価を含めます (閾値 {args.ev_threshold})")
+
+    result = walk_forward(entries, payouts, test_months,
+                          exacta_odds_df=exacta_odds,
+                          ev_threshold=args.ev_threshold)
     summary = result["summary"]
     if summary.empty:
         print("バックテスト対象がありません(学習データ不足)")
@@ -395,6 +478,23 @@ def main():
         help="取得したAPI応答JSONを可読名で保存するディレクトリ",
     )
 
+    # scrape-odds
+    p_odds = sub.add_parser(
+        "scrape-odds", help="保存済みレースのオッズ(2連単・単勝)を収集する")
+    p_odds.add_argument("--from-date", dest="from_date", help="開始日")
+    p_odds.add_argument("--to-date", dest="to_date", help="終了日")
+    p_odds.add_argument("--date", help="特定日付 YYYYMMDD または YYYY-MM-DD")
+    p_odds.add_argument(
+        "--venue",
+        choices=["all", "kawaguchi", "isesaki", "hamamatsu", "sanyou", "iizuka"],
+        default="all",
+    )
+    p_odds.add_argument("--no-cache", action="store_true", dest="no_cache")
+    p_odds.add_argument(
+        "--dump-html", dest="dump_html", metavar="DIR",
+        help="取得したAPI応答JSONを可読名で保存するディレクトリ",
+    )
+
     # evaluate
     p_eval = sub.add_parser("evaluate", help="選手能力評価指標を算出する")
     p_eval.add_argument("--from-date", required=True, dest="from_date")
@@ -433,6 +533,9 @@ def main():
         choices=["kawaguchi", "isesaki", "hamamatsu", "sanyou", "iizuka"])
     p_pred.add_argument("--race", type=int, help="レース番号で絞り込み")
     p_pred.add_argument("--top", type=int, default=5, help="2連単候補の表示点数")
+    p_pred.add_argument(
+        "--ev-threshold", dest="ev_threshold", type=float, default=1.2,
+        help="期待値(確率×オッズ)がこの値以上の買い目を推奨する(デフォルト: 1.2)")
     p_pred.add_argument("--no-cache", action="store_true", dest="no_cache")
 
     # backtest-model
@@ -441,6 +544,9 @@ def main():
     p_bt.add_argument(
         "--test-months", dest="test_months", type=int, default=6,
         help="直近何か月をテストに使うか(デフォルト: 6)")
+    p_bt.add_argument(
+        "--ev-threshold", dest="ev_threshold", type=float, default=1.2,
+        help="期待値ベットの購入閾値(デフォルト: 1.2)")
     p_bt.add_argument("--csv", dest="csv", help="サマリCSVの出力パス")
 
     # parse-json
@@ -460,6 +566,8 @@ def main():
         run_scrape(args)
     elif args.command == "scrape-program":
         run_scrape_program(args)
+    elif args.command == "scrape-odds":
+        run_scrape_odds(args)
     elif args.command == "evaluate":
         run_evaluate(args)
     elif args.command == "train-model":
