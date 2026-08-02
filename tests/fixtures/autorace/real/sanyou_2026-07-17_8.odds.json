@@ -1,0 +1,126 @@
+{
+ "result": "Success",
+ "errors": [],
+ "body": {
+  "statusCode": 1,
+  "salesInfo": {
+   "updateDate": "2026-08-02 10:29:00",
+   "oldFlg": 1
+  },
+  "twicePlayerExist": 0,
+  "playerList": [
+   {
+    "carNo": 1,
+    "playerCode": "1919",
+    "playerName": "竹中　一成",
+    "handicap": 0,
+    "trialTime": "3.44",
+    "trialRetryCode": null,
+    "stAve": "0.17",
+    "absent": null
+   },
+   {
+    "carNo": 2,
+    "playerCode": "3018",
+    "playerName": "松井　大和",
+    "handicap": 10,
+    "trialTime": "3.38",
+    "trialRetryCode": null,
+    "stAve": "0.15",
+    "absent": null
+   },
+   {
+    "carNo": 3,
+    "playerCode": "3117",
+    "playerName": "矢野　正剛",
+    "handicap": 20,
+    "trialTime": "3.35",
+    "trialRetryCode": null,
+    "stAve": "0.14",
+    "absent": null
+   },
+   {
+    "carNo": 4,
+    "playerCode": "3111",
+    "playerName": "春本　綾斗",
+    "handicap": 30,
+    "trialTime": "3.36",
+    "trialRetryCode": null,
+    "stAve": "0.25",
+    "absent": null
+   },
+   {
+    "carNo": 5,
+    "playerCode": "3312",
+    "playerName": "山本　将之",
+    "handicap": 30,
+    "trialTime": "3.32",
+    "trialRetryCode": null,
+    "stAve": "0.17",
+    "absent": null
+   },
+   {
+    "carNo": 6,
+    "playerCode": "2925",
+    "playerName": "丹村　飛竜",
+    "handicap": 30,
+    "trialTime": "3.35",
+    "trialRetryCode": null,
+    "stAve": "0.12",
+    "absent": null
+   }
+  ],
+  "rtwOddsList": {
+   "6": {
+    "5": "2.8",
+    "4": "70.3",
+    "3": "6.1",
+    "2": "4.3",
+    "1": "16.5"
+   },
+   "5": {
+    "6": "7.9",
+    "4": "97.2",
+    "3": "17.9",
+    "2": "13.9",
+    "1": "67.7"
+   },
+   "4": {
+    "6": "161.2",
+    "5": "174.4",
+    "3": "231.5",
+    "2": "215.8",
+    "1": "509.4"
+   },
+   "3": {
+    "6": "17.1",
+    "5": "22.9",
+    "4": "113.7",
+    "2": "39.5",
+    "1": "71.9"
+   },
+   "2": {
+    "6": "23.1",
+    "5": "38.5",
+    "4": "127.3",
+    "3": "47.1",
+    "1": "67.7"
+   },
+   "1": {
+    "6": "69.2",
+    "5": "116.8",
+    "4": "509.4",
+    "3": "161.2",
+    "2": "93.6"
+   }
+  },
+  "tnsOddsList": {
+   "6": "1.2",
+   "5": "3.0",
+   "4": "36.4",
+   "3": "7.0",
+   "2": "11.4",
+   "1": "23.7"
+  }
+ }
+}
