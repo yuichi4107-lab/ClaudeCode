@@ -26,6 +26,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from rakuten_room.compose import compose_post
 from rakuten_room.rakuten_api import fetch_ranking
 
 # ROOMの投稿実績と相性が良いジャンル (Ichiba genreId)
@@ -168,8 +169,9 @@ def render_markdown(candidates: list, snapshot_date: str) -> str:
         f"# ROOM投稿候補 {snapshot_date}",
         "",
         "スコア = ランキング順位 + 急上昇 + レビュー + 価格帯 + 期待報酬 の加重平均。",
-        "**投稿文はたたき台です。「自分の言葉ポイント」を必ず自分の体験・視点で書き換えてから投稿してください**",
-        "(定型文のままの投稿はいいねが付きにくいことが分析で確認済み)。",
+        "投稿文は商品ごとに文面パターンを変えて自動生成しています。",
+        "**そのまま使えますが、自分の体験・一言を1行足すと反応が上がります**",
+        "(定型文の量産はいいねが付きにくいことが分析で確認済み)。",
         "",
     ]
     for n, (score, surge_label, item) in enumerate(candidates, 1):
@@ -188,11 +190,9 @@ def render_markdown(candidates: list, snapshot_date: str) -> str:
             f"- レビュー: {review_count:,}件 / ★{review_avg}",
             f"- URL: {url}",
             "",
-            "投稿文たたき台:",
+            "投稿文(自動生成・コピペ可):",
             "```",
-            f"{name[:30]}…",
-            "【自分の言葉ポイント】なぜ気になったか・どんな場面で使いたいかを2〜3行で",
-            f"レビュー{review_count:,}件で★{review_avg}と高評価。",
+            compose_post(item, surge_label),
             "```",
             "",
         ]
