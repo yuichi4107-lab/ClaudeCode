@@ -1,0 +1,79 @@
+/* 町工場の生成AI仕事術 — EPUB stylesheet */
+
+body {
+  font-family: serif;
+  line-height: 1.9;
+  margin: 0 2%;
+  text-align: justify;
+}
+
+h1, h2, h3 {
+  font-family: sans-serif;
+  line-height: 1.4;
+  text-align: left;
+}
+
+h1 {
+  font-size: 1.5em;
+  border-bottom: 3px solid #1a3a5c;
+  padding-bottom: 0.3em;
+  margin-top: 1.5em;
+}
+
+h2 {
+  font-size: 1.2em;
+  border-left: 6px solid #e8762c;
+  padding-left: 0.5em;
+  margin-top: 1.8em;
+}
+
+h3 {
+  font-size: 1.05em;
+  margin-top: 1.5em;
+}
+
+/* プロンプト例のコードブロック */
+pre {
+  font-family: sans-serif;
+  font-size: 0.85em;
+  line-height: 1.7;
+  background-color: #f2f5f8;
+  border: 1px solid #c9d4de;
+  border-radius: 6px;
+  padding: 0.8em;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+code {
+  font-family: sans-serif;
+  font-size: 0.9em;
+}
+
+table {
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+th, td {
+  border: 1px solid #999;
+  padding: 0.4em 0.6em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #aaa;
+  margin: 2em 20%;
+}
+
+ul, ol {
+  padding-left: 1.5em;
+}
+
+li {
+  margin-bottom: 0.3em;
+}
+
+strong {
+  font-family: sans-serif;
+}
