@@ -26,7 +26,7 @@
 ## ディレクトリ
 
 - `scripts/` — netkeiba照会・Excel生成スクリプト(レート制限3秒・HTMLキャッシュ付き)
-- `data/` — 照会結果データ
+- `datasets/` — 照会結果データ
   - `roster.csv`: 過去3年の募集馬276頭(検討Excelから抽出)
   - `final_results.json`: 276頭のnetkeiba成績(父名照合で全頭検証済み)
   - `dams2026_v3.json`: 2026年募集馬の母情報(母馬ID基準で産駒数を確定)
