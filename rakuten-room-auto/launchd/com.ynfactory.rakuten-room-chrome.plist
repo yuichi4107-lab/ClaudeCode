@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ynfactory.rakuten-room-chrome</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__PROJECT_DIR__/scripts/start_chrome_room.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>__HOME__</string>
+    <key>RAKUTEN_ROOM_CDP_PORT</key>
+    <string>9225</string>
+    <key>RAKUTEN_ROOM_HEADLESS</key>
+    <string>0</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>__HOME__/rakuten-room-auto/logs/chrome.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/rakuten-room-auto/logs/chrome.log</string>
+</dict>
+</plist>

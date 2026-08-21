@@ -1,0 +1,6 @@
+{
+  "name": "yn-sns",
+  "description": "SNS運用: note記事の企画・執筆・投稿(5アカウント週次バッチ)・X/Instagram/Facebook/Threads投稿",
+  "version": "1.0.0",
+  "author": { "name": "YN Factory" }
+}

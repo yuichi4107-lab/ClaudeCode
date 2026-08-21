@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Mobile nav -->
+<div class="md:hidden mb-4 overflow-x-auto">
+    <div class="bg-white rounded-xl shadow-sm border p-3 flex gap-2 min-w-max">
+        <a href="/tools/mailer/" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if page == 'send' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600{% endif %} whitespace-nowrap">送信</a>
+        <a href="/tools/mailer/bulk" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if page == 'bulk' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600{% endif %} whitespace-nowrap">一括送信</a>
+        <a href="/tools/mailer/templates" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if page == 'templates' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600{% endif %} whitespace-nowrap">テンプレート</a>
+        <a href="/tools/mailer/contacts" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if page == 'contacts' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600{% endif %} whitespace-nowrap">連絡先</a>
+        <a href="/tools/mailer/history" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if page == 'history' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600{% endif %} whitespace-nowrap">送信履歴</a>
+        <a href="/tools/mailer/settings" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if page == 'settings' %}bg-indigo-50 text-indigo-700{% else %}text-gray-600{% endif %} whitespace-nowrap">SMTP設定</a>
+    </div>
+</div>
+
+<div class="flex gap-6">
+    <!-- Sidebar (desktop only) -->
+    <nav class="hidden md:block w-48 flex-shrink-0">
+        <div class="bg-white rounded-xl shadow-sm border p-4 sticky top-24">
+            <h3 class="font-bold text-sm text-gray-400 mb-3 uppercase tracking-wide">メール送信</h3>
+            <ul class="space-y-1">
+                <li><a href="/tools/mailer/" class="block px-3 py-2 rounded-lg text-sm {% if page == 'send' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:bg-gray-50{% endif %}">送信</a></li>
+                <li><a href="/tools/mailer/bulk" class="block px-3 py-2 rounded-lg text-sm {% if page == 'bulk' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:bg-gray-50{% endif %}">一括送信</a></li>
+                <li><a href="/tools/mailer/templates" class="block px-3 py-2 rounded-lg text-sm {% if page == 'templates' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:bg-gray-50{% endif %}">テンプレート</a></li>
+                <li><a href="/tools/mailer/contacts" class="block px-3 py-2 rounded-lg text-sm {% if page == 'contacts' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:bg-gray-50{% endif %}">連絡先</a></li>
+                <li><a href="/tools/mailer/history" class="block px-3 py-2 rounded-lg text-sm {% if page == 'history' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:bg-gray-50{% endif %}">送信履歴</a></li>
+                <li><a href="/tools/mailer/settings" class="block px-3 py-2 rounded-lg text-sm {% if page == 'settings' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:bg-gray-50{% endif %}">SMTP設定</a></li>
+            </ul>
+            <hr class="my-3">
+            <a href="/dashboard" class="block px-3 py-2 text-gray-400 hover:text-gray-600 text-xs">&larr; ダッシュボードへ</a>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="flex-1 min-w-0">
+        {% block mailer_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

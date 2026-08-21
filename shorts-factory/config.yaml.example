@@ -1,0 +1,75 @@
+# shorts-factory 設定（~/shorts-factory/config.yaml に置く。無ければ全てデフォルト）
+# ここにあるのは変更しそうな項目のみ。全項目は src/config.py の DEFAULTS を参照。
+
+speaker_id: 3                # VOICEVOX話者ID（3=ずんだもんノーマル。一覧: python -c "from src import tts_voicevox as t; print(t.speaker_names())"）
+speaker_credit: "VOICEVOX:ずんだもん"
+speed_scale: 1.0             # 話速（尺超過時は自動で一時的に上がる）
+
+llm:
+  provider: claude_cli       # claude_cli | openai（openaiはsecrets.yamlにキー必須）
+
+images:
+  provider: card             # card（無料・デザインカード） | openai | gemini（要APIキー）
+  count: 4                   # 背景画像の枚数（3〜5推奨）
+
+queue:
+  auto_post: false           # ★ true にすると承認スキップで全自動投稿。実公開前に必ず確認
+  platforms: [x, youtube, instagram, tiktok]
+                              # 投稿先: x / youtube / instagram / tiktok
+  retry_failed_posts: true    # 投稿失敗時、失敗媒体だけ自動再投稿する
+  retry_max_attempts: 2       # 初回失敗後の自動再投稿回数
+  retry_delay_sec: 60         # 再投稿前の待機秒数
+  auto_recover_failed_posts: true       # 2回再投稿後も失敗した媒体は自動で原因確認・復旧
+  recovery_after_retries: 2             # 何回リトライ後に復旧処理へ進むか
+  recovery_retry_attempts: 1            # 復旧後に追加する再投稿回数
+  recovery_max_attempts_per_platform: 2 # 同一媒体への復旧処理上限
+
+cta:
+  lp_url: "https://ai.yn-factory.com/"
+  campaign: "shorts_ai_consult"
+
+content:
+  default_difficulty: beginner
+  platform_variant_videos: false  # true=SNS別に別動画生成 / false=共通動画1本（Seedance統合後の標準）
+  scheduled_slots:
+    - {hour: 9, minute: 0, difficulty: beginner}
+    - {hour: 14, minute: 0, difficulty: intermediate}
+    - {hour: 19, minute: 0, difficulty: intermediate}
+
+topics:
+  auto_replenish:
+    enabled: true
+    min_by_difficulty:
+      beginner: 8        # 使用可能ネタがこの数未満など自動補充
+      intermediate: 16
+    target_by_difficulty:
+      beginner: 18       # 補充後に目指す本数
+      intermediate: 36
+
+verify:
+  cer_line_max: 0.20         # 行ごとの音韻CER上限
+  cer_avg_max: 0.10          # 平均CER上限
+  auto_remake_on_fail: true  # 品質検証で不合格なら候補を作り直す
+  remake_max_attempts: 2     # 候補生成の最大回数（2=1回作り直し）
+
+# Atlas Cloud Seedance 2.0 によるAI動画背景生成（週5枠のみ、他は静止画カード版）
+seedance:
+  enabled: true                 # false で完全無効化（常に静止画版）
+  slots: [mon-09, wed-14, fri-19, sat-14, sun-09]  # 対象枠（曜日-時、実行時刻のスロットと突合）
+  model: fast                   # std ($0.112/s) | fast ($0.09/s)
+  resolution: 720p
+  ratio: "9:16"
+  audio_mode: voicevox          # voicevox=日本語TTSで差し替え | native=Seedance音声を使う
+  generate_audio: false         # 音声はVOICEVOXで差し替え、Seedance音声は使わない
+  voicevox_speaker_id: 13       # 青山龍星（ノーマル）
+  voicevox_speaker_credit: "VOICEVOX:青山龍星"
+  watermark: false
+  seed: 42                      # 固定するとカット間のスタイル一貫性が上がる
+  cut_duration_sec: 10
+  poll_interval_sec: 15
+  timeout_sec: 1800             # 1カットあたりのポーリングタイムアウト（秒）
+  monthly_budget_usd: 130.0     # 月間上限。超過したら自動でcard版へフォールバック
+  max_cost_per_video_usd: 10.0  # 1本あたりの上限（異常値の暴走防止）
+  cer_line_max: 0.30            # native音声時の許容値。voicevox時は通常verify閾値を使う
+  cer_avg_max: 0.18
+  remake_max_attempts: 1        # CER不合格時の再生成は1回のみ。それでも不合格ならフォールバック

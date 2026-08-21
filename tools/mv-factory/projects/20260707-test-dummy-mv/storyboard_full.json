@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "version": "full",
+  "aspect_ratio": "16:9",
+  "target_duration_sec": 40,
+  "clip_duration_default_sec": 5,
+  "characters": [],
+  "world": {
+    "description": ""
+  },
+  "scenes": [
+    {"scene_id": "scene_01", "section": "intro", "duration_sec": 5, "video_prompt": "Cinematic night drive POV, neon city lights blurring past a car window, slow tracking shot", "reference_image_role": "none"},
+    {"scene_id": "scene_02", "section": "intro", "duration_sec": 5, "video_prompt": "Wide establishing shot of a rain-soaked city skyline at night, neon reflections on wet asphalt", "reference_image_role": "none"},
+    {"scene_id": "scene_03", "section": "verse1", "duration_sec": 5, "video_prompt": "Wide shot of a car driving on an elevated highway at night, city skyline in background, gentle camera pan", "reference_image_role": "none"},
+    {"scene_id": "scene_04", "section": "verse1", "duration_sec": 5, "video_prompt": "Side tracking shot of the car weaving through traffic, neon signs streaking past", "reference_image_role": "none"},
+    {"scene_id": "scene_05", "section": "chorus1", "duration_sec": 5, "video_prompt": "Close-up dashboard view, hands on steering wheel, neon reflections flickering across the windshield, energetic camera shake", "reference_image_role": "none"},
+    {"scene_id": "scene_06", "section": "chorus1", "duration_sec": 5, "video_prompt": "Low angle shot of the car speeding under a bridge covered in neon graffiti, dynamic lighting flashes", "reference_image_role": "none"},
+    {"scene_id": "scene_07", "section": "bridge", "duration_sec": 5, "video_prompt": "Slow motion shot of city lights reflected in a puddle as the car passes, dreamy atmosphere", "reference_image_role": "none"},
+    {"scene_id": "scene_08", "section": "outro", "duration_sec": 5, "video_prompt": "Aerial drone shot pulling back from the car as it disappears into a tunnel of neon lights, cinematic fade", "reference_image_role": "none"}
+  ],
+  "generation_note": "scenesはLLM(Claude Code実行時のエージェント)がsong_structure.jsonのセクション情報をもとに作文すること。各シーンは4〜15秒、video_promptはカメラワーク・画角・雰囲気を含む英語推奨プロンプトとする。"
+}

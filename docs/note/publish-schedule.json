@@ -1,0 +1,93 @@
+{
+  "series": "AIを使いこなす（全5回）",
+  "platform": "note",
+  "author": "YN Factory",
+  "schedule_policy": {
+    "start_date": "2026-04-27",
+    "cadence": "Mon/Wed/Fri",
+    "publish_time_jst": "08:00",
+    "timezone": "Asia/Tokyo"
+  },
+  "articles": [
+    {
+      "article_no": 1,
+      "title": "「AIで楽してる」と言われる人の9割は、AIの1割も引き出せていない",
+      "target": "B/C共通",
+      "markdown_path": "docs/note/2026-04-23-ai-literacy-article-1.md",
+      "images_dir": ".company/outputs/note-article-1",
+      "images": [
+        "manga_cover_20260423_123845.png",
+        "manga_fig1_chef_20260423_123757.png",
+        "manga_fig2_contrast_20260423_123816.png",
+        "manga_fig3_gears_20260423_123815.png"
+      ],
+      "publish_date": "2026-04-27",
+      "publish_weekday": "Mon",
+      "publish_time": "08:00"
+    },
+    {
+      "article_no": 2,
+      "title": "AIに仕事をさせる前に、必ず考える3つのこと",
+      "target": "B寄り（副業/個人事業主）",
+      "markdown_path": "docs/note/2026-04-23-ai-literacy-article-2.md",
+      "images_dir": ".company/outputs/note-article-2",
+      "images": [
+        "manga_cover_20260423_133434.png",
+        "manga_fig1_20260423_133358.png",
+        "manga_fig2_20260423_133357.png",
+        "manga_fig3_20260423_133403.png"
+      ],
+      "publish_date": "2026-04-29",
+      "publish_weekday": "Wed",
+      "publish_time": "08:00"
+    },
+    {
+      "article_no": 3,
+      "title": "プロンプトじゃない、AIを使うのに本当に必要な「境界線設計」",
+      "target": "B寄り（副業/個人事業主）",
+      "markdown_path": "docs/note/2026-04-23-ai-literacy-article-3.md",
+      "images_dir": ".company/outputs/note-article-3",
+      "images": [
+        "manga_cover_20260423_133459.png",
+        "manga_fig1_20260423_133417.png",
+        "manga_fig2_20260423_133426.png",
+        "manga_fig3_20260423_133430.png"
+      ],
+      "publish_date": "2026-05-01",
+      "publish_weekday": "Fri",
+      "publish_time": "08:00"
+    },
+    {
+      "article_no": 4,
+      "title": "AI社員を雇うな、AI部署を作れ — 小さな会社のAI組織論",
+      "target": "C向け（経営者/マネージャー）",
+      "markdown_path": "docs/note/2026-04-23-ai-literacy-article-4.md",
+      "images_dir": ".company/outputs/note-article-4",
+      "images": [
+        "manga_cover_20260423_133540.png",
+        "manga_fig1_20260423_133448.png",
+        "manga_fig2_20260423_133448.png",
+        "manga_fig3_20260423_133502.png"
+      ],
+      "publish_date": "2026-05-04",
+      "publish_weekday": "Mon",
+      "publish_time": "08:00"
+    },
+    {
+      "article_no": 5,
+      "title": "AIを使いこなせる人・組織が手にする5年後",
+      "target": "B/C共通",
+      "markdown_path": "docs/note/2026-04-23-ai-literacy-article-5.md",
+      "images_dir": ".company/outputs/note-article-5",
+      "images": [
+        "manga_cover_20260423_133608.png",
+        "manga_fig1_20260423_133503.png",
+        "manga_fig2_20260423_133522.png",
+        "manga_fig3_20260423_133519.png"
+      ],
+      "publish_date": "2026-05-06",
+      "publish_weekday": "Wed",
+      "publish_time": "08:00"
+    }
+  ]
+}

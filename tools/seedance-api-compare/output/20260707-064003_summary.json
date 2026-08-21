@@ -1,0 +1,16 @@
+{
+  "prompt": "test",
+  "duration": 5,
+  "resolution": "720p",
+  "mode": "std",
+  "results": {
+    "atlas": {
+      "status": "skipped",
+      "reason": "ATLAS_CLOUD_API_KEY 未設定"
+    },
+    "evolink": {
+      "status": "skipped",
+      "reason": "EVOLINK_API_KEY 未設定"
+    }
+  }
+}

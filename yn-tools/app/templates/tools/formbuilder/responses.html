@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ form.title }}の回答 - フォームビルダー{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="/tools/formbuilder/" class="text-sm text-indigo-600 hover:underline">&larr; フォーム一覧に戻る</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ form.title }} の回答</h1>
+    <p class="text-gray-500 text-sm mt-1">{{ responses | length }}件の回答</p>
+</div>
+
+{% if responses %}
+<div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b">
+                <tr>
+                    <th class="text-left px-4 py-3 font-medium text-gray-500">#</th>
+                    {% for field in fields %}
+                    <th class="text-left px-4 py-3 font-medium text-gray-500">{{ field.label }}</th>
+                    {% endfor %}
+                    <th class="text-left px-4 py-3 font-medium text-gray-500">受信日時</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for r in responses %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-gray-400">{{ loop.index }}</td>
+                    {% for field in fields %}
+                    <td class="px-4 py-3 text-gray-900">{{ r.data.get('field_' ~ loop.index0, '') }}</td>
+                    {% endfor %}
+                    <td class="px-4 py-3 text-gray-400 text-xs">{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="bg-white rounded-xl shadow-sm border p-8 text-center text-gray-400">
+    まだ回答がありません。
+</div>
+{% endif %}
+{% endblock %}

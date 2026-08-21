@@ -1,0 +1,29 @@
+{
+  "name": "@yn-tools/sales-automation",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@yn-tools/ui": "*",
+    "@prisma/client": "6.9.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "typescript": "^5.7.0",
+    "prisma": "6.9.0"
+  }
+}

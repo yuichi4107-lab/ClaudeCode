@@ -1,0 +1,307 @@
+:root {
+  --toolbar-bg: #2d2f36;
+  --toolbar-fg: #f2f2f2;
+  --toolbar-border: #444750;
+  --accent: #4a8bfc;
+  --accent-active: #2f6fe0;
+  --canvas-bg: #6b6f78;
+  --status-bg: #1f2024;
+  --status-fg: #cfd2d9;
+  --btn-disabled-opacity: 0.4;
+}
+
+/* 表示・保存の両方で見た目を揃えるため、同梱のNotoSansCJKjpを書き込みテキストに使用する */
+@font-face {
+  font-family: "NotoSansCJKjp-Annot";
+  src: url("./vendor/fonts/NotoSansCJKjp-Regular.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Yu Gothic UI", "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif;
+  color: #1a1a1a;
+  background: var(--canvas-bg);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ---------- Toolbar ---------- */
+#toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--toolbar-bg);
+  color: var(--toolbar-fg);
+  border-bottom: 1px solid var(--toolbar-border);
+  flex-shrink: 0;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 12px;
+  border-right: 1px solid var(--toolbar-border);
+}
+
+.toolbar-group:last-child {
+  border-right: none;
+}
+
+/* display:flex を付けたクラスと [hidden] 属性の詳細度が同点で後勝ちするため、
+   hidden指定時は明示的に display:none を強制する */
+.toolbar-group[hidden] {
+  display: none;
+}
+
+.toolbar-group--options {
+  gap: 12px;
+}
+
+.toolbar-group--save {
+  margin-left: auto;
+}
+
+.opt-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--toolbar-fg);
+}
+
+.opt-field[hidden] {
+  display: none;
+}
+
+.opt-field input[type="number"] {
+  width: 52px;
+  font-size: 13px;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--toolbar-border);
+  background: #1f2024;
+  color: var(--toolbar-fg);
+}
+
+.opt-field input[type="color"] {
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid var(--toolbar-border);
+  background: transparent;
+  cursor: pointer;
+}
+
+#toolbar button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid var(--toolbar-border);
+  border-radius: 4px;
+  background: #3a3d46;
+  color: var(--toolbar-fg);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#toolbar button:hover:not(:disabled) {
+  background: #454854;
+}
+
+#toolbar button:disabled {
+  opacity: var(--btn-disabled-opacity);
+  cursor: not-allowed;
+}
+
+#toolbar .tool-btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent-active);
+}
+
+.file-name {
+  font-size: 12px;
+  color: #b7bac2;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+#page-input {
+  width: 48px;
+  text-align: center;
+  font-size: 13px;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--toolbar-border);
+  background: #1f2024;
+  color: var(--toolbar-fg);
+}
+
+#zoom-level {
+  min-width: 48px;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* ---------- Viewer ---------- */
+#viewer-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: var(--canvas-bg);
+}
+
+#drop-zone {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#drop-zone.is-dragover {
+  outline: 3px dashed var(--accent);
+  outline-offset: -12px;
+  background: rgba(74, 139, 252, 0.08);
+}
+
+#empty-state {
+  text-align: center;
+  color: #eef0f4;
+  font-size: 15px;
+  line-height: 2;
+}
+
+#page-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+#canvas-stack {
+  position: relative;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  background: #fff;
+  line-height: 0;
+}
+
+#pdf-canvas {
+  display: block;
+}
+
+/* オーバーレイ: ペン・蛍光ペンのストローク描画用canvas（PDF直上・テキスト層の下） */
+#annotation-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  touch-action: none;
+}
+
+/* オーバーレイ: テキスト書き込み用DOM層（最前面）
+   初期ツールは「選択」のため pointer-events は auto を既定値にする。
+   ペン/蛍光ペンツールへの切替時はJS（setTool）側で none に切り替える。 */
+#annotation-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+/* ---------- テキスト注釈 ---------- */
+.text-annot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 24px;
+  min-height: 1.2em;
+  transform-origin: top left;
+  cursor: move;
+}
+
+.text-annot-content {
+  font-family: "NotoSansCJKjp-Annot", "Yu Gothic UI", "Meiryo", sans-serif;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.3;
+  padding: 2px 4px;
+  outline: none;
+  cursor: inherit;
+  min-width: 20px;
+}
+
+.text-annot.is-selected .text-annot-content {
+  box-shadow: 0 0 0 1px var(--accent);
+  background: rgba(74, 139, 252, 0.08);
+}
+
+.text-annot.is-editing .text-annot-content {
+  cursor: text;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.text-annot-delete {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--toolbar-border);
+  background: #d9364a;
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+  display: none;
+}
+
+.text-annot.is-selected .text-annot-delete {
+  display: block;
+}
+
+/* ---------- Status bar ---------- */
+#status-bar {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  background: var(--status-bg);
+  color: var(--status-fg);
+  font-size: 12px;
+}
+
+#status-message.is-error {
+  color: #ff8080;
+}

@@ -1,0 +1,7 @@
+{
+  "bot_token": "PUT-YOUR-BOT-TOKEN-HERE",
+  "allowed_chat_ids": [],
+  "save_dir": "%USERPROFILE%\\Pictures\\iPhoneScreenshots",
+  "send_confirmation": true,
+  "poll_timeout": 30
+}

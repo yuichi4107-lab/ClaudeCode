@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}アプリ評価 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">アプリ評価</h1>
+    <p class="text-gray-500 mt-1">ツールの感想・レビューを投稿しよう</p>
+</div>
+
+<!-- Tool Stats -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+    {% for t in tools %}
+    <a href="/community/reviews?tool={{ t.slug }}"
+       class="bg-white rounded-lg shadow-sm border p-5 hover:shadow-md transition {% if current_tool == t.slug %}ring-2 ring-indigo-500{% endif %}">
+        <h3 class="font-semibold text-gray-900">{{ t.name }}</h3>
+        <div class="flex items-center gap-2 mt-2">
+            <div class="flex text-amber-400">
+                {% set avg = tool_stats[t.slug].avg %}
+                {% for i in range(1, 6) %}
+                {% if i <= avg %}<span>&#9733;</span>{% else %}<span class="text-gray-300">&#9733;</span>{% endif %}
+                {% endfor %}
+            </div>
+            <span class="text-sm text-gray-500">{{ avg }} ({{ tool_stats[t.slug].count }}件)</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+{% if current_tool %}
+<div class="mb-4">
+    <a href="/community/reviews" class="text-sm text-indigo-600 hover:underline">&larr; すべてのレビューを表示</a>
+</div>
+{% endif %}
+
+<!-- Submit Review -->
+{% if user %}
+<div class="bg-white rounded-lg shadow-sm border p-6 mb-8">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">レビューを投稿</h2>
+    <form method="post" action="/community/reviews">
+        <div class="grid md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ツール</label>
+                <select name="tool_slug" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                    {% for t in tools %}
+                    <option value="{{ t.slug }}" {% if my_reviews.get(t.slug) %}disabled{% endif %}>
+                        {{ t.name }}{% if my_reviews.get(t.slug) %} (投稿済み){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">評価</label>
+                <select name="rating" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                    <option value="5">&#9733;&#9733;&#9733;&#9733;&#9733; (5)</option>
+                    <option value="4">&#9733;&#9733;&#9733;&#9733; (4)</option>
+                    <option value="3">&#9733;&#9733;&#9733; (3)</option>
+                    <option value="2">&#9733;&#9733; (2)</option>
+                    <option value="1">&#9733; (1)</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">コメント</label>
+                <div class="flex gap-2">
+                    <input type="text" name="comment" placeholder="感想を一言..."
+                        class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 whitespace-nowrap">投稿</button>
+                </div>
+            </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">各ツールにつき1件まで。再投稿で更新されます。</p>
+    </form>
+</div>
+{% endif %}
+
+<!-- Reviews List -->
+<div class="space-y-3">
+    {% for r in reviews %}
+    {% set author = user_map.get(r.user_id) %}
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+        <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+                {% if author and author.avatar_url %}
+                <img src="{{ author.avatar_url }}" alt="" class="w-8 h-8 rounded-full">
+                {% else %}
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">?</div>
+                {% endif %}
+                <div>
+                    <span class="font-medium text-gray-900 text-sm">{{ author.name if author else '匿名' }}</span>
+                    <span class="text-xs text-gray-400 ml-2">{{ r.created_at.strftime('%Y-%m-%d') if r.created_at else '' }}</span>
+                </div>
+            </div>
+            <div>
+                <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                    {% for t in tools %}{% if t.slug == r.tool_slug %}{{ t.name }}{% endif %}{% endfor %}
+                </span>
+            </div>
+        </div>
+        <div class="flex items-center gap-1 mt-2 text-amber-400">
+            {% for i in range(1, 6) %}
+            {% if i <= r.rating %}<span>&#9733;</span>{% else %}<span class="text-gray-300">&#9733;</span>{% endif %}
+            {% endfor %}
+        </div>
+        {% if r.comment %}
+        <p class="text-sm text-gray-700 mt-2">{{ r.comment }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% if not reviews %}
+    <div class="bg-white rounded-lg shadow-sm border p-8 text-center text-gray-400">
+        まだレビューがありません。最初のレビューを投稿しましょう！
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

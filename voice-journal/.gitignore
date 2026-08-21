@@ -1,0 +1,8 @@
+# voice-journal local artifacts (never commit)
+__pycache__/
+*.pyc
+logs/
+PAUSE.flag
+failed/
+*.flac
+*.wav

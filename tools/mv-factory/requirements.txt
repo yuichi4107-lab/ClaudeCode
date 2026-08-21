@@ -1,0 +1,12 @@
+# MV Factory 依存パッケージ(最小限)
+#
+# 標準ライブラリのみで動く部分が大半。以下は任意/推奨パッケージ。
+PyYAML>=6.0
+
+# 工程2で歌詞タイムスタンプ解析(Whisper API)を使う場合のみ必要。
+# OPENAI_API_KEY未設定時はルールベース解析にフォールバックするため必須ではない。
+openai>=1.0
+
+# 動画生成(Atlas Cloud)・ダウンロードはurllib標準ライブラリのみで完結し、
+# 追加パッケージ不要。ffmpeg/ffprobeはOSに別途インストールしておくこと
+# (macOS: brew install ffmpeg)。

@@ -1,0 +1,17 @@
+{
+  "name": "名古屋天気",
+  "short_name": "名古屋天気",
+  "description": "名古屋市を初期表示するスマホ向け天気アプリ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f7f2",
+  "theme_color": "#0b6b82",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

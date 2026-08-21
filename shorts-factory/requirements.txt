@@ -1,0 +1,8 @@
+openai>=1.50
+tweepy>=4.14
+playwright>=1.47
+PyYAML>=6.0
+Pillow>=10.0
+requests>=2.31
+python-dotenv>=1.0
+pykakasi>=2.2

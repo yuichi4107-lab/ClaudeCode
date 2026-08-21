@@ -1,0 +1,65 @@
+{% extends "tools/mailer/base_mailer.html" %}
+{% block title %}SMTP設定 - YN Tools{% endblock %}
+
+{% block mailer_content %}
+<h1 class="text-xl font-bold mb-6">SMTP設定</h1>
+
+<form action="/tools/mailer/settings" method="post" class="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">SMTPホスト</label>
+            <input type="text" name="host" value="{{ config.host if config else '' }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="smtp.gmail.com">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ポート</label>
+            <input type="number" name="port" value="{{ config.port if config else 587 }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ユーザー名（メールアドレス）</label>
+            <input type="text" name="username" value="{{ config.username if config else '' }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">パスワード{% if has_password %} (設定済み){% endif %}</label>
+            <input type="password" name="password" placeholder="{% if has_password %}変更する場合のみ入力{% else %}パスワードを入力{% endif %}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">送信者名</label>
+            <input type="text" name="from_name" value="{{ config.from_name if config else '' }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="山田太郎">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">送信元メール</label>
+            <input type="email" name="from_email" value="{{ config.from_email if config else '' }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="（空欄ならユーザー名を使用）">
+        </div>
+    </div>
+    <label class="flex items-center gap-2">
+        <input type="checkbox" name="use_tls" {% if not config or config.use_tls %}checked{% endif %} class="rounded">
+        <span class="text-sm text-gray-700">TLSを使用する（推奨）</span>
+    </label>
+
+    <div class="flex gap-3">
+        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">保存</button>
+    </div>
+</form>
+
+<!-- Test send -->
+<form action="/tools/mailer/settings/test" method="post" class="mt-4">
+    <button type="submit" class="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+        テストメールを送信
+    </button>
+    <span class="text-xs text-gray-400 ml-2">自分のメールアドレスにテスト送信します</span>
+</form>
+
+<!-- Help -->
+<div class="mt-8 bg-gray-50 rounded-xl p-6 text-sm text-gray-600">
+    <h3 class="font-bold mb-2">設定例</h3>
+    <dl class="space-y-2">
+        <div><dt class="font-medium">Gmail</dt><dd class="text-gray-400">ホスト: smtp.gmail.com / ポート: 587 / TLS: ON / パスワード: アプリパスワードを使用</dd></div>
+        <div><dt class="font-medium">ConoHa</dt><dd class="text-gray-400">ホスト: mail.example.com / ポート: 587 / TLS: ON</dd></div>
+        <div><dt class="font-medium">さくら</dt><dd class="text-gray-400">ホスト: example.sakura.ne.jp / ポート: 587 / TLS: ON</dd></div>
+    </dl>
+</div>
+{% endblock %}

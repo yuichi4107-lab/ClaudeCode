@@ -1,0 +1,28 @@
+{
+  "version": "short",
+  "total_scenes": 4,
+  "ok": 4,
+  "skipped": 0,
+  "results": [
+    {
+      "scene_id": "scene_01",
+      "status": "already_exists",
+      "file": "scene_01.mp4"
+    },
+    {
+      "scene_id": "scene_02",
+      "status": "already_exists",
+      "file": "scene_02.mp4"
+    },
+    {
+      "scene_id": "scene_03",
+      "status": "already_exists",
+      "file": "scene_03.mp4"
+    },
+    {
+      "scene_id": "scene_04",
+      "status": "already_exists",
+      "file": "scene_04.mp4"
+    }
+  ]
+}

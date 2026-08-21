@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}予約管理 - YN Tools{% endblock %}
+
+{% block head %}
+<script>
+async function createForm() {
+    const form = document.getElementById('booking-form');
+    const resp = await fetch('/tools/booking/api/forms/create', { method: 'POST', body: new FormData(form) });
+    const data = await resp.json();
+    if (data.error) { alert(data.error); return; }
+    location.reload();
+}
+
+async function deleteForm(formId) {
+    if (!confirm('このフォームを削除しますか？')) return;
+    await fetch(`/tools/booking/api/forms/delete/${formId}`, { method: 'POST' });
+    location.reload();
+}
+
+async function cancelBooking(id) {
+    if (!confirm('この予約をキャンセルしますか？')) return;
+    await fetch(`/tools/booking/api/bookings/cancel/${id}`, { method: 'POST' });
+    location.reload();
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">予約管理</h1>
+            <p class="text-gray-500 mt-1">予約フォームを作成して公開URLで予約受付</p>
+        </div>
+        <div class="flex gap-4 text-sm">
+            <div class="bg-white rounded-lg shadow-sm border px-4 py-2 text-center">
+                <div class="text-lg font-bold text-indigo-600">{{ forms | length }}</div>
+                <div class="text-gray-500 text-xs">フォーム数</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border px-4 py-2 text-center">
+                <div class="text-lg font-bold text-green-600">{{ bookings | selectattr('status', 'eq', 'confirmed') | list | length }}</div>
+                <div class="text-gray-500 text-xs">予約件数</div>
+            </div>
+            <a href="/guide#booking" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition self-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                使い方ガイド
+            </a>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+        <!-- Left: フォーム作成 -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h2 class="text-lg font-semibold mb-4">予約フォーム作成</h2>
+                <form id="booking-form" class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">フォーム名</label>
+                        <input type="text" name="name" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: 無料相談の予約" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">説明</label>
+                        <textarea name="description" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="予約の説明..."></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">所要時間</label>
+                            <select name="duration_min" class="w-full border rounded-lg px-3 py-2 text-sm">
+                                <option value="30">30分</option>
+                                <option value="60" selected>60分</option>
+                                <option value="90">90分</option>
+                                <option value="120">120分</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">開始時間</label>
+                            <input type="time" name="available_start" value="09:00" class="w-full border rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">終了時間</label>
+                            <input type="time" name="available_end" value="18:00" class="w-full border rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">受付曜日</label>
+                        <div class="flex gap-2 flex-wrap">
+                            {% for day, label in [('mon','月'), ('tue','火'), ('wed','水'), ('thu','木'), ('fri','金'), ('sat','土'), ('sun','日')] %}
+                            <label class="flex items-center gap-1 text-sm">
+                                <input type="checkbox" name="days" value="{{ day }}" {% if day in ['mon','tue','wed','thu','fri'] %}checked{% endif %} class="rounded">
+                                {{ label }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button type="button" onclick="createForm()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">作成</button>
+                </form>
+            </div>
+
+            <!-- フォーム一覧 -->
+            {% if forms %}
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h2 class="text-lg font-semibold mb-4">作成済みフォーム</h2>
+                <div class="space-y-3">
+                    {% for f in forms %}
+                    <div class="border rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-semibold text-sm">{{ f.name }}</h3>
+                            <span class="text-xs px-2 py-0.5 rounded {% if f.is_active %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+                                {{ '受付中' if f.is_active else '停止中' }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">{{ f.duration_min }}分 | {{ f.available_start }}〜{{ f.available_end }}</p>
+                        <div class="flex items-center gap-3 text-xs">
+                            <a href="/tools/booking/p/{{ f.form_id }}" target="_blank" class="text-indigo-600 hover:underline">予約ページ</a>
+                            <button onclick="navigator.clipboard.writeText(location.origin + '/tools/booking/p/{{ f.form_id }}'); this.textContent='コピー済み'; setTimeout(()=>this.textContent='URLコピー',2000)" class="text-indigo-600 hover:underline">URLコピー</button>
+                            <button onclick="deleteForm('{{ f.form_id }}')" class="text-red-400 hover:text-red-600">削除</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: 予約一覧 -->
+        <div>
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h2 class="text-lg font-semibold mb-4">予約一覧</h2>
+                {% if bookings %}
+                <div class="space-y-3">
+                    {% for b in bookings %}
+                    <div class="border rounded-lg p-4 {% if b.status == 'canceled' %}opacity-50{% endif %}">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-semibold text-sm">{{ b.guest_name }}</span>
+                            <span class="text-xs px-2 py-0.5 rounded {% if b.status == 'confirmed' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-600{% endif %}">
+                                {{ '確定' if b.status == 'confirmed' else 'キャンセル' }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500">{{ b.guest_email }}</p>
+                        <p class="text-sm text-indigo-600 font-medium mt-1">{{ b.booked_date }} {{ b.booked_time }}</p>
+                        {% if b.guest_note %}
+                        <p class="text-xs text-gray-400 mt-1">{{ b.guest_note }}</p>
+                        {% endif %}
+                        {% if b.status == 'confirmed' %}
+                        <button onclick="cancelBooking({{ b.id }})" class="text-xs text-red-400 hover:text-red-600 mt-2">キャンセル</button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm text-center py-8">まだ予約がありません</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

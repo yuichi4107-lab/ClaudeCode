@@ -1,0 +1,28 @@
+channels:
+  - id: UC_CHANNEL_ID_1
+    handle: "@your_channel_handle"
+    name: "Channel Name 1"
+    notebook_id: ""  # NotebookLM URL末尾のIDを工程4で記入
+
+# 動作設定
+sync:
+  rss_max_entries: 15      # YouTube RSSの上限
+  init_max_videos: 0       # 0=無制限
+  request_delay_sec: 3     # 動画追加間の待機秒数
+  retry_count: 3
+  retry_backoff_sec: 5
+
+# Playwright
+playwright:
+  user_data_dir: "./.auth/chromium"
+  headless: true
+  navigation_timeout_ms: 60000
+  source_add_timeout_ms: 30000
+  notebooklm_url: "https://notebooklm.google.com"
+
+# ログ
+logging:
+  file: "logs/sync.log"
+  level: "INFO"
+  max_bytes: 10485760   # 10MB
+  backup_count: 5

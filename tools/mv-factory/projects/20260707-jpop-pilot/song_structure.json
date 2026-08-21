@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "duration_sec": 161.76,
+  "bpm": 120.0,
+  "bpm_confidence": "low",
+  "sections": [
+    {
+      "name": "intro",
+      "start_sec": 0.0,
+      "end_sec": 20.22,
+      "lyrics": [
+        "[Verse 1]",
+        "目覚まし鳴る前に 目が覚めた",
+        "カーテンの隙間 光がこぼれる",
+        "昨日までの不安は もう脱ぎ捨てて",
+        "新しいスニーカー 玄関で待ってる"
+      ]
+    },
+    {
+      "name": "verse1",
+      "start_sec": 20.22,
+      "end_sec": 40.44,
+      "lyrics": [
+        "[Pre-Chorus]",
+        "深呼吸ひとつ 空を見上げたら",
+        "夏の匂いがした 心が動き出す"
+      ]
+    },
+    {
+      "name": "chorus1",
+      "start_sec": 40.44,
+      "end_sec": 60.66,
+      "lyrics": [
+        "[Chorus]",
+        "走り出せ ここから タイユラインの続き",
+        "迷っても大丈夫 誰かが見てる",
+        "自転車のペダル 風になるまで",
+        "声にならない夢も 全部連れていくよ",
+        "これが私のはじまり"
+      ]
+    },
+    {
+      "name": "verse2",
+      "start_sec": 60.66,
+      "end_sec": 80.88,
+      "lyrics": [
+        "[Verse 2]",
+        "別れも出会いも 全部まとめて",
+        "リュックに詰め込んで さあ行こう",
+        "振り返らなくたって ちゃんと覚えてる",
+        "あの日笑った顔 忘れないから"
+      ]
+    },
+    {
+      "name": "chorus2",
+      "start_sec": 80.88,
+      "end_sec": 101.1,
+      "lyrics": [
+        "[Pre-Chorus]",
+        "深呼吸ひとつ 空を見上げたら",
+        "夏の匂いがした 心が動き出す"
+      ]
+    },
+    {
+      "name": "bridge",
+      "start_sec": 101.1,
+      "end_sec": 121.32,
+      "lyrics": [
+        "[Chorus]",
+        "走り出せ ここから タイユラインの続き",
+        "迷っても大丈夫 誰かが見てる",
+        "自転車のペダル 風になるまで",
+        "声にならない夢も 全部連れていくよ"
+      ]
+    },
+    {
+      "name": "outro",
+      "start_sec": 121.32,
+      "end_sec": 141.54,
+      "lyrics": [
+        "[Bridge]",
+        "何度でも 何度でも",
+        "立ち上がれる 私になる",
+        "明日の私が 今日を待ってる"
+      ]
+    },
+    {
+      "name": "intro",
+      "start_sec": 141.54,
+      "end_sec": 161.76,
+      "lyrics": [
+        "[Final Chorus]",
+        "走り出せ ここから タイユラインの続き",
+        "迷っても大丈夫 誰かが見てる",
+        "自転車のペダル 風になるまで",
+        "声にならない夢も 全部連れていくよ",
+        "これが私の はじまり"
+      ]
+    }
+  ],
+  "word_timestamps": [],
+  "analysis_method": {
+    "duration": "ffprobe",
+    "sections": "rule_based_even_split",
+    "bpm": "default_fallback",
+    "fallback_used": true
+  },
+  "manual_correction_hint": "BPM・セクション境界は簡易推定です。精度が必要な場合はsong_structure.json を直接編集して手動補正してください(sections[].start_sec/end_sec, bpm を上書き可能)。"
+}

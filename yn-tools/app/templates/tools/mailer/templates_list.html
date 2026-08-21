@@ -1,0 +1,33 @@
+{% extends "tools/mailer/base_mailer.html" %}
+{% block title %}テンプレート - YN Tools{% endblock %}
+
+{% block mailer_content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-xl font-bold">テンプレート（{{ mail_templates | length }}件）</h1>
+    <a href="/tools/mailer/templates/new" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">新規作成</a>
+</div>
+
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for t in mail_templates %}
+    <div class="bg-white rounded-xl shadow-sm border p-5">
+        <h3 class="font-bold mb-1 truncate">{{ t.name }}</h3>
+        <p class="text-gray-400 text-xs mb-3">{{ t.updated_at.strftime('%Y-%m-%d %H:%M') if t.updated_at else '' }}</p>
+        <p class="text-gray-500 text-sm mb-4 line-clamp-2">{{ t.subject }}</p>
+        <div class="flex gap-2">
+            <a href="/tools/mailer/templates/edit/{{ t.id }}" class="text-indigo-600 text-xs hover:underline">編集</a>
+            <form action="/tools/mailer/templates/duplicate/{{ t.id }}" method="post" class="inline">
+                <button type="submit" class="text-gray-500 text-xs hover:underline">複製</button>
+            </form>
+            <form action="/tools/mailer/templates/delete/{{ t.id }}" method="post" class="inline" onsubmit="return confirm('削除しますか？')">
+                <button type="submit" class="text-red-500 text-xs hover:underline">削除</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+    {% if not mail_templates %}
+    <div class="col-span-full text-center py-12 text-gray-400">
+        テンプレートがありません。<a href="/tools/mailer/templates/new" class="text-indigo-600 underline">作成する</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

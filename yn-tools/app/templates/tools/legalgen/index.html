@@ -1,0 +1,791 @@
+{% extends "base.html" %}
+{% block title %}契約書・利用規約自動作成 - YN Tools{% endblock %}
+
+{% block head %}
+<script>
+// ===== 文書種別ごとの固有フィールド定義 =====
+const DOC_TYPE_FIELDS = {
+    commission: ["work_content", "compensation", "period", "ip_ownership"],
+    nda: ["purpose", "info_scope", "period"],
+    sale: ["product_name", "amount", "delivery_conditions"],
+    tos: ["service_name", "prohibited_items", "disclaimer"],
+    privacy: ["collected_info", "usage_purpose", "contact_info"],
+    employment: ["work_content", "salary", "work_location", "period"],
+    rent: ["property", "rent", "period", "deposit"],
+};
+
+// すべての固有フィールドグループを非表示にしてから対象のみ表示
+function switchDocType(docType) {
+    // カード選択UI更新
+    document.querySelectorAll('.doc-type-card').forEach(card => {
+        card.classList.remove('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-300');
+        card.classList.add('border-gray-200');
+    });
+    const selected = document.getElementById('card-' + docType);
+    if (selected) {
+        selected.classList.remove('border-gray-200');
+        selected.classList.add('border-blue-500', 'bg-blue-50', 'ring-2', 'ring-blue-300');
+    }
+
+    // hidden input に値セット
+    const hiddenInput = document.getElementById('doc_type_hidden');
+    if (hiddenInput) hiddenInput.value = docType;
+
+    // 種別ラベル更新
+    const label = document.getElementById('selected-doc-type-label');
+    const docNames = {
+        commission: '業務委託契約書',
+        nda: 'NDA（秘密保持契約書）',
+        sale: '売買契約書',
+        tos: '利用規約',
+        privacy: 'プライバシーポリシー',
+        employment: '雇用契約書',
+        rent: '賃貸借契約書',
+    };
+    if (label) label.textContent = docNames[docType] || docType;
+
+    // 全固有フィールドグループを非表示
+    document.querySelectorAll('.specific-fields').forEach(el => {
+        el.classList.add('hidden');
+    });
+
+    // 選択された種別の固有フィールドを表示
+    const fieldGroup = document.getElementById('fields-' + docType);
+    if (fieldGroup) fieldGroup.classList.remove('hidden');
+
+    // フォームセクションを表示
+    const formSection = document.getElementById('form-section');
+    if (formSection) formSection.classList.remove('hidden');
+}
+
+// ===== フォーム送信・AI生成 =====
+async function doGenerate() {
+    const form = document.getElementById('generate-form');
+    const btn = document.getElementById('generate-btn');
+    const loadingDiv = document.getElementById('loading-overlay');
+
+    const docType = document.getElementById('doc_type_hidden').value;
+    if (!docType) {
+        alert('文書種別を選択してください。');
+        return false;
+    }
+
+    const partyA = document.getElementById('party_a_name').value.trim();
+    const partyB = document.getElementById('party_b_name').value.trim();
+    if (!partyA || !partyB) {
+        alert('甲（第一当事者）と乙（第二当事者）の名称を入力してください。');
+        return false;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>生成中...';
+    if (loadingDiv) loadingDiv.classList.remove('hidden');
+
+    try {
+        const formData = new FormData(form);
+        const resp = await fetch('/tools/legalgen/api/generate', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert('エラー: ' + data.error);
+            btn.disabled = false;
+            btn.textContent = '契約書を生成する';
+            if (loadingDiv) loadingDiv.classList.add('hidden');
+            return false;
+        }
+
+        window.location.href = '/tools/legalgen/' + data.id;
+    } catch (e) {
+        alert('エラーが発生しました: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '契約書を生成する';
+        if (loadingDiv) loadingDiv.classList.add('hidden');
+    }
+    return false;
+}
+
+// ===== 保存 =====
+async function saveResult() {
+    const docId = document.getElementById('doc-id').value;
+    const textEl = document.getElementById('result-text');
+    const btn = document.getElementById('save-btn');
+
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+
+    try {
+        const resp = await fetch('/tools/legalgen/api/' + docId, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({edited_text: textEl.value}),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            btn.textContent = '保存しました！';
+            btn.classList.add('bg-green-600');
+            btn.classList.remove('bg-blue-600');
+            setTimeout(() => {
+                btn.textContent = '保存する';
+                btn.classList.remove('bg-green-600');
+                btn.classList.add('bg-blue-600');
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            alert('保存に失敗しました: ' + (data.error || ''));
+            btn.disabled = false;
+            btn.textContent = '保存する';
+        }
+    } catch (e) {
+        alert('保存エラー: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '保存する';
+    }
+}
+
+// ===== 再生成 =====
+async function regenerateResult() {
+    const docId = document.getElementById('doc-id').value;
+    const btn = document.getElementById('regen-btn');
+    const textEl = document.getElementById('result-text');
+
+    if (!confirm('再生成すると現在の編集内容が失われます。よろしいですか？')) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>再生成中...';
+
+    try {
+        const resp = await fetch('/tools/legalgen/api/' + docId + '/regenerate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({}),
+        });
+        const data = await resp.json();
+        if (data.generated_text) {
+            textEl.value = data.generated_text;
+            btn.textContent = '再生成しました！';
+            setTimeout(() => {
+                btn.innerHTML = '再生成';
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            alert('再生成に失敗しました: ' + (data.error || ''));
+            btn.innerHTML = '再生成';
+            btn.disabled = false;
+        }
+    } catch (e) {
+        alert('再生成エラー: ' + e.message);
+        btn.innerHTML = '再生成';
+        btn.disabled = false;
+    }
+}
+
+// ===== 削除 =====
+async function deleteDocument(docId) {
+    if (!confirm('この文書を削除してもよろしいですか？')) return;
+    try {
+        const resp = await fetch('/tools/legalgen/api/' + docId, {method: 'DELETE'});
+        const data = await resp.json();
+        if (data.ok) {
+            window.location.href = '/tools/legalgen/';
+        } else {
+            alert('削除に失敗しました: ' + (data.error || ''));
+        }
+    } catch (e) {
+        alert('削除エラー: ' + e.message);
+    }
+}
+
+// ===== Word/PDFダウンロード =====
+async function downloadFile(format) {
+    const docId = document.getElementById('doc-id').value;
+    const btn = document.getElementById('download-' + format + '-btn');
+
+    btn.disabled = true;
+    const original = btn.innerHTML;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-1 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>準備中...';
+
+    try {
+        const resp = await fetch(`/tools/legalgen/api/${docId}/download?format=${format}`);
+        if (!resp.ok) {
+            const data = await resp.json();
+            alert('ダウンロードエラー: ' + (data.error || resp.statusText));
+            btn.innerHTML = original;
+            btn.disabled = false;
+            return;
+        }
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const disposition = resp.headers.get('content-disposition') || '';
+        const fnMatch = disposition.match(/filename="([^"]+)"/);
+        a.download = fnMatch ? fnMatch[1] : `document.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        alert('ダウンロードエラー: ' + e.message);
+    }
+    btn.innerHTML = original;
+    btn.disabled = false;
+}
+
+// ===== リスクチェック連携 =====
+function riskCheck() {
+    const textEl = document.getElementById('result-text');
+    if (!textEl) return;
+    const text = textEl.value;
+    // sessionStorageに渡してcontractツールへ遷移
+    sessionStorage.setItem('legalgen_contract_text', text);
+    window.location.href = '/tools/contract/?from=legalgen';
+}
+
+// ===== コピー =====
+function copyText() {
+    const textEl = document.getElementById('result-text');
+    if (!textEl) return;
+    navigator.clipboard.writeText(textEl.value).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const original = btn.textContent;
+        btn.textContent = 'コピーしました！';
+        btn.classList.add('bg-green-600');
+        btn.classList.remove('bg-gray-600');
+        setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('bg-green-600');
+            btn.classList.add('bg-gray-600');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  {# ===== ページヘッダー ===== #}
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">📄 契約書・利用規約自動作成</h1>
+      <p class="text-sm text-gray-500 mt-1">7種類の法的文書をAIで自動生成。Word・PDFでダウンロード可能。</p>
+    </div>
+    {% if view == "dashboard" %}
+    <a href="/tools/legalgen/new"
+       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      新規作成
+    </a>
+    {% else %}
+    <a href="/tools/legalgen/"
+       class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+      ← 一覧に戻る
+    </a>
+    {% endif %}
+    <a href="/guide#legalgen" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition self-center">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      使い方ガイド
+    </a>
+  </div>
+
+  {# 月次利用状況 #}
+  <div class="mb-6 p-3 bg-gray-50 rounded-lg flex items-center justify-between text-sm">
+    <span class="text-gray-600">今月の利用回数:</span>
+    <span class="font-medium {% if monthly_used >= monthly_limit %}text-red-600{% elif monthly_used >= monthly_limit * 0.8 %}text-yellow-600{% else %}text-gray-900{% endif %}">
+      {{ monthly_used }} / {{ monthly_limit }} 回
+    </span>
+  </div>
+
+  {# ===== ダッシュボード ビュー ===== #}
+  {% if view == "dashboard" %}
+  <div>
+    {% if documents %}
+    <div class="space-y-3">
+      {% for doc in documents %}
+      {% set type_info = doc_types.get(doc.doc_type, {}) %}
+      {% set color_map = {
+        'commission': 'blue', 'nda': 'purple', 'sale': 'green',
+        'tos': 'orange', 'privacy': 'teal', 'employment': 'indigo', 'rent': 'red'
+      } %}
+      {% set color = color_map.get(doc.doc_type, 'gray') %}
+      <div class="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between hover:border-blue-300 transition-colors">
+        <div class="flex items-center space-x-4">
+          <span class="text-2xl">{{ type_info.get('icon', '📄') }}</span>
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="inline-block px-2 py-0.5 text-xs font-medium rounded-full
+                {% if color == 'blue' %}bg-blue-100 text-blue-700
+                {% elif color == 'purple' %}bg-purple-100 text-purple-700
+                {% elif color == 'green' %}bg-green-100 text-green-700
+                {% elif color == 'orange' %}bg-orange-100 text-orange-700
+                {% elif color == 'teal' %}bg-teal-100 text-teal-700
+                {% elif color == 'indigo' %}bg-indigo-100 text-indigo-700
+                {% elif color == 'red' %}bg-red-100 text-red-700
+                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                {{ type_info.get('name', doc.doc_type) }}
+              </span>
+            </div>
+            <p class="font-medium text-gray-900">{{ doc.title }}</p>
+            <p class="text-sm text-gray-500">{{ doc.party_a_name }} ／ {{ doc.party_b_name }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-gray-400">{{ doc.created_at.strftime('%Y-%m-%d') }}</span>
+          <a href="/tools/legalgen/{{ doc.id }}"
+             class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            開く
+          </a>
+          <button onclick="deleteDocument({{ doc.id }})"
+                  class="px-3 py-1.5 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+            削除
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 bg-white border border-dashed border-gray-300 rounded-xl">
+      <div class="text-5xl mb-4">📄</div>
+      <h3 class="text-lg font-medium text-gray-700 mb-2">まだ文書がありません</h3>
+      <p class="text-sm text-gray-500 mb-6">「新規作成」から契約書・利用規約を生成しましょう。</p>
+      <a href="/tools/legalgen/new"
+         class="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+        最初の文書を作成する
+      </a>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ===== 新規作成 ビュー ===== #}
+  {% if view == "new" %}
+  <div>
+    {# 文書種別選択カードグリッド #}
+    <div class="mb-8">
+      <h2 class="text-base font-semibold text-gray-800 mb-4">文書の種別を選択してください</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {% for slug, info in doc_types.items() %}
+        {% set color_map = {
+          'commission': 'blue', 'nda': 'purple', 'sale': 'green',
+          'tos': 'orange', 'privacy': 'teal', 'employment': 'indigo', 'rent': 'red'
+        } %}
+        {% set color = color_map.get(slug, 'gray') %}
+        <button id="card-{{ slug }}"
+                type="button"
+                onclick="switchDocType('{{ slug }}')"
+                class="doc-type-card border-2 border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all focus:outline-none">
+          <div class="text-3xl mb-2">{{ info.icon }}</div>
+          <div class="text-sm font-medium text-gray-800">{{ info.name }}</div>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# 入力フォーム（種別選択後に表示） #}
+    <div id="form-section" class="hidden">
+      <form id="generate-form" onsubmit="return false;">
+        <input type="hidden" id="doc_type_hidden" name="doc_type" value="">
+
+        {# 選択中の種別表示 #}
+        <div class="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <span class="text-sm text-blue-600 font-medium">選択中: </span>
+          <span id="selected-doc-type-label" class="text-sm font-bold text-blue-800"></span>
+        </div>
+
+        {# 共通フィールド #}
+        <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h3 class="text-base font-semibold text-gray-800 mb-4">共通情報</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                甲（第一当事者）<span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="party_a_name" name="party_a_name"
+                     placeholder="例: 株式会社ABC"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                乙（第二当事者）<span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="party_b_name" name="party_b_name"
+                     placeholder="例: 山田 太郎"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">契約日（効力発生日）</label>
+              <input type="date" name="effective_date"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">準拠法</label>
+              <input type="text" name="governing_law" value="日本法"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">合意管轄裁判所</label>
+              <input type="text" name="jurisdiction" value="東京地方裁判所"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        {# 業務委託契約書 固有フィールド #}
+        <div id="fields-commission" class="specific-fields hidden bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h3 class="text-base font-semibold text-gray-800 mb-4">業務委託契約書の詳細</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">業務内容</label>
+              <textarea name="work_content" rows="3" placeholder="例: Webサイトのデザイン・コーディング業務"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">報酬</label>
+                <input type="text" name="compensation" placeholder="例: 月額30万円（税別）"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">期間</label>
+                <input type="text" name="period" placeholder="例: 2026年4月1日〜2026年9月30日"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">知的財産権の帰属</label>
+              <select name="ip_ownership"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="委託者に帰属">委託者（甲）に帰属</option>
+                <option value="受託者に帰属">受託者（乙）に帰属</option>
+                <option value="共同所有">共同所有</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {# NDA 固有フィールド #}
+        <div id="fields-nda" class="specific-fields hidden bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h3 class="text-base font-semibold text-gray-800 mb-4">NDAの詳細</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">秘密保持の目的</label>
+              <input type="text" name="purpose" placeholder="例: 新規事業に関する業務提携の検討"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">対象情報の範囲</label>
+              <textarea name="info_scope" rows="2" placeholder="例: 事業計画書、顧客情報、技術情報、財務情報等"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">秘密保持期間</label>
+              <input type="text" name="period" placeholder="例: 契約締結日から3年間"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        {# 売買契約書 固有フィールド #}
+        <div id="fields-sale" class="specific-fields hidden bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h3 class="text-base font-semibold text-gray-800 mb-4">売買契約書の詳細</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">商品名・商品説明</label>
+              <input type="text" name="product_name" placeholder="例: ソフトウェアライセンス（商品管理システム）"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">売買代金</label>
+                <input type="text" name="amount" placeholder="例: 500,000円（税込）"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">引渡条件</label>
+                <input type="text" name="delivery_conditions" placeholder="例: 2026年5月末日までに甲の事業所にて引渡"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# 利用規約 固有フィールド #}
+        <div id="fields-tos" class="specific-fields hidden bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h3 class="text-base font-semibold text-gray-800 mb-4">利用規約の詳細</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">サービス名</label>
+              <input type="text" name="service_name" placeholder="例: YNツール"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">主な禁止事項</label>
+              <textarea name="prohibited_items" rows="3" placeholder="例: 不正アクセス、スパム送信、他者へのなりすまし、違法コンテンツの投稿"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">免責事項（特記事項）</label>
+              <textarea name="disclaimer" rows="2" placeholder="例: サービス停止・データ損失に対する損害賠償を負わない"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+          </div>
+        </div>
+
+        {# プライバシーポリシー 固有フィールド #}
+        <div id="fields-privacy" class="specific-fields hidden bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h3 class="text-base font-semibold text-gray-800 mb-4">プライバシーポリシーの詳細</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">取得する個人情報の項目</label>
+              <textarea name="collected_info" rows="2" placeholder="例: 氏名、メールアドレス、住所、電話番号、クレジットカード情報"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">利用目的</label>
+              <textarea name="usage_purpose" rows="2" placeholder="例: サービス提供・改善、お問い合わせ対応、マーケティング"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">問い合わせ先</label>
+              <input type="text" name="contact_info" placeholder="例: support@example.com"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        {# 雇用契約書 固有フィールド #}
+        <div id="fields-employment" class="specific-fields hidden bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h3 class="text-base font-semibold text-gray-800 mb-4">雇用契約書の詳細</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">業務内容</label>
+              <textarea name="work_content" rows="2" placeholder="例: Webシステムの開発・運用業務"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">給与</label>
+                <input type="text" name="salary" placeholder="例: 月給250,000円（固定残業代含む）"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">勤務地</label>
+                <input type="text" name="work_location" placeholder="例: 東京都渋谷区〇〇（テレワーク併用）"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">雇用期間</label>
+              <input type="text" name="period" placeholder="例: 期間の定めなし / 2026年4月1日〜2027年3月31日"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        {# 賃貸借契約書 固有フィールド #}
+        <div id="fields-rent" class="specific-fields hidden bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h3 class="text-base font-semibold text-gray-800 mb-4">賃貸借契約書の詳細</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">物件情報</label>
+              <input type="text" name="property" placeholder="例: 東京都新宿区〇〇 △△マンション101号室（1LDK 45㎡）"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">賃料</label>
+                <input type="text" name="rent" placeholder="例: 月額80,000円（管理費5,000円別途）"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">敷金</label>
+                <input type="text" name="deposit" placeholder="例: 賃料2ヶ月分"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">賃貸期間</label>
+              <input type="text" name="period" placeholder="例: 2026年5月1日〜2028年4月30日（2年間）"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        {# 免責注意書き #}
+        <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg">
+          <div class="flex">
+            <svg class="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <p class="text-sm text-yellow-800">
+              <strong>免責事項:</strong> 生成される文書はAIによる自動生成物であり、法的助言ではありません。実際の法的効力を担保するには、弁護士等の専門家にご確認ください。
+            </p>
+          </div>
+        </div>
+
+        {# 生成ボタン #}
+        <button type="button" id="generate-btn" onclick="doGenerate()"
+                class="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-base">
+          契約書を生成する
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {# ローディングオーバーレイ #}
+  <div id="loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-sm mx-4">
+      <div class="text-5xl mb-4">📄</div>
+      <svg class="animate-spin h-8 w-8 mx-auto mb-4 text-blue-600" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      </svg>
+      <p class="text-gray-700 font-medium">AIが契約書を生成しています...</p>
+      <p class="text-sm text-gray-500 mt-2">通常20〜40秒かかります</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ===== 結果・編集 ビュー ===== #}
+  {% if view == "detail" %}
+  <input type="hidden" id="doc-id" value="{{ doc.id }}">
+
+  {# 免責文言バナー（非表示不可） #}
+  <div class="mb-6 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-xl">
+    <div class="flex items-start gap-3">
+      <span class="text-2xl flex-shrink-0">⚠️</span>
+      <div>
+        <p class="font-bold text-yellow-800 text-sm">重要な免責事項</p>
+        <p class="text-yellow-700 text-sm mt-1">{{ disclaimer }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {# 左カラム: 入力サマリ #}
+    <div class="lg:col-span-1">
+      <div class="bg-white border border-gray-200 rounded-xl p-5 sticky top-4">
+        {% set type_info = doc_types.get(doc.doc_type, {}) %}
+        <div class="text-center mb-4">
+          <div class="text-4xl mb-2">{{ type_info.get('icon', '📄') }}</div>
+          <h2 class="font-bold text-gray-900">{{ type_info.get('name', doc.doc_type) }}</h2>
+        </div>
+
+        <dl class="space-y-3 text-sm">
+          <div>
+            <dt class="text-gray-500 text-xs">甲（第一当事者）</dt>
+            <dd class="font-medium text-gray-900">{{ doc.party_a_name }}</dd>
+          </div>
+          <div>
+            <dt class="text-gray-500 text-xs">乙（第二当事者）</dt>
+            <dd class="font-medium text-gray-900">{{ doc.party_b_name }}</dd>
+          </div>
+          {% if doc.effective_date %}
+          <div>
+            <dt class="text-gray-500 text-xs">契約日</dt>
+            <dd class="font-medium text-gray-900">{{ doc.effective_date }}</dd>
+          </div>
+          {% endif %}
+          {% if input_params.get('governing_law') %}
+          <div>
+            <dt class="text-gray-500 text-xs">準拠法</dt>
+            <dd class="font-medium text-gray-900">{{ input_params.governing_law }}</dd>
+          </div>
+          {% endif %}
+          {% if input_params.get('jurisdiction') %}
+          <div>
+            <dt class="text-gray-500 text-xs">合意管轄</dt>
+            <dd class="font-medium text-gray-900">{{ input_params.jurisdiction }}</dd>
+          </div>
+          {% endif %}
+          <div class="pt-2 border-t border-gray-100">
+            <dt class="text-gray-500 text-xs">作成日</dt>
+            <dd class="font-medium text-gray-900">{{ doc.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+          </div>
+        </dl>
+
+        <div class="mt-6 space-y-2">
+          <button onclick="downloadFile('docx')" id="download-docx-btn"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Word (.docx) DL
+          </button>
+          <button onclick="downloadFile('pdf')" id="download-pdf-btn"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            PDF DL
+          </button>
+          <button onclick="copyText()" id="copy-btn"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            テキストをコピー
+          </button>
+        </div>
+
+        {# リスクチェックボタン #}
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <button onclick="riskCheck()"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            この契約書をリスクチェックする
+          </button>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-gray-100 space-y-2">
+          <button id="regen-btn" onclick="regenerateResult()"
+                  class="w-full px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+            再生成
+          </button>
+          <button onclick="deleteDocument({{ doc.id }})"
+                  class="w-full px-4 py-2 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors">
+            削除
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {# 右カラム: 生成テキスト（編集可能） #}
+    <div class="lg:col-span-2">
+      <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-gray-900">生成された文書</h2>
+          {% if doc.edited_text %}
+          <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">編集済み</span>
+          {% endif %}
+        </div>
+        <p class="text-xs text-gray-500 mb-3">テキストを直接編集できます。編集後は「保存する」をクリックしてください。</p>
+
+        <textarea id="result-text" rows="40"
+                  class="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm font-mono leading-relaxed focus:ring-blue-500 focus:border-blue-500 resize-y">{{ display_text }}</textarea>
+
+        <div class="mt-4 flex justify-end">
+          <button id="save-btn" onclick="saveResult()"
+                  class="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            保存する
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+// contractツールからの戻り時にlocalStorageを設定
+// contractツール側でsessionStorageを読む実装に合わせる
+</script>
+{% endblock %}

@@ -1,0 +1,151 @@
+{
+  "date": "2026-03-22",
+  "strategies": {
+    "◎本命": {
+      "bets": 12,
+      "hits": 3,
+      "hit_rate": 0.25,
+      "investment": 1200,
+      "payout": 1500,
+      "return_rate": 1.25,
+      "profit": 300
+    },
+    "◎○上位2頭": {
+      "bets": 24,
+      "hits": 4,
+      "hit_rate": 0.16666666666666666,
+      "investment": 2400,
+      "payout": 1990,
+      "return_rate": 0.8291666666666667,
+      "profit": -410
+    },
+    "★期待値>1.0": {
+      "bets": 36,
+      "hits": 3,
+      "hit_rate": 0.08333333333333333,
+      "investment": 3600,
+      "payout": 3620,
+      "return_rate": 1.0055555555555555,
+      "profit": 20
+    },
+    "◎○▲上位3頭": {
+      "bets": 36,
+      "hits": 6,
+      "hit_rate": 0.16666666666666666,
+      "investment": 3600,
+      "payout": 3670,
+      "return_rate": 1.0194444444444444,
+      "profit": 70
+    }
+  },
+  "race_details": [
+    {
+      "race_no": "1",
+      "pred_name": "ホクセイモモエ",
+      "pred_num": 5,
+      "pred_rank_result": 3,
+      "winner_name": "アソマルゼン",
+      "winner_num": 4,
+      "hit": false
+    },
+    {
+      "race_no": "2",
+      "pred_name": "クマモトイヤサカ",
+      "pred_num": 8,
+      "pred_rank_result": 8,
+      "winner_name": "ビューティーレディ",
+      "winner_num": 4,
+      "hit": false
+    },
+    {
+      "race_no": "3",
+      "pred_name": "ビクトリーイサム",
+      "pred_num": 6,
+      "pred_rank_result": 1,
+      "winner_name": "ビクトリーイサム",
+      "winner_num": 6,
+      "hit": true
+    },
+    {
+      "race_no": "4",
+      "pred_name": "ソウゾウノツバサ",
+      "pred_num": 4,
+      "pred_rank_result": 3,
+      "winner_name": "ソラトダイチ",
+      "winner_num": 8,
+      "hit": false
+    },
+    {
+      "race_no": "5",
+      "pred_name": "ヤマノドラゴン",
+      "pred_num": 2,
+      "pred_rank_result": 2,
+      "winner_name": "不明",
+      "winner_num": 0,
+      "hit": false
+    },
+    {
+      "race_no": "6",
+      "pred_name": "ホクセイマジェスタ",
+      "pred_num": 3,
+      "pred_rank_result": 1,
+      "winner_name": "ホクセイマジェスタ",
+      "winner_num": 3,
+      "hit": true
+    },
+    {
+      "race_no": "7",
+      "pred_name": "マコトクラウン",
+      "pred_num": 7,
+      "pred_rank_result": 9,
+      "winner_name": "ツカサマーチ",
+      "winner_num": 9,
+      "hit": false
+    },
+    {
+      "race_no": "8",
+      "pred_name": "アアモンドクリン",
+      "pred_num": 2,
+      "pred_rank_result": 6,
+      "winner_name": "不明",
+      "winner_num": 0,
+      "hit": false
+    },
+    {
+      "race_no": "9",
+      "pred_name": "カツブライト",
+      "pred_num": 9,
+      "pred_rank_result": 3,
+      "winner_name": "ヤマトテンショウ",
+      "winner_num": 6,
+      "hit": false
+    },
+    {
+      "race_no": "10",
+      "pred_name": "ジェイホースワン",
+      "pred_num": 5,
+      "pred_rank_result": 1,
+      "winner_name": "ジェイホースワン",
+      "winner_num": 5,
+      "hit": true
+    },
+    {
+      "race_no": "11",
+      "pred_name": "ショウリノホシ",
+      "pred_num": 1,
+      "pred_rank_result": 9,
+      "winner_name": "不明",
+      "winner_num": 0,
+      "hit": false
+    },
+    {
+      "race_no": "12",
+      "pred_name": "ネオキングダム",
+      "pred_num": 2,
+      "pred_rank_result": 4,
+      "winner_name": "不明",
+      "winner_num": 0,
+      "hit": false
+    }
+  ]
+}

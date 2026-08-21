@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+{% block title %}ステップメール作成ツール - YN Tools{% endblock %}
+
+{% block head %}
+<script>
+// ===== ビジネス目的テンプレートのデフォルト値 =====
+const PURPOSE_TEMPLATES = {
+    {% for slug, tmpl in purpose_templates.items() %}
+    "{{ slug }}": {
+        "name": {{ tmpl.name | tojson }},
+        "recommended_steps": {{ tmpl.recommended_steps }},
+        "icon": {{ tmpl.icon | tojson }}
+    },
+    {% endfor %}
+};
+
+// 目的選択時に推奨通数をセット
+function applyPurposeTemplate(slug) {
+    const tmpl = PURPOSE_TEMPLATES[slug];
+    if (!tmpl) return;
+
+    const stepCountEl = document.getElementById('step_count');
+    if (stepCountEl) stepCountEl.value = tmpl.recommended_steps;
+
+    // 選択されたカードをハイライト
+    document.querySelectorAll('.purpose-card').forEach(card => {
+        card.classList.remove('border-blue-500', 'bg-blue-50');
+        card.classList.add('border-gray-200');
+    });
+    const selected = document.getElementById('card-' + slug);
+    if (selected) {
+        selected.classList.remove('border-gray-200');
+        selected.classList.add('border-blue-500', 'bg-blue-50');
+    }
+}
+
+// ===== シリーズ一括生成 =====
+async function doGenerate() {
+    const form = document.getElementById('generate-form');
+    const btn = document.getElementById('generate-btn');
+    const loadingDiv = document.getElementById('loading-overlay');
+
+    // バリデーション
+    const purposeInput = document.querySelector('input[name="business_purpose"]:checked');
+    if (!purposeInput) {
+        alert('ビジネス目的を選択してください。');
+        return false;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>AIが生成中...';
+    if (loadingDiv) loadingDiv.classList.remove('hidden');
+
+    try {
+        const formData = new FormData(form);
+        const resp = await fetch('/tools/stepmail/api/generate', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert('エラー: ' + data.error);
+            btn.disabled = false;
+            btn.textContent = 'ステップメールを一括生成する';
+            if (loadingDiv) loadingDiv.classList.add('hidden');
+            return false;
+        }
+
+        // シリーズ詳細ページへ遷移
+        window.location.href = '/tools/stepmail/' + data.series_id;
+    } catch (e) {
+        alert('エラーが発生しました: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'ステップメールを一括生成する';
+        if (loadingDiv) loadingDiv.classList.add('hidden');
+    }
+    return false;
+}
+
+// ===== AUTO-SAVE (2秒debounce) =====
+const autoSaveTimers = {};
+
+function scheduleAutoSave(itemId) {
+    if (autoSaveTimers[itemId]) clearTimeout(autoSaveTimers[itemId]);
+    const indicator = document.getElementById('save-indicator-' + itemId);
+    if (indicator) {
+        indicator.textContent = '編集中...';
+        indicator.className = 'text-xs text-gray-400';
+    }
+    autoSaveTimers[itemId] = setTimeout(() => doAutoSave(itemId), 2000);
+}
+
+async function doAutoSave(itemId) {
+    const indicator = document.getElementById('save-indicator-' + itemId);
+    const subject = document.getElementById('subject-' + itemId)?.value || '';
+    const preheader = document.getElementById('preheader-' + itemId)?.value || '';
+    const body = document.getElementById('body-' + itemId)?.value || '';
+    const ctaText = document.getElementById('cta_text-' + itemId)?.value || '';
+
+    try {
+        const resp = await fetch('/tools/stepmail/api/item/' + itemId, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                subject: subject,
+                preheader: preheader || null,
+                body: body,
+                cta_text: ctaText || null,
+            }),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            if (indicator) {
+                indicator.textContent = '保存済み ✓';
+                indicator.className = 'text-xs text-green-600';
+            }
+        } else {
+            if (indicator) {
+                indicator.textContent = '保存失敗';
+                indicator.className = 'text-xs text-red-500';
+            }
+        }
+    } catch (e) {
+        if (indicator) {
+            indicator.textContent = '保存失敗';
+            indicator.className = 'text-xs text-red-500';
+        }
+    }
+}
+
+// ===== 文字数カウンター =====
+function updateCharCount(textarea, counterId) {
+    const counter = document.getElementById(counterId);
+    if (counter) counter.textContent = textarea.value.length + '文字';
+}
+
+// ===== アコーディオン開閉 =====
+function toggleAccordion(stepId) {
+    const content = document.getElementById('accordion-content-' + stepId);
+    const arrow = document.getElementById('accordion-arrow-' + stepId);
+    if (!content) return;
+
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        if (arrow) arrow.classList.add('rotate-180');
+    } else {
+        content.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-180');
+    }
+}
+
+// ===== 1通だけ再生成 =====
+async function regenerateItem(itemId, stepNumber, totalSteps) {
+    const btn = document.getElementById('regen-btn-' + itemId);
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-3 w-3 mr-1 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>再生成中...';
+
+    // 前後の文脈を収集
+    const prevBodyEl = document.querySelector('[data-step="' + (stepNumber - 1) + '"] .body-textarea');
+    const nextBodyEl = document.querySelector('[data-step="' + (stepNumber + 1) + '"] .body-textarea');
+
+    const payload = {
+        context_prev: prevBodyEl ? prevBodyEl.value : null,
+        context_next: nextBodyEl ? nextBodyEl.value : null,
+    };
+
+    try {
+        const resp = await fetch('/tools/stepmail/api/item/' + itemId + '/regenerate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert('再生成エラー: ' + data.error);
+            return;
+        }
+
+        // フォームを更新
+        const subjectEl = document.getElementById('subject-' + itemId);
+        const preheaderEl = document.getElementById('preheader-' + itemId);
+        const bodyEl = document.getElementById('body-' + itemId);
+        const ctaEl = document.getElementById('cta_text-' + itemId);
+
+        if (subjectEl && data.subject) subjectEl.value = data.subject;
+        if (preheaderEl && data.preheader) preheaderEl.value = data.preheader;
+        if (bodyEl && data.body) {
+            bodyEl.value = data.body;
+            updateCharCount(bodyEl, 'body-count-' + itemId);
+        }
+        if (ctaEl && data.cta_text) ctaEl.value = data.cta_text;
+
+        // 保存インジケーター更新
+        const indicator = document.getElementById('save-indicator-' + itemId);
+        if (indicator) {
+            indicator.textContent = '再生成完了 ✓';
+            indicator.className = 'text-xs text-blue-600';
+        }
+    } catch (e) {
+        alert('再生成エラー: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '1通だけ再生成';
+    }
+}
+
+// ===== 全通コピー =====
+async function copyAllMails(seriesId) {
+    try {
+        const resp = await fetch('/tools/stepmail/api/series/' + seriesId + '/export?format=text');
+        const text = await resp.text();
+        await navigator.clipboard.writeText(text);
+
+        const btn = document.getElementById('copy-all-btn');
+        const original = btn.textContent;
+        btn.textContent = 'コピーしました！';
+        btn.classList.add('bg-green-600');
+        btn.classList.remove('bg-indigo-600');
+        setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('bg-green-600');
+            btn.classList.add('bg-indigo-600');
+        }, 2000);
+    } catch (e) {
+        // フォールバック: 画面上のテキストを収集
+        const items = document.querySelectorAll('[data-item-id]');
+        let text = '';
+        items.forEach(item => {
+            const step = item.dataset.step;
+            const itemId = item.dataset.itemId;
+            const subject = document.getElementById('subject-' + itemId)?.value || '';
+            const preheader = document.getElementById('preheader-' + itemId)?.value || '';
+            const body = document.getElementById('body-' + itemId)?.value || '';
+            const cta = document.getElementById('cta_text-' + itemId)?.value || '';
+            text += `=== 第${step}通 ===\n`;
+            text += `件名: ${subject}\n`;
+            if (preheader) text += `プレヘッダー: ${preheader}\n`;
+            text += '\n' + body;
+            if (cta) text += `\n\n【CTA】${cta}`;
+            text += '\n\n';
+        });
+        await navigator.clipboard.writeText(text);
+        const btn = document.getElementById('copy-all-btn');
+        btn.textContent = 'コピーしました！';
+        setTimeout(() => { btn.textContent = '全通コピー'; }, 2000);
+    }
+}
+
+// ===== シリーズ削除 =====
+async function deleteSeries(seriesId) {
+    if (!confirm('このシリーズを削除しますか？（元に戻せません）')) return;
+    try {
+        const resp = await fetch('/tools/stepmail/api/series/' + seriesId, {
+            method: 'DELETE',
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            window.location.href = '/tools/stepmail/';
+        } else {
+            alert('削除に失敗しました: ' + (data.error || ''));
+        }
+    } catch (e) {
+        alert('削除エラー: ' + e.message);
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+
+    <!-- ===== ヘッダー ===== -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+            {% if view == 'dashboard' %}
+            <h1 class="text-2xl font-bold text-gray-900">ステップメール作成ツール</h1>
+            <p class="text-gray-500 mt-1">ビジネス目的を選ぶだけでシリーズ全通を一括生成します</p>
+            {% elif view == 'new' %}
+            <div class="flex items-center gap-2">
+                <a href="/tools/stepmail/" class="text-blue-600 hover:text-blue-800 text-sm">一覧に戻る</a>
+                <span class="text-gray-400">/</span>
+                <h1 class="text-2xl font-bold text-gray-900">新規シリーズ作成</h1>
+            </div>
+            {% elif view == 'detail' %}
+            <div class="flex items-center gap-2">
+                <a href="/tools/stepmail/" class="text-blue-600 hover:text-blue-800 text-sm">一覧に戻る</a>
+                <span class="text-gray-400">/</span>
+                <h1 class="text-2xl font-bold text-gray-900">{{ series.title }}</h1>
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="bg-white rounded-lg shadow-sm border px-4 py-2 text-center">
+                <div class="text-lg font-bold {% if monthly_used >= monthly_limit %}text-red-500{% elif monthly_used >= monthly_limit * 0.8 %}text-orange-500{% else %}text-blue-600{% endif %}">{{ monthly_limit - monthly_used }}/{{ monthly_limit }}</div>
+                <div class="text-gray-500 text-xs">今月の残り</div>
+            </div>
+            {% if view == 'dashboard' %}
+            <a href="/tools/stepmail/new" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                + 新規作成
+            </a>
+            {% elif view == 'detail' %}
+            <button id="copy-all-btn" onclick="copyAllMails({{ series.id }})"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                全通コピー
+            </button>
+            <button onclick="deleteSeries({{ series.id }})"
+                    class="text-red-500 border border-red-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition">
+                削除
+            </button>
+            {% endif %}
+            <a href="/guide#stepmail" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition self-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                使い方ガイド
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== ダッシュボード ===== -->
+    {% if view == 'dashboard' %}
+
+    {% if series_list %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for s in series_list %}
+        {% set pt = purpose_templates.get(s.business_purpose, {}) %}
+        <div class="bg-white rounded-xl shadow p-5 border border-gray-100 hover:shadow-md transition">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">{{ pt.get('icon', '📧') }}</span>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 text-sm leading-tight">{{ s.title }}</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ pt.get('name', s.business_purpose) }}</p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 flex-shrink-0">
+                    {{ s.step_count }}通
+                </span>
+            </div>
+            <div class="flex flex-wrap gap-1.5 mb-3">
+                {% set tone_labels = {'formal': 'フォーマル', 'casual': 'カジュアル', 'business': 'ビジネス'} %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ tone_labels.get(s.tone, s.tone) }}</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{{ s.status }}</span>
+            </div>
+            <p class="text-xs text-gray-400 mb-3">{{ s.created_at.strftime('%Y/%m/%d %H:%M') if s.created_at else '-' }}</p>
+            <a href="/tools/stepmail/{{ s.id }}" class="block w-full text-center bg-blue-50 text-blue-700 rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-blue-100 transition">
+                開く / 編集
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+        <div class="text-5xl mb-4">✉️</div>
+        <h2 class="text-lg font-semibold text-gray-700 mb-2">まだシリーズがありません</h2>
+        <p class="text-gray-400 text-sm mb-6">ビジネス目的を選ぶだけで、シリーズ全通を一括生成します。</p>
+        <a href="/tools/stepmail/new" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+            最初のシリーズを作成する
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- ===== 新規作成フォーム ===== -->
+    {% elif view == 'new' %}
+
+    <form id="generate-form" onsubmit="doGenerate(); return false;">
+
+        <!-- ビジネス目的選択 -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-1">ビジネス目的を選択 <span class="text-red-500">*</span></h2>
+            <p class="text-xs text-gray-400 mb-4">選択すると推奨通数が自動でセットされます</p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {% for slug, tmpl in purpose_templates.items() %}
+                <label id="card-{{ slug }}" class="purpose-card flex flex-col items-center gap-1 border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                    <input type="radio" name="business_purpose" value="{{ slug }}" class="sr-only" onchange="applyPurposeTemplate('{{ slug }}')">
+                    <span class="text-2xl">{{ tmpl.icon }}</span>
+                    <span class="text-xs font-medium text-gray-700 text-center leading-tight">{{ tmpl.name }}</span>
+                    <span class="text-xs text-gray-400">推奨{{ tmpl.recommended_steps }}通</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 基本情報 -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">基本情報</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">商品・サービス名 <span class="text-red-500">*</span></label>
+                    <input type="text" name="product_name" placeholder="例: オンライン英会話スクール" required
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ターゲット読者 <span class="text-red-500">*</span></label>
+                    <input type="text" name="target_audience" placeholder="例: 30代女性フリーランス、英語を仕事で使いたい方" required
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">通数 <span class="text-red-500">*</span></label>
+                    <input type="number" id="step_count" name="step_count" min="3" max="10" value="5" required
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    <p class="text-xs text-gray-400 mt-1">3〜10通の範囲で指定</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">文体・トーン <span class="text-red-500">*</span></label>
+                    <select name="tone" required
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <option value="business">ビジネス（標準）</option>
+                        <option value="casual">カジュアル（親しみやすい）</option>
+                        <option value="formal">フォーマル（格式あり）</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- オプション情報 -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-1">オプション情報</h2>
+            <p class="text-xs text-gray-400 mb-4">入力するとより精度の高いメールが生成されます</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">CTAリンク先URL</label>
+                    <input type="url" name="cta_url" placeholder="https://example.com/lp"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">送信者名</label>
+                    <input type="text" name="seller_name" placeholder="例: 山田太郎"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">追加情報・強み・USP</label>
+                    <textarea name="extra_info" rows="3"
+                              placeholder="例: 業界最安値・返金保証あり・累計受講生5,000人突破・24時間サポート"
+                              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ローディングオーバーレイ -->
+        <div id="loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-xl p-8 text-center max-w-sm mx-4">
+                <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <p class="text-gray-700 font-medium">AIがシリーズ全通を生成しています...</p>
+                <p class="text-gray-400 text-sm mt-1">10〜30秒ほどお待ちください</p>
+            </div>
+        </div>
+
+        <button type="submit" id="generate-btn"
+                class="w-full bg-blue-600 text-white px-6 py-3 rounded-xl text-base font-semibold hover:bg-blue-700 transition">
+            ステップメールを一括生成する
+        </button>
+    </form>
+
+    <!-- ===== シリーズ詳細 ===== -->
+    {% elif view == 'detail' %}
+
+    <!-- シリーズ情報バナー -->
+    <div class="bg-white rounded-xl shadow p-4 mb-6 border border-gray-100">
+        <div class="flex flex-wrap gap-3 items-center">
+            {% set pt = purpose_templates.get(series.business_purpose, {}) %}
+            <span class="text-2xl">{{ pt.get('icon', '📧') }}</span>
+            <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-sm font-medium text-gray-700">{{ pt.get('name', series.business_purpose) }}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{{ series.step_count }}通シリーズ</span>
+                    {% set tone_labels = {'formal': 'フォーマル', 'casual': 'カジュアル', 'business': 'ビジネス'} %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ tone_labels.get(series.tone, series.tone) }}</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">{{ series.product_name }} / {{ series.target_audience }}</p>
+            </div>
+            <p class="text-xs text-gray-400">{{ series.created_at.strftime('%Y/%m/%d %H:%M') if series.created_at else '-' }}</p>
+        </div>
+    </div>
+
+    {% if items %}
+    <!-- アコーディオン: 各通 -->
+    <div class="space-y-3">
+        {% for item in items %}
+        <div class="bg-white rounded-xl shadow border border-gray-100" data-item-id="{{ item.id }}" data-step="{{ item.step_number }}">
+            <!-- アコーディオンヘッダー -->
+            <button type="button" onclick="toggleAccordion('{{ item.id }}')"
+                    class="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition rounded-xl">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex-shrink-0">
+                        {{ item.step_number }}
+                    </span>
+                    <div>
+                        <p class="font-medium text-gray-900 text-sm">{{ item.subject }}</p>
+                        {% if item.preheader %}
+                        <p class="text-xs text-gray-500 mt-0.5">{{ item.preheader }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                    <span id="save-indicator-{{ item.id }}" class="text-xs text-gray-400"></span>
+                    <svg id="accordion-arrow-{{ item.id }}" class="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </button>
+
+            <!-- アコーディオンコンテンツ -->
+            <div id="accordion-content-{{ item.id }}" class="hidden border-t border-gray-100 p-4">
+                <div class="space-y-4">
+                    <!-- 件名 -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">件名</label>
+                        <input type="text" id="subject-{{ item.id }}"
+                               value="{{ item.subject }}"
+                               onchange="scheduleAutoSave({{ item.id }})"
+                               oninput="scheduleAutoSave({{ item.id }})"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                               style="height: 38px;">
+                    </div>
+
+                    <!-- プレヘッダー -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">プレヘッダー（40字以内推奨）</label>
+                        <input type="text" id="preheader-{{ item.id }}"
+                               value="{{ item.preheader or '' }}"
+                               maxlength="100"
+                               onchange="scheduleAutoSave({{ item.id }})"
+                               oninput="scheduleAutoSave({{ item.id }})"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+
+                    <!-- 本文 -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-gray-500">本文</label>
+                            <span id="body-count-{{ item.id }}" class="text-xs text-gray-400">{{ item.body | length }}文字</span>
+                        </div>
+                        <textarea id="body-{{ item.id }}"
+                                  class="body-textarea w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                  style="height: 300px; resize: vertical;"
+                                  onchange="scheduleAutoSave({{ item.id }})"
+                                  oninput="scheduleAutoSave({{ item.id }}); updateCharCount(this, 'body-count-{{ item.id }}')">{{ item.body }}</textarea>
+                    </div>
+
+                    <!-- CTA文言 -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">CTAボタン文言（20字以内推奨）</label>
+                        <input type="text" id="cta_text-{{ item.id }}"
+                               value="{{ item.cta_text or '' }}"
+                               maxlength="100"
+                               onchange="scheduleAutoSave({{ item.id }})"
+                               oninput="scheduleAutoSave({{ item.id }})"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+
+                    <!-- 操作ボタン -->
+                    <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                        <button type="button"
+                                id="regen-btn-{{ item.id }}"
+                                onclick="regenerateItem({{ item.id }}, {{ item.step_number }}, {{ series.step_count }})"
+                                class="text-xs text-blue-600 border border-blue-300 rounded-lg px-3 py-1.5 hover:bg-blue-50 transition">
+                            1通だけ再生成
+                        </button>
+                        <span class="text-xs text-gray-400">変更後2秒で自動保存</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 全通コピーボタン（下部） -->
+    <div class="mt-6 text-center">
+        <button onclick="copyAllMails({{ series.id }})"
+                class="bg-indigo-600 text-white px-8 py-3 rounded-xl text-sm font-medium hover:bg-indigo-700 transition">
+            全{{ series.step_count }}通をコピーする
+        </button>
+        <p class="text-xs text-gray-400 mt-2">全通を「=== 第1通 ===」形式でクリップボードにコピーします</p>
+    </div>
+
+    {% else %}
+    <div class="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+        <div class="text-5xl mb-4">📭</div>
+        <h2 class="text-lg font-semibold text-gray-700 mb-2">メールが見つかりません</h2>
+        <p class="text-gray-400 text-sm mb-6">このシリーズにはまだメールが生成されていません。</p>
+        <a href="/tools/stepmail/new" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+            新規作成する
+        </a>
+    </div>
+    {% endif %}
+
+    {% endif %}
+
+</div>
+{% endblock %}

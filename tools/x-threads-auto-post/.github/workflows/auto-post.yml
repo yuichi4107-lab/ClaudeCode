@@ -1,0 +1,85 @@
+name: X自動投稿
+
+on:
+  # 自動投稿は停止済み（GASに移行）
+  # 手動実行ボタン（テスト用のみ）
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'dry-run（確認のみ、実際には投稿しない）'
+        required: false
+        default: 'false'
+
+# 同時実行を禁止。前のジョブ完了後に次を実行（posted_ids.json の整合性を保証）
+concurrency:
+  group: x-auto-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # queue.jsonの変更をpushするために必要
+      issues: write    # 失敗時のIssue作成のために必要
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 全履歴取得（rebase のため）
+
+      - name: 最新状態を取得（前回のpush失敗に備えて）
+        run: git pull --rebase origin master || git pull --rebase origin main || true
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 依存パッケージをインストール
+        run: |
+          pip install tweepy python-dotenv google-genai
+
+      - name: キューから投稿
+        id: post_step
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          API_KEY_SECRET: ${{ secrets.API_KEY_SECRET }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+          if [ "$DRY_RUN" = "true" ]; then
+            python skills/note-to-x/scripts/dequeue_post.py --dry-run
+          else
+            python skills/note-to-x/scripts/dequeue_post.py
+          fi
+
+      - name: キューの変更をコミット・プッシュ
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add queue/queue.json queue/posted_ids.json queue/images/ 2>/dev/null || true
+          # 変更がある場合のみコミット
+          if git diff --staged --quiet; then
+            echo "変更なし（投稿スキップまたはdry-run）。コミットをスムップ。"
+          else
+            git commit -m "chore: 投稿済みアイテムをキューから削除 [skip ci]"
+            # push前に最新を取り込む（競合防止）
+            git pull --rebase origin master || git pull --rebase origin main
+            git push
+          fi
+
+      - name: 失敗時にGitHub Issueを作成
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `X自動投稿 失敗 - ${new Date().toISOString()}`,
+              body: `## 自動投稿ジョブが失敗しました\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n投稿内容とログを確認してください。`,
+              labels: ['bug']
+            })

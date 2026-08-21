@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}管理者ダッシュボード - YN Tools{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <!-- ヘッダー -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">管理者ダッシュボード</h1>
+        <p class="text-sm text-gray-500 mt-1">ユーザー・課金情報の管理</p>
+    </div>
+
+    <!-- 統計カード -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white rounded-xl border p-5 shadow-sm">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">総ユーザー数</p>
+            <p class="text-3xl font-bold text-gray-900">{{ total_users }}</p>
+        </div>
+        <div class="bg-white rounded-xl border p-5 shadow-sm">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">無料ユーザー</p>
+            <p class="text-3xl font-bold text-indigo-600">{{ free_users }}</p>
+        </div>
+        <div class="bg-white rounded-xl border p-5 shadow-sm">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">有料ユーザー</p>
+            <p class="text-3xl font-bold text-green-600">{{ pro_users }}</p>
+        </div>
+        <div class="bg-white rounded-xl border p-5 shadow-sm">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">管理者</p>
+            <p class="text-3xl font-bold text-purple-600">{{ admin_users }}</p>
+        </div>
+    </div>
+
+    <!-- ナビゲーション -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a href="/admin/users" class="bg-white rounded-xl border p-6 shadow-sm hover:shadow-md hover:border-indigo-300 transition group">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 transition">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                </div>
+                <h2 class="text-base font-semibold text-gray-900">ユーザー一覧</h2>
+            </div>
+            <p class="text-sm text-gray-500">全ユーザーの一覧表示・プラン変更・アカウント管理</p>
+        </a>
+        <a href="/admin/billing" class="bg-white rounded-xl border p-6 shadow-sm hover:shadow-md hover:border-indigo-300 transition group">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
+                </div>
+                <h2 class="text-base font-semibold text-gray-900">課金サマリー</h2>
+            </div>
+            <p class="text-sm text-gray-500">月次売上・プラン別件数・Stripe連携状況</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF書き込みツール</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%234a8bfc'/%3E%3Ctext x='8' y='12' font-size='9' text-anchor='middle' fill='white' font-family='sans-serif'%3EPDF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="app">
+
+  <header id="toolbar">
+    <div class="toolbar-group toolbar-group--file">
+      <button id="btn-open" type="button">ファイルを開く</button>
+      <input id="file-input" type="file" accept="application/pdf" hidden>
+      <span id="file-name" class="file-name">ファイル未選択</span>
+    </div>
+
+    <div class="toolbar-group toolbar-group--tools" id="tool-group" aria-label="書き込みツール">
+      <button id="tool-select" type="button" class="tool-btn is-active" data-tool="select" disabled>選択</button>
+      <button id="tool-text" type="button" class="tool-btn" data-tool="text" disabled>テキスト</button>
+      <button id="tool-pen" type="button" class="tool-btn" data-tool="pen" disabled>ペン</button>
+      <button id="tool-highlighter" type="button" class="tool-btn" data-tool="highlighter" disabled>蛍光ペン</button>
+      <button id="btn-undo" type="button" class="tool-btn" disabled title="Ctrl+Z">元に戻す</button>
+    </div>
+
+    <div class="toolbar-group toolbar-group--options" id="option-group" hidden>
+      <label class="opt-field" id="opt-field-size">サイズ
+        <input id="opt-font-size" type="number" min="10" max="48" step="1" value="16">
+      </label>
+      <label class="opt-field" id="opt-field-width">太さ
+        <input id="opt-line-width" type="number" min="1" max="40" step="1" value="3">
+      </label>
+      <label class="opt-field" id="opt-field-color">色
+        <input id="opt-color" type="color" value="#e02424">
+      </label>
+      <button id="btn-delete-selected" type="button" class="tool-btn" hidden>削除</button>
+    </div>
+
+    <div class="toolbar-group toolbar-group--page">
+      <button id="btn-prev-page" type="button" disabled>◀ 前へ</button>
+      <span class="page-indicator">
+        <input id="page-input" type="number" min="1" value="1" disabled>
+        <span>/</span>
+        <span id="page-count">0</span>
+      </span>
+      <button id="btn-next-page" type="button" disabled>次へ ▶</button>
+    </div>
+
+    <div class="toolbar-group toolbar-group--zoom">
+      <button id="btn-zoom-out" type="button" disabled>－</button>
+      <span id="zoom-level">100%</span>
+      <button id="btn-zoom-in" type="button" disabled>＋</button>
+    </div>
+
+    <div class="toolbar-group toolbar-group--save">
+      <button id="btn-save" type="button" disabled>保存</button>
+    </div>
+  </header>
+
+  <main id="viewer-container">
+    <div id="drop-zone">
+      <div id="empty-state">
+        <p>PDFファイルをここにドラッグ＆ドロップ</p>
+        <p>または「ファイルを開く」ボタンで選択してください</p>
+      </div>
+      <div id="page-wrapper" hidden>
+        <div id="canvas-stack">
+          <canvas id="pdf-canvas"></canvas>
+          <canvas id="annotation-canvas"></canvas>
+          <div id="annotation-layer"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="status-bar">
+    <span id="status-message">PDFファイルを選択してください</span>
+  </footer>
+
+</div>
+
+<script src="./vendor/pdf.min.js"></script>
+<script src="./vendor/pdf-lib.min.js"></script>
+<script src="./vendor/fontkit.umd.min.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

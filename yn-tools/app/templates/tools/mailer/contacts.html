@@ -1,0 +1,77 @@
+{% extends "tools/mailer/base_mailer.html" %}
+{% block title %}連絡先 - YN Tools{% endblock %}
+
+{% block mailer_content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-xl font-bold">連絡先（{{ contacts | length }}件）</h1>
+</div>
+
+<!-- Add contact form -->
+<details class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+    <summary class="font-medium cursor-pointer">連絡先を追加</summary>
+    <form action="/tools/mailer/contacts/add" method="post" class="mt-4 grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">名前</label>
+            <input type="text" name="name" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">メールアドレス *</label>
+            <input type="email" name="email" required class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">会社名</label>
+            <input type="text" name="company" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">メモ</label>
+            <input type="text" name="notes" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div class="col-span-2">
+            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">追加</button>
+        </div>
+    </form>
+</details>
+
+<!-- CSV Import -->
+<details class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+    <summary class="font-medium cursor-pointer">CSVインポート</summary>
+    <form action="/tools/mailer/contacts/import" method="post" enctype="multipart/form-data" class="mt-4">
+        <p class="text-xs text-gray-500 mb-2">CSV列: email (or メールアドレス), name (or 氏名), company (or 会社名), notes (or メモ)</p>
+        <input type="file" name="csv_file" accept=".csv" required class="text-sm">
+        <button type="submit" class="ml-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200">インポート</button>
+    </form>
+</details>
+
+<!-- Contact list -->
+<div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+            <tr>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">名前</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">メール</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">会社名</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">メモ</th>
+                <th class="px-4 py-3 text-right font-medium text-gray-500">操作</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for c in contacts %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">{{ c.name or '-' }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ c.email }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ c.company or '-' }}</td>
+                <td class="px-4 py-3 text-gray-400 text-xs">{{ c.notes or '' }}</td>
+                <td class="px-4 py-3 text-right">
+                    <form action="/tools/mailer/contacts/delete/{{ c.id }}" method="post" class="inline" onsubmit="return confirm('削除しますか？')">
+                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">削除</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not contacts %}
+            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">連絡先がありません</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+project:
+  name: "JRA Keiba Predictor"
+  version: "1.0.0"
+
+database:
+  path: "data/keiba.db"
+
+scraping:
+  base_url: "https://db.netkeiba.com"
+  race_url_template: "https://db.netkeiba.com/race/{race_id}/"
+  horse_url_template: "https://db.netkeiba.com/horse/{horse_id}/"
+  request_interval_sec: 2.0
+  max_retries: 3
+  retry_delay_sec: 5.0
+  timeout_sec: 30
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  years: [2021, 2022, 2023, 2024, 2025]
+  venue_codes: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
+
+logging:
+  level: "INFO"
+  file: "data/logs/app.log"
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"

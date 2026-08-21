@@ -1,0 +1,41 @@
+walk_forward:
+  train_months: 12
+  test_months: 1
+  slide_months: 1
+
+data_split:
+  train_start: "2021-01-01"
+  train_end: "2023-12-31"
+  validation_start: "2024-01-01"
+  validation_end: "2024-12-31"
+  final_test_start: "2025-01-01"
+  final_test_end: "2025-12-31"
+
+targets:
+  roi_pct: 150
+  purchase_rate_pct: 30
+  daily_win_rate_pct: 50
+
+overfit_detection:
+  cscv_splits: 16
+  pbo_threshold: 0.50
+  param_sensitivity_range: [0.10, 0.20]
+  param_sensitivity_max_variation: 0.30
+  bootstrap_iterations: 1000
+  bootstrap_confidence: 0.95
+
+model:
+  type: "lightgbm"
+  params:
+    objective: "binary"
+    metric: "auc"
+    n_estimators: 1000
+    learning_rate: 0.05
+    max_depth: 6
+    num_leaves: 31
+    min_child_samples: 20
+    subsample: 0.8
+    colsample_bytree: 0.8
+    early_stopping_rounds: 50
+    random_state: 42
+    verbose: -1

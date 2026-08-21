@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}CRM管理 - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">CRM管理</h1>
+        <p class="text-gray-500 mt-1">{{ total }} 件</p>
+    </div>
+    <a href="{{ P }}/" class="text-sm text-gray-600 hover:text-gray-900">ダッシュボード</a>
+</div>
+
+<!-- Status Tabs -->
+<div class="flex flex-wrap gap-2 mb-4">
+    <a href="{{ P }}/crm" class="px-3 py-1.5 rounded-full text-sm {% if not current_status %}bg-indigo-600 text-white{% else %}border text-gray-600 hover:bg-gray-50{% endif %}">
+        すべて
+    </a>
+    {% for s in statuses %}
+    <a href="{{ P }}/crm?status={{ s }}&sort={{ current_sort }}&search={{ search }}"
+       class="px-3 py-1.5 rounded-full text-sm {% if current_status == s %}bg-indigo-600 text-white{% else %}border text-gray-600 hover:bg-gray-50{% endif %}">
+        {{ s }} ({{ status_counts[s] }})
+    </a>
+    {% endfor %}
+    <a href="{{ P }}/crm?status=blacklist" class="px-3 py-1.5 rounded-full text-sm border text-red-500 hover:bg-red-50">
+        BL ({{ blacklist_count }})
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="flex gap-2 mb-6">
+    <form method="get" action="{{ P }}/crm" class="flex gap-2 flex-1">
+        <input type="hidden" name="status" value="{{ current_status }}">
+        <input type="text" name="search" value="{{ search }}" placeholder="企業名・業種・地域で検索..."
+            class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        <select name="sort" class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <option value="score_desc" {% if current_sort == 'score_desc' %}selected{% endif %}>スコア高い順</option>
+            <option value="score_asc" {% if current_sort == 'score_asc' %}selected{% endif %}>スコア低い順</option>
+            <option value="name" {% if current_sort == 'name' %}selected{% endif %}>企業名</option>
+            <option value="updated" {% if current_sort == 'updated' %}selected{% endif %}>更新日</option>
+        </select>
+        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm">絞り込み</button>
+    </form>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-lg shadow-sm border overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-left text-gray-500 border-b bg-gray-50">
+                <th class="px-4 py-3 font-medium">企業名</th>
+                <th class="px-4 py-3 font-medium">業種</th>
+                <th class="px-4 py-3 font-medium">メール</th>
+                <th class="px-4 py-3 font-medium">ステータス</th>
+                <th class="px-4 py-3 font-medium text-right">スコア</th>
+                <th class="px-4 py-3 font-medium">メモ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in companies %}
+            <tr class="border-b last:border-0 hover:bg-gray-50">
+                <td class="px-4 py-3">
+                    <a href="{{ P }}/companies/{{ c.id }}" class="text-indigo-600 hover:underline font-medium">{{ c.name }}</a>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ c.industry or '-' }}</td>
+                <td class="px-4 py-3">
+                    {% set emails = c.contacts|selectattr('email')|list if c.contacts else [] %}
+                    {% if emails %}
+                    <span class="text-green-600 text-xs">{{ emails[0].email }}</span>
+                    {% else %}<span class="text-gray-400">-</span>{% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <form method="post" action="{{ P }}/crm/{{ c.id }}/status" class="inline">
+                        <select name="new_status" onchange="this.form.submit()"
+                            class="rounded border-gray-300 text-xs px-2 py-1 focus:ring-indigo-500">
+                            {% for s in statuses %}
+                            <option value="{{ s }}" {% if c.crm_status and c.crm_status.status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </td>
+                <td class="px-4 py-3 text-right font-medium">{{ c.crm_status.score if c.crm_status else 0 }}</td>
+                <td class="px-4 py-3 text-gray-500 text-xs max-w-[200px] truncate">{{ c.crm_status.memo or '' if c.crm_status else '' }}</td>
+            </tr>
+            {% endfor %}
+            {% if not companies %}
+            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">該当する企業はありません。</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% set total_pages = (total / per_page)|round(0, 'ceil')|int %}
+{% if total_pages > 1 %}
+<div class="flex justify-center gap-1 mt-6">
+    {% for p_num in range(1, total_pages + 1) %}
+    <a href="{{ P }}/crm?page={{ p_num }}&status={{ current_status }}&sort={{ current_sort }}&search={{ search }}"
+       class="px-3 py-1 rounded text-sm {% if p_num == page_num %}bg-indigo-600 text-white{% else %}border text-gray-600 hover:bg-gray-50{% endif %}">{{ p_num }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

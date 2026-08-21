@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "enabled": false,
+  "images": [],
+  "note": "reference_images.enabled=false のため参照画像は使用しません(text-to-videoのみ)。",
+  "already_present": []
+}

@@ -1,0 +1,53 @@
+runtime:
+  root_dir: "~/rakuten-room-auto"
+  ledger_path: "~/rakuten-room-auto/data/post-ledger.jsonl"
+  log_dir: "~/rakuten-room-auto/logs"
+  max_items_per_run: 1
+
+google:
+  client_secret_json: "~/rakuten-room-auto/secrets/google-oauth-client.json"
+  token_json: "~/rakuten-room-auto/secrets/google-token.json"
+
+sheet:
+  spreadsheet_id: "${GOOGLE_SHEETS_SPREADSHEET_ID}"
+  worksheet_name: "${GOOGLE_SHEETS_WORKSHEET_NAME}"
+  header_row: 1
+  columns:
+    product_url: "商品URL"
+    description: "紹介文"
+    status: "ステータス"
+    posted_at: "投稿日時"
+    error: "エラー"
+    attempts: "試行回数"
+
+statuses:
+  unposted: "未投稿"
+  approval_pending: "承認待ち"
+  approved: "承認済"
+  processing: "処理中"
+  completed: "完了"
+  needs_review: "要確認"
+  error: "エラー"
+
+browser:
+  cdp_endpoint: "${RAKUTEN_ROOM_CDP_ENDPOINT:-http://127.0.0.1:9225}"
+  expected_profile_name: "${RAKUTEN_ROOM_EXPECTED_PROFILE:-Yuichi}"
+  room_home_url: "https://room.rakuten.co.jp/"
+  my_room_url: "https://room.rakuten.co.jp/myroom"
+  navigation_timeout_ms: 45000
+  action_timeout_ms: 20000
+
+llm:
+  enabled: false
+  provider: "openai"
+  model: "${OPENAI_MODEL}"
+  max_chars: 180
+
+replenish:
+  enabled: true
+  threshold: 5   # 残りネタ（未投稿・承認待ち・承認済）がこの件数以下になったら補充
+  batch: 5       # 1回に追加する件数
+  ranking_urls:
+    - "https://ranking.rakuten.co.jp/daily/100804/"   # インテリア・寝具・収納
+    - "https://ranking.rakuten.co.jp/daily/215783/"   # 日用品雑貨・文房具・手芸
+    - "https://ranking.rakuten.co.jp/daily/558944/"   # キッチン用品・食器・調理器具

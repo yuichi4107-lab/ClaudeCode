@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Claude Code 開発デモ｜YN Factory{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding:4rem 1.5rem;text-align:center;">
+  <h1 style="font-size:2.4rem;margin-bottom:1rem;">
+    🤖 これは全て <span style="color:#a37bff;">Claude Code</span> で作りました
+  </h1>
+  <p style="font-size:1.1rem;color:#666;max-width:760px;margin:0 auto 2rem;">
+    本デモは YN Factory のセミナー教材です。<br>
+    37 種類の業務 SaaS ツールを、Claude Code を使って実装した実例をそのままご覧いただけます。
+    ログイン不要・無料で全機能を試せます（保存データはセッション中のみ保持されます）。
+  </p>
+  <a href="/dashboard" class="btn btn-primary" style="padding:0.9rem 2rem;font-size:1.1rem;">
+    ツール一覧を見る →
+  </a>
+</section>
+
+<section style="padding:2rem 1.5rem;max-width:960px;margin:0 auto;">
+  <h2 style="font-size:1.4rem;margin-bottom:1rem;">このデモについて</h2>
+  <ul style="line-height:1.9;">
+    <li>本番版（販売中）は <a href="https://tools.ynfactory.online" target="_blank" rel="noopener">tools.ynfactory.online</a></li>
+    <li>このデモはセミナー説明用で、課金・ログインは無効化されています</li>
+    <li>生成・保存データはコンテナ再起動で消えます</li>
+  </ul>
+</section>
+{% endblock %}

@@ -1,0 +1,48 @@
+speed_index:
+  lookback_races: 10
+  last_n_avg: 3
+  best_n: 3
+  weight_per_kg: 0.5
+  base_time_years: 3
+
+pace_index:
+  split_point: "3f"
+
+horse_features:
+  win_rate_lookback: null
+  recent_n: 5
+  distance_categories:
+    sprint: [1000, 1400]
+    mile: [1401, 1800]
+    middle: [1801, 2200]
+    long: [2201, 2800]
+    ultra_long: [2801, 4000]
+
+jockey_features:
+  stats_period_days: 365
+
+trainer_features:
+  stats_period_days: 365
+
+race_features:
+  grade_mapping:
+    新馬: 1
+    未勝利: 2
+    1勝クラス: 3
+    2勝クラス: 4
+    3勝クラス: 5
+    オープン: 6
+    G3: 7
+    G2: 8
+    G1: 9
+
+market_features:
+  use_log_odds: true
+
+interaction_features:
+  pairs:
+    - ["speed_index_last3", "distance_category"]
+    - ["jockey_win_rate_1y", "venue_code"]
+    - ["pace_index_last3", "running_style"]
+    - ["track_condition_code", "surface_type"]
+    - ["age", "distance_category"]

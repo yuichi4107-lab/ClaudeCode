@@ -1,0 +1,48 @@
+{
+  "version": "full",
+  "total_scenes": 8,
+  "ok": 8,
+  "skipped": 0,
+  "results": [
+    {
+      "scene_id": "scene_01",
+      "status": "already_exists",
+      "file": "scene_01.mp4"
+    },
+    {
+      "scene_id": "scene_02",
+      "status": "already_exists",
+      "file": "scene_02.mp4"
+    },
+    {
+      "scene_id": "scene_03",
+      "status": "already_exists",
+      "file": "scene_03.mp4"
+    },
+    {
+      "scene_id": "scene_04",
+      "status": "already_exists",
+      "file": "scene_04.mp4"
+    },
+    {
+      "scene_id": "scene_05",
+      "status": "already_exists",
+      "file": "scene_05.mp4"
+    },
+    {
+      "scene_id": "scene_06",
+      "status": "already_exists",
+      "file": "scene_06.mp4"
+    },
+    {
+      "scene_id": "scene_07",
+      "status": "already_exists",
+      "file": "scene_07.mp4"
+    },
+    {
+      "scene_id": "scene_08",
+      "status": "already_exists",
+      "file": "scene_08.mp4"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "prompt": "A young Japanese woman in a cozy kitchen enthusiastically presenting a bowl of steaming ramen to the camera, speaking excitedly, warm lighting, vertical short-form video style, realistic",
+  "duration": 5,
+  "resolution": "720p",
+  "mode": "std",
+  "results": {
+    "atlas": {
+      "status": "error",
+      "error": "HTTP 403 https://api.atlascloud.ai/api/v1/model/generateVideo\nerror code: 1010\n"
+    }
+  }
+}

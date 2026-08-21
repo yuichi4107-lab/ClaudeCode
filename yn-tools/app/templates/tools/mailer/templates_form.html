@@ -1,0 +1,28 @@
+{% extends "tools/mailer/base_mailer.html" %}
+{% block title %}{% if mode == 'new' %}新規テンプレート{% else %}テンプレート編集{% endif %} - YN Tools{% endblock %}
+
+{% block mailer_content %}
+<h1 class="text-xl font-bold mb-6">{% if mode == 'new' %}新規テンプレート{% else %}テンプレート編集{% endif %}</h1>
+
+<form action="{% if mode == 'new' %}/tools/mailer/templates/new{% else %}/tools/mailer/templates/edit/{{ template.id }}{% endif %}" method="post" class="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">テンプレート名</label>
+        <input type="text" name="name" required value="{{ template.name if template else '' }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">件名</label>
+        <input type="text" name="subject" required value="{{ template.subject if template else '' }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">本文</label>
+        <textarea name="body" rows="12" required class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm">{{ template.body if template else '' }}</textarea>
+        <p class="text-xs text-gray-400 mt-1">使用可能な変数: {<!-- -->{name}} {<!-- -->{company}} やカスタム変数</p>
+    </div>
+    <div class="flex gap-3">
+        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+            {% if mode == 'new' %}作成{% else %}更新{% endif %}
+        </button>
+        <a href="/tools/mailer/templates" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">戻る</a>
+    </div>
+</form>
+{% endblock %}

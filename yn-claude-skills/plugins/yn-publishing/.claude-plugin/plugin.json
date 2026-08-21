@@ -1,0 +1,6 @@
+{
+  "name": "yn-publishing",
+  "description": "電子書籍出版: テーマ調査→原稿執筆→マンガ化→KDP表紙・メタデータ生成までの一貫パイプライン",
+  "version": "1.0.0",
+  "author": { "name": "YN Factory" }
+}

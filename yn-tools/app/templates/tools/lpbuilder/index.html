@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}LPビルダー - YN Tools{% endblock %}
+
+{% block head %}
+<script>
+async function createLP() {
+    const form = document.getElementById('lp-form');
+    const resp = await fetch('/tools/lpbuilder/api/create', { method: 'POST', body: new FormData(form) });
+    const data = await resp.json();
+    if (data.error) { alert(data.error); return; }
+    location.reload();
+}
+
+async function deletePage(pageId) {
+    if (!confirm('このLPを削除しますか？')) return;
+    await fetch(`/tools/lpbuilder/api/delete/${pageId}`, { method: 'POST' });
+    location.reload();
+}
+
+async function togglePublish(pageId) {
+    await fetch(`/tools/lpbuilder/api/toggle/${pageId}`, { method: 'POST' });
+    location.reload();
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">LPビルダー</h1>
+            <p class="text-gray-500 mt-1">用意した原稿をもとにランディングページを公開</p>
+        </div>
+        <div class="flex gap-4 text-sm">
+            <div class="bg-white rounded-lg shadow-sm border px-4 py-2 text-center">
+                <div class="text-lg font-bold text-indigo-600">{{ pages | length }}</div>
+                <div class="text-gray-500 text-xs">作成ページ数</div>
+            </div>
+            <a href="/guide#lpbuilder" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition self-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                使い方ガイド
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+        <p class="text-amber-800 text-xs">
+            <strong>このツールについて：</strong>
+            あらかじめ用意した原稿（見出し・特徴・説明文など）を入力して、LPページとして公開するツールです。原稿の作成自体はこのツールの範囲外です。
+        </p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+        <!-- Left: 作成フォーム -->
+        <div class="bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-lg font-semibold mb-4">新規LP作成</h2>
+            <form id="lp-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ページタイトル</label>
+                    <input type="text" name="title" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: 新サービスのご紹介" required>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h3 class="text-sm font-semibold text-gray-600 mb-3">ヒーローセクション</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">見出し</label>
+                            <input type="text" name="hero_title" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="あなたのビジネスを加速する">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">サブテキスト</label>
+                            <textarea name="hero_subtitle" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="サービスの概要を一言で"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">ボタンテキスト</label>
+                                <input type="text" name="hero_cta_text" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="お問い合わせ">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">ボタンURL</label>
+                                <input type="text" name="hero_cta_url" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="https://...">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">背景色</label>
+                                <input type="color" name="hero_bg_color" value="#4F46E5" class="w-full h-9 border rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h3 class="text-sm font-semibold text-gray-600 mb-3">特徴（最大3つ）</h3>
+                    <div class="space-y-2">
+                        <input type="text" name="feature1" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="特徴1: 例）簡単3ステップで導入">
+                        <input type="text" name="feature2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="特徴2: 例）24時間365日サポート">
+                        <input type="text" name="feature3" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="特徴3: 例）初月無料キャンペーン中">
+                    </div>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h3 class="text-sm font-semibold text-gray-600 mb-3">説明セクション</h3>
+                    <textarea name="about_text" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="サービスの詳細説明..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">フッターテキスト</label>
+                    <input type="text" name="footer_text" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: &copy; 2026 YN Factory">
+                </div>
+
+                <button type="button" onclick="createLP()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">作成・公開</button>
+            </form>
+        </div>
+
+        <!-- Right: LP一覧 -->
+        <div>
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <h2 class="text-lg font-semibold mb-4">作成済みLP</h2>
+                {% if pages %}
+                <div class="space-y-3">
+                    {% for lp in pages %}
+                    <div class="border rounded-lg p-4 hover:bg-gray-50">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-semibold text-sm">{{ lp.title }}</h3>
+                            <span class="text-xs px-2 py-0.5 rounded {% if lp.is_published %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-500{% endif %}">
+                                {{ '公開中' if lp.is_published else '非公開' }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">{{ lp.hero_subtitle[:80] if lp.hero_subtitle else '-' }}</p>
+                        <div class="flex items-center gap-3 text-xs">
+                            {% if lp.is_published %}
+                            <a href="/tools/lpbuilder/p/{{ lp.page_id }}" target="_blank" class="text-indigo-600 hover:underline">プレビュー</a>
+                            <button onclick="navigator.clipboard.writeText(location.origin + '/tools/lpbuilder/p/{{ lp.page_id }}'); this.textContent='コピー済み'; setTimeout(()=>this.textContent='URLコピー',2000)" class="text-indigo-600 hover:underline">URLコピー</button>
+                            {% endif %}
+                            <button onclick="togglePublish('{{ lp.page_id }}')" class="text-gray-500 hover:text-gray-700">{{ '非公開にする' if lp.is_published else '公開する' }}</button>
+                            <button onclick="deletePage('{{ lp.page_id }}')" class="text-red-400 hover:text-red-600">削除</button>
+                        </div>
+                        <p class="text-xs text-gray-300 mt-2">更新: {{ lp.updated_at.strftime('%Y/%m/%d %H:%M') if lp.updated_at else '-' }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm text-center py-8">まだLPがありません</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+{% block title %}求人票ジェネレーター - YN Tools{% endblock %}
+
+{% block head %}
+<script>
+// ===== 業種テンプレートのデフォルト値 =====
+const TEMPLATE_DEFAULTS = {
+    {% for slug, tmpl in industry_templates.items() %}
+    "{{ slug }}": {
+        "qualifications": {{ tmpl.qualifications_default | tojson }},
+        "benefits": {{ tmpl.benefits_default | tojson }},
+        "pr_points": {{ tmpl.pr_points_default | tojson }}
+    },
+    {% endfor %}
+};
+
+// テンプレート選択時にフォームにデフォルト値をセット
+function applyTemplate(slug) {
+    const defaults = TEMPLATE_DEFAULTS[slug];
+    if (!defaults) return;
+
+    const qualEl = document.getElementById('qualifications');
+    const benEl = document.getElementById('benefits');
+    const prEl = document.getElementById('pr_points');
+
+    if (qualEl) qualEl.value = defaults.qualifications || '';
+    if (benEl) benEl.value = defaults.benefits || '';
+    if (prEl) prEl.value = defaults.pr_points || '';
+
+    // 選択されたカードをハイライト
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('border-blue-500', 'bg-blue-50');
+        card.classList.add('border-gray-200');
+    });
+    const selected = document.getElementById('card-' + slug);
+    if (selected) {
+        selected.classList.remove('border-gray-200');
+        selected.classList.add('border-blue-500', 'bg-blue-50');
+    }
+}
+
+// ===== フォーム送信・AI生成 =====
+async function doGenerate() {
+    const form = document.getElementById('generate-form');
+    const btn = document.getElementById('generate-btn');
+    const loadingDiv = document.getElementById('loading-overlay');
+
+    // バリデーション
+    const industryTemplate = document.querySelector('input[name="industry_template"]:checked');
+    if (!industryTemplate) {
+        alert('業種テンプレートを選択してください。');
+        return false;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>生成中...';
+    if (loadingDiv) loadingDiv.classList.remove('hidden');
+
+    try {
+        const formData = new FormData(form);
+        const resp = await fetch('/tools/jobposting/api/generate', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert('エラー: ' + data.error);
+            btn.disabled = false;
+            btn.textContent = '求人票を生成する';
+            if (loadingDiv) loadingDiv.classList.add('hidden');
+            return false;
+        }
+
+        // 結果ページへ遷移
+        window.location.href = '/tools/jobposting/' + data.id;
+    } catch (e) {
+        alert('エラーが発生しました: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '求人票を生成する';
+        if (loadingDiv) loadingDiv.classList.add('hidden');
+    }
+    return false;
+}
+
+// ===== 結果テキストのコピー =====
+function copyResult() {
+    const textEl = document.getElementById('result-text');
+    if (!textEl) return;
+    const text = textEl.value;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const original = btn.textContent;
+        btn.textContent = 'コピーしました！';
+        btn.classList.add('bg-green-600');
+        btn.classList.remove('bg-blue-600');
+        setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('bg-green-600');
+            btn.classList.add('bg-blue-600');
+        }, 2000);
+    });
+}
+
+// ===== 保存 =====
+async function saveResult() {
+    const postingId = document.getElementById('posting-id').value;
+    const textEl = document.getElementById('result-text');
+    const btn = document.getElementById('save-btn');
+
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+
+    try {
+        const resp = await fetch('/tools/jobposting/api/' + postingId + '/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({edited_text: textEl.value}),
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            btn.textContent = '保存しました！';
+            btn.classList.add('bg-green-600');
+            btn.classList.remove('bg-blue-600');
+            setTimeout(() => {
+                btn.textContent = '保存する';
+                btn.classList.remove('bg-green-600');
+                btn.classList.add('bg-blue-600');
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            alert('保存に失敗しました: ' + (data.error || ''));
+            btn.disabled = false;
+            btn.textContent = '保存する';
+        }
+    } catch (e) {
+        alert('保存エラー: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '保存する';
+    }
+}
+
+// ===== 再生成 =====
+async function regenerateResult() {
+    const postingId = document.getElementById('posting-id').value;
+    const btn = document.getElementById('regen-btn');
+    const textEl = document.getElementById('result-text');
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>再生成中...';
+
+    try {
+        const resp = await fetch('/tools/jobposting/api/' + postingId + '/regenerate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({field_overrides: {}}),
+        });
+        const data = await resp.json();
+        if (data.generated_text) {
+            textEl.value = data.generated_text;
+        } else {
+            alert('再生成に失敗しました: ' + (data.error || ''));
+        }
+    } catch (e) {
+        alert('再生成エラー: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '再生成';
+    }
+}
+
+// ===== 削除 =====
+async function deletePosting(postingId) {
+    if (!confirm('この求人票を削除しますか？')) return;
+    try {
+        const resp = await fetch('/tools/jobposting/api/' + postingId, {
+            method: 'DELETE',
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            window.location.href = '/tools/jobposting/';
+        } else {
+            alert('削除に失敗しました: ' + (data.error || ''));
+        }
+    } catch (e) {
+        alert('削除エラー: ' + e.message);
+    }
+}
+
+// ===== 一覧からコピー =====
+async function copyPostingText(postingId) {
+    try {
+        const resp = await fetch('/tools/jobposting/' + postingId, {headers: {'Accept': 'application/json'}});
+        // テキストを個別に取得するより、一覧表示中のボタンはページ遷移で対応
+        window.location.href = '/tools/jobposting/' + postingId;
+    } catch (e) {
+        window.location.href = '/tools/jobposting/' + postingId;
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+
+    <!-- ===== ヘッダー ===== -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+            {% if view == 'dashboard' %}
+            <h1 class="text-2xl font-bold text-gray-900">求人票ジェネレーター</h1>
+            <p class="text-gray-500 mt-1">業種テンプレートを選ぶだけでプロ品質の求人票を自動生成します</p>
+            {% elif view == 'new' %}
+            <div class="flex items-center gap-2">
+                <a href="/tools/jobposting/" class="text-blue-600 hover:text-blue-800 text-sm">一覧に戻る</a>
+                <span class="text-gray-400">/</span>
+                <h1 class="text-2xl font-bold text-gray-900">新規作成</h1>
+            </div>
+            {% elif view == 'detail' %}
+            <div class="flex items-center gap-2">
+                <a href="/tools/jobposting/" class="text-blue-600 hover:text-blue-800 text-sm">一覧に戻る</a>
+                <span class="text-gray-400">/</span>
+                <h1 class="text-2xl font-bold text-gray-900">{{ posting.title }}</h1>
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="bg-white rounded-lg shadow-sm border px-4 py-2 text-center">
+                <div class="text-lg font-bold {% if monthly_used >= monthly_limit %}text-red-500{% elif monthly_used >= monthly_limit * 0.8 %}text-orange-500{% else %}text-blue-600{% endif %}">{{ monthly_limit - monthly_used }}/{{ monthly_limit }}</div>
+                <div class="text-gray-500 text-xs">今月の残り</div>
+            </div>
+            {% if view == 'dashboard' %}
+            <a href="/tools/jobposting/new" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                + 新規作成
+            </a>
+            {% endif %}
+            <a href="/guide#jobposting" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition self-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                使い方ガイド
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== ダッシュボード ===== -->
+    {% if view == 'dashboard' %}
+
+    {% if postings %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% set industry_labels = {
+            'restaurant': '飲食店ホール・キッチン',
+            'care': '介護職・ヘルパー',
+            'construction': '建設・土木作業員',
+            'office': '一般事務・経理',
+            'engineer': 'ITエンジニア',
+            'retail': '販売員・レジスタッフ',
+            'driver': '配送ドライバー',
+            'medical': '医療事務・クリニックスタッフ',
+            'other': 'その他'
+        } %}
+        {% set format_labels = {
+            'indeed': 'Indeed',
+            'townwork': 'タウンワーク',
+            'hellowork': 'ハローワーク',
+            'general': '汎用'
+        } %}
+        {% for p in postings %}
+        <div class="bg-white rounded-xl shadow p-5 border border-gray-100 hover:shadow-md transition">
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <h3 class="font-semibold text-gray-900 text-sm leading-tight">{{ p.title }}</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ p.company_name }} / {{ p.location }}</p>
+                </div>
+                <button onclick="deletePosting({{ p.id }})" class="text-gray-300 hover:text-red-500 transition ml-2 flex-shrink-0" title="削除">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-1.5 mb-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{{ industry_labels.get(p.industry_template, p.industry_template) }}</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ format_labels.get(p.target_format, p.target_format) }}</span>
+            </div>
+            <p class="text-xs text-gray-400 mb-3">{{ p.created_at.strftime('%Y/%m/%d %H:%M') if p.created_at else '-' }}</p>
+            <a href="/tools/jobposting/{{ p.id }}" class="block w-full text-center bg-blue-50 text-blue-700 rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-blue-100 transition">
+                開く / コピー
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+        <div class="text-5xl mb-4">📝</div>
+        <h2 class="text-lg font-semibold text-gray-700 mb-2">まだ求人票がありません</h2>
+        <p class="text-gray-400 text-sm mb-6">業種テンプレートを選ぶだけで、プロ品質の求人票を自動生成します。</p>
+        <a href="/tools/jobposting/new" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+            最初の求人票を作成する
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- ===== 新規作成フォーム ===== -->
+    {% elif view == 'new' %}
+
+    <form id="generate-form" onsubmit="doGenerate(); return false;">
+
+        <!-- 業種テンプレート選択 -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">業種テンプレートを選択 <span class="text-red-500">*</span></h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {% set template_icons = {
+                    'restaurant': '🍽️',
+                    'care': '🤝',
+                    'construction': '🏗️',
+                    'office': '💼',
+                    'engineer': '💻',
+                    'retail': '🛍️',
+                    'driver': '🚚',
+                    'medical': '🏥',
+                    'other': '📋'
+                } %}
+                {% for slug, tmpl in industry_templates.items() %}
+                <label id="card-{{ slug }}" class="template-card flex items-center gap-2 border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+                    <input type="radio" name="industry_template" value="{{ slug }}" class="sr-only" onchange="applyTemplate('{{ slug }}')">
+                    <span class="text-xl flex-shrink-0">{{ template_icons.get(slug, '📋') }}</span>
+                    <span class="text-sm font-medium text-gray-700">{{ tmpl.name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 基本情報 -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">基本情報</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">職種名 <span class="text-red-500">*</span></label>
+                    <input type="text" name="job_title" placeholder="例: ホールスタッフ" required
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">会社・店舗名 <span class="text-red-500">*</span></label>
+                    <input type="text" name="company_name" placeholder="例: 株式会社〇〇" required
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">勤務地 <span class="text-red-500">*</span></label>
+                    <input type="text" name="location" placeholder="例: 東京都新宿区西新宿1-1-1" required
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+        </div>
+
+        <!-- 給与・勤務条件 -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">給与・勤務条件</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">給与種別 <span class="text-red-500">*</span></label>
+                    <select name="salary_type" required
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <option value="hourly">時給</option>
+                        <option value="daily">日給</option>
+                        <option value="monthly">月給</option>
+                        <option value="annual">年収</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">最低給与（円） <span class="text-red-500">*</span></label>
+                    <input type="number" name="salary_min" placeholder="例: 1100" required min="0"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">最高給与（円・任意）</label>
+                    <input type="number" name="salary_max" placeholder="例: 1500" min="0"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">勤務時間 <span class="text-red-500">*</span></label>
+                    <input type="text" name="work_hours" placeholder="例: 10:00〜22:00のうちシフト制" required
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">休日・休暇（任意）</label>
+                    <input type="text" name="holidays" placeholder="例: 週休2日制（シフト制）、有給休暇あり"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+        </div>
+
+        <!-- 詳細情報 -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-1">詳細情報</h2>
+            <p class="text-xs text-gray-400 mb-4">業種テンプレートを選択すると自動入力されます。編集してお使いください。</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">応募資格・経験（任意）</label>
+                    <textarea id="qualifications" name="qualifications" rows="3"
+                              placeholder="例: 未経験歓迎。笑顔でお客様に接することができる方。"
+                              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">待遇・福利厚生（任意）</label>
+                    <textarea id="benefits" name="benefits" rows="3"
+                              placeholder="例: まかない無料、交通費支給、社会保険完備"
+                              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">アピールポイント・3点まで（任意）</label>
+                    <textarea id="pr_points" name="pr_points" rows="3"
+                              placeholder="例: ①未経験から調理技術を習得できます ②シフト自由でWワーク可能 ③昇給・正社員登用あり"
+                              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 出力フォーマット -->
+        <div class="bg-white rounded-xl shadow p-6 mb-6">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">出力フォーマット <span class="text-red-500">*</span></h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <label class="flex flex-col items-center gap-1 border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="target_format" value="indeed" checked class="sr-only">
+                    <span class="text-sm font-semibold text-gray-800">Indeed</span>
+                    <span class="text-xs text-gray-400 text-center">各項目500字以内</span>
+                </label>
+                <label class="flex flex-col items-center gap-1 border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="target_format" value="townwork" class="sr-only">
+                    <span class="text-sm font-semibold text-gray-800">タウンワーク</span>
+                    <span class="text-xs text-gray-400 text-center">全体2,000字以内</span>
+                </label>
+                <label class="flex flex-col items-center gap-1 border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="target_format" value="hellowork" class="sr-only">
+                    <span class="text-sm font-semibold text-gray-800">ハローワーク</span>
+                    <span class="text-xs text-gray-400 text-center">定型ヘッダー付き</span>
+                </label>
+                <label class="flex flex-col items-center gap-1 border-2 border-gray-200 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="target_format" value="general" class="sr-only">
+                    <span class="text-sm font-semibold text-gray-800">汎用</span>
+                    <span class="text-xs text-gray-400 text-center">制限なし</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-xl p-8 text-center">
+                <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <p class="text-gray-700 font-medium">AIが求人票を生成しています...</p>
+                <p class="text-gray-400 text-sm mt-1">10〜20秒ほどお待ちください</p>
+            </div>
+        </div>
+
+        <button type="submit" id="generate-btn"
+                class="w-full bg-blue-600 text-white px-6 py-3 rounded-xl text-base font-semibold hover:bg-blue-700 transition">
+            求人票を生成する
+        </button>
+    </form>
+
+    <!-- ===== 結果・編集画面 ===== -->
+    {% elif view == 'detail' %}
+
+    <input type="hidden" id="posting-id" value="{{ posting.id }}">
+
+    {% set industry_labels = {
+        'restaurant': '飲食店ホール・キッチン',
+        'care': '介護職・ヘルパー',
+        'construction': '建設・土木作業員',
+        'office': '一般事務・経理',
+        'engineer': 'ITエンジニア',
+        'retail': '販売員・レジスタッフ',
+        'driver': '配送ドライバー',
+        'medical': '医療事務・クリニックスタッフ',
+        'other': 'その他'
+    } %}
+    {% set format_labels = {
+        'indeed': 'Indeed',
+        'townwork': 'タウンワーク',
+        'hellowork': 'ハローワーク',
+        'general': '汎用'
+    } %}
+    {% set salary_labels = {
+        'hourly': '時給',
+        'daily': '日給',
+        'monthly': '月給',
+        'annual': '年収'
+    } %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- 左カラム: 入力情報サマリ -->
+        <div class="lg:col-span-1 space-y-4">
+            <div class="bg-white rounded-xl shadow p-5">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">入力情報</h2>
+                <dl class="space-y-2 text-sm">
+                    <div>
+                        <dt class="text-gray-400 text-xs">職種</dt>
+                        <dd class="font-medium text-gray-800">{{ posting.job_title }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-400 text-xs">会社・店舗</dt>
+                        <dd class="font-medium text-gray-800">{{ posting.company_name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-400 text-xs">勤務地</dt>
+                        <dd class="font-medium text-gray-800">{{ posting.location }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-400 text-xs">給与</dt>
+                        <dd class="font-medium text-gray-800">
+                            {{ salary_labels.get(posting.salary_type, posting.salary_type) }}
+                            {{ "{:,}".format(posting.salary_min) }}円{% if posting.salary_max %}〜{{ "{:,}".format(posting.salary_max) }}円{% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-400 text-xs">勤務時間</dt>
+                        <dd class="font-medium text-gray-800">{{ posting.work_hours }}</dd>
+                    </div>
+                    {% if posting.holidays %}
+                    <div>
+                        <dt class="text-gray-400 text-xs">休日・休暇</dt>
+                        <dd class="font-medium text-gray-800">{{ posting.holidays }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+                <div class="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{{ industry_labels.get(posting.industry_template, posting.industry_template) }}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ format_labels.get(posting.target_format, posting.target_format) }}</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-5">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">アクション</h2>
+                <div class="space-y-2">
+                    <button id="copy-btn" onclick="copyResult()"
+                            class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                        コピー
+                    </button>
+                    <button id="save-btn" onclick="saveResult()"
+                            class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                        保存する
+                    </button>
+                    <button id="regen-btn" onclick="regenerateResult()"
+                            class="w-full border border-blue-600 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition">
+                        再生成
+                    </button>
+                    <a href="/tools/jobposting/new"
+                       class="block w-full text-center border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+                        新規作成
+                    </a>
+                    <button onclick="deletePosting({{ posting.id }})"
+                            class="w-full border border-red-200 text-red-500 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition">
+                        削除
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-400 text-center">作成日: {{ posting.created_at.strftime('%Y/%m/%d %H:%M') if posting.created_at else '-' }}</p>
+        </div>
+
+        <!-- 右カラム: 生成テキスト（編集可能） -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-base font-semibold text-gray-900">生成された求人票</h2>
+                    <span class="text-xs text-gray-400">テキストを直接編集できます</span>
+                </div>
+                <textarea id="result-text" rows="30"
+                          class="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-800 leading-relaxed focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono resize-y">{{ display_text }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}

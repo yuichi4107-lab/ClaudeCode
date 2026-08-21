@@ -1,0 +1,15 @@
+{
+  "prompt": "A young Japanese woman in a cozy kitchen enthusiastically presenting a bowl of steaming ramen to the camera, speaking excitedly, warm lighting, vertical short-form video style, realistic",
+  "duration": 5,
+  "resolution": "720p",
+  "mode": "std",
+  "results": {
+    "evolink": {
+      "status": "ok",
+      "elapsed_sec": 232,
+      "file": "20260707-065219_evolink_720p_5s.mp4",
+      "size_mb": 2.0,
+      "video_url": "https://files.evolink.ai/002758CV2XFPMTG1MG/videos/2026/07/07/718a53d05a4e40e393f0de5f553d5afe.mp4"
+    }
+  }
+}

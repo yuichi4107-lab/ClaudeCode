@@ -1,0 +1,12 @@
+{
+  "name": "yn-factory",
+  "owner": { "name": "YN Factory" },
+  "metadata": { "pluginRoot": "./plugins" },
+  "plugins": [
+    { "name": "yn-company",    "source": "yn-company",    "description": "会社運営: 秘書・CEO振り分け・品質ループ・営業ブリーフィング・引き継ぎ" },
+    { "name": "yn-publishing", "source": "yn-publishing", "description": "電子書籍出版: テーマ調査→執筆→マンガ化→KDP出版" },
+    { "name": "yn-media",      "source": "yn-media",      "description": "動画・音楽制作: ショート動画編集・shorts-factory運用・Suno楽曲生成" },
+    { "name": "yn-sns",        "source": "yn-sns",        "description": "SNS運用: note記事の企画・執筆・投稿、X/Instagram等への投稿" },
+    { "name": "yn-imagegen",   "source": "yn-imagegen",   "description": "画像生成: ChatGPT Images 2.0 ガードレール・Codexキュー・NanoBanana2" }
+  ]
+}

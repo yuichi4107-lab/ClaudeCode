@@ -1,0 +1,231 @@
+{
+  "job_id": "picture-book-kintarou-mori-no-chikara-gpt-image2-20260702",
+  "model": "gpt-image-2",
+  "output_dir": "images/pages_gpt_image2",
+  "pages": [
+    {
+      "page": 1,
+      "filename": "page_001.png",
+      "role": "タイトル",
+      "scene": "足柄山の明るい森、赤い和柄の腹掛けをした幼い金太郎、母、熊の子・兎・猿・鹿が輪になっている",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 01: 足柄山の明るい森、赤い和柄の腹掛けをした幼い金太郎、母、熊の子・兎・猿・鹿が輪になっている. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 2,
+      "filename": "page_002.png",
+      "role": "足柄山",
+      "scene": "朝霧の足柄山、杉や広葉樹、やさしい光",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 02: 朝霧の足柄山、杉や広葉樹、やさしい光. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 3,
+      "filename": "page_003.png",
+      "role": "きんたろう",
+      "scene": "丸い頬の幼い金太郎、赤い和柄の腹掛け、母の家の前",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 03: 丸い頬の幼い金太郎、赤い和柄の腹掛け、母の家の前. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 4,
+      "filename": "page_004.png",
+      "role": "母のことば",
+      "scene": "母が金太郎の手を包み、囲炉裏のある山の家",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 04: 母が金太郎の手を包み、囲炉裏のある山の家. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 5,
+      "filename": "page_005.png",
+      "role": "朝のあいさつ",
+      "scene": "森で木と石と小川に礼をする金太郎",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 05: 森で木と石と小川に礼をする金太郎. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 6,
+      "filename": "page_006.png",
+      "role": "森の友だち",
+      "scene": "動物たちが金太郎の周りに集まる",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 06: 動物たちが金太郎の周りに集まる. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 7,
+      "filename": "page_007.png",
+      "role": "おにぎり",
+      "scene": "笹の葉の上のおにぎり、皆で分け合う",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 07: 笹の葉の上のおにぎり、皆で分け合う. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 8,
+      "filename": "page_008.png",
+      "role": "力くらべ",
+      "scene": "熊の子が前足を上げ、皆がわくわくする",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 08: 熊の子が前足を上げ、皆がわくわくする. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 9,
+      "filename": "page_009.png",
+      "role": "やさしい約束",
+      "scene": "金太郎が皆に約束を伝え、柔らかい草地",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 09: 金太郎が皆に約束を伝え、柔らかい草地. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 10,
+      "filename": "page_010.png",
+      "role": "丸太ころがし",
+      "scene": "短い丸太を皆で安全に転がす",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 10: 短い丸太を皆で安全に転がす. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 11,
+      "filename": "page_011.png",
+      "role": "うさぎの声",
+      "scene": "兎が耳を伏せ、金太郎がしゃがんで聞く",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 11: 兎が耳を伏せ、金太郎がしゃがんで聞く. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 12,
+      "filename": "page_012.png",
+      "role": "ゆっくりの力",
+      "scene": "金太郎が丸太を止め、兎が安心する",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 12: 金太郎が丸太を止め、兎が安心する. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 13,
+      "filename": "page_013.png",
+      "role": "つり橋",
+      "scene": "小川にかかる低い吊り橋、片側が外れている",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 13: 小川にかかる低い吊り橋、片側が外れている. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 14,
+      "filename": "page_014.png",
+      "role": "みんなで考える",
+      "scene": "金太郎と動物たちが橋の前で相談",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 14: 金太郎と動物たちが橋の前で相談. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 15,
+      "filename": "page_015.png",
+      "role": "さるの知恵",
+      "scene": "猿が蔓を集める",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 15: 猿が蔓を集める. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 16,
+      "filename": "page_016.png",
+      "role": "しかの目",
+      "scene": "鹿が倒木ではなく丈夫な落ち枝を示す",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 16: 鹿が倒木ではなく丈夫な落ち枝を示す. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 17,
+      "filename": "page_017.png",
+      "role": "くまの力",
+      "scene": "熊の子が枝を支える、優しい力",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 17: 熊の子が枝を支える、優しい力. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 18,
+      "filename": "page_018.png",
+      "role": "きんたろうの手",
+      "scene": "金太郎が蔓を結び、母の言葉が光のように差す",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 18: 金太郎が蔓を結び、母の言葉が光のように差す. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 19,
+      "filename": "page_019.png",
+      "role": "小さな橋",
+      "scene": "修理された低い橋、小川と草花",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 19: 修理された低い橋、小川と草花. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 20,
+      "filename": "page_020.png",
+      "role": "最初の一歩",
+      "scene": "兎が橋を渡り、金太郎が手を添えて見守る",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 20: 兎が橋を渡り、金太郎が手を添えて見守る. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 21,
+      "filename": "page_021.png",
+      "role": "みんな渡れた",
+      "scene": "動物たちが順番に橋を渡る",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 21: 動物たちが順番に橋を渡る. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 22,
+      "filename": "page_022.png",
+      "role": "雨雲",
+      "scene": "遠くの雨雲、森に涼しい風",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 22: 遠くの雨雲、森に涼しい風. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 23,
+      "filename": "page_023.png",
+      "role": "雨宿り",
+      "scene": "大木の下で雨宿りする金太郎と動物たち",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 23: 大木の下で雨宿りする金太郎と動物たち. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 24,
+      "filename": "page_024.png",
+      "role": "母さんの包み",
+      "scene": "金太郎が布で熊の子や兎を拭く",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 24: 金太郎が布で熊の子や兎を拭く. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 25,
+      "filename": "page_025.png",
+      "role": "雨あがり",
+      "scene": "雨上がりの葉と光、虹の気配",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 25: 雨上がりの葉と光、虹の気配. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 26,
+      "filename": "page_026.png",
+      "role": "旅人",
+      "scene": "穏やかな旅人が道に迷っている",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 26: 穏やかな旅人が道に迷っている. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 27,
+      "filename": "page_027.png",
+      "role": "案内",
+      "scene": "金太郎が旅人を低い橋へ案内する",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 27: 金太郎が旅人を低い橋へ案内する. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 28,
+      "filename": "page_028.png",
+      "role": "ほめ言葉",
+      "scene": "旅人が感謝し、動物たちが嬉しそう",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 28: 旅人が感謝し、動物たちが嬉しそう. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 29,
+      "filename": "page_029.png",
+      "role": "胸の中",
+      "scene": "金太郎が森を見上げて微笑む",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 29: 金太郎が森を見上げて微笑む. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 30,
+      "filename": "page_030.png",
+      "role": "夕ごはん",
+      "scene": "山の家で母に今日の話をする金太郎",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 30: 山の家で母に今日の話をする金太郎. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 31,
+      "filename": "page_031.png",
+      "role": "保護者の方へ",
+      "scene": "親子が畳で絵本を読む、金太郎の森を思わせる木の飾り",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 31: 親子が畳で絵本を読む、金太郎の森を思わせる木の飾り. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    },
+    {
+      "page": 32,
+      "filename": "page_032.png",
+      "role": "書籍紹介",
+      "scene": "和紙背景、森の葉と小さな橋、QRを置く余白",
+      "prompt": "Japanese folktale children's picture book illustration, original warm picture-book style, gentle Edo/Mingei-inspired mountain Japan, soft watercolor and colored pencil texture, full square composition, no text, no letters, no captions, no speech bubbles, child-safe, warm lighting. Page 32: 和紙背景、森の葉と小さな橋、QRを置く余白. Keep characters consistent: Kintarou is a cheerful preschool-age Japanese boy with round cheeks, black hair, red patterned haragake apron over simple mountain clothes, no weapon; mother wears indigo work kimono; animal friends are a gentle bear cub, rabbit, monkey, deer, and small birds. Single full-page illustration only."
+    }
+  ]
+}

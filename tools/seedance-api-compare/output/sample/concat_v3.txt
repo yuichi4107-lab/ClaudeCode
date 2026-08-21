@@ -1,0 +1,4 @@
+file 'cut1_hook.mp4'
+file 'cut2_tip1_v2.mp4'
+file 'cut3_tip2_v3.mp4'
+file 'cut4_cta_v2.mp4'

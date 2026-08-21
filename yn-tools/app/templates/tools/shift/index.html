@@ -1,0 +1,1048 @@
+{% extends "base.html" %}
+{% block title %}シフト作成 - YN Tools{% endblock %}
+
+{% block head %}
+<style>
+  .tab-btn { @apply px-4 py-2 text-sm font-medium rounded-lg transition; }
+  .tab-btn.active { @apply bg-indigo-600 text-white; }
+  .tab-btn:not(.active) { @apply text-gray-600 hover:bg-gray-100; }
+  .calendar-cell { min-width: 40px; min-height: 36px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">シフト作成</h1>
+      <p class="text-gray-500 mt-1">月間シフト表の作成・従業員管理・勤務希望の管理</p>
+    </div>
+    <a href="/guide#shift" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition self-start sm:self-center">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      使い方ガイド
+    </a>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 flex-wrap">
+    <button class="tab-btn active" onclick="switchTab('shift')" id="tab-shift">シフト表</button>
+    <button class="tab-btn" onclick="switchTab('requests')" id="tab-requests">希望入力</button>
+    <button class="tab-btn" onclick="switchTab('employees')" id="tab-employees">従業員</button>
+    <button class="tab-btn" onclick="switchTab('templates')" id="tab-templates">テンプレート</button>
+  </div>
+</div>
+
+<!-- ==================== TAB: シフト表 ==================== -->
+<div id="pane-shift" class="tab-pane">
+
+  <!-- シフト表選択・新規作成 -->
+  <div class="bg-white rounded-lg shadow-sm border p-5 mb-5">
+    <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-gray-700 mb-1">シフト表を選択</label>
+        <select id="scheduleSelect" class="w-full border rounded-lg px-3 py-2 text-sm" onchange="onScheduleChange()">
+          <option value="">-- シフト表を選択 --</option>
+          {% for s in schedules %}
+          <option value="{{ s.id }}" data-ym="{{ s.year_month }}" data-status="{{ s.status }}">
+            {{ s.name }}（{{ s.year_month }}）{% if s.status == 'published' %} [公開中]{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button onclick="openNewScheduleModal()" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        新規作成
+      </button>
+    </div>
+  </div>
+
+  <!-- カレンダー -->
+  <div id="calendarSection" class="hidden">
+    <div class="bg-white rounded-lg shadow-sm border p-5 mb-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold" id="calendarTitle">シフト表</h2>
+        <div id="scheduleStatusBadge"></div>
+      </div>
+      <div class="overflow-x-auto">
+        <table id="calendarTable" class="border-collapse text-xs w-max">
+          <thead id="calendarHead"></thead>
+          <tbody id="calendarBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- バリデーション結果 -->
+    <div id="validationResults" class="hidden mb-5">
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <h3 class="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          バリデーション警告
+        </h3>
+        <ul id="validationList" class="space-y-1 text-sm text-yellow-700"></ul>
+      </div>
+    </div>
+
+    <!-- アクションボタン -->
+    <div class="flex flex-wrap gap-3">
+      <button onclick="generateAIShift()" id="aiGenBtn" class="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        AI自動生成
+      </button>
+      <button onclick="saveAssignments()" class="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+        保存
+      </button>
+      <button onclick="validateSchedule()" class="flex items-center gap-2 px-5 py-2.5 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        バリデーション
+      </button>
+      <button onclick="publishSchedule()" id="publishBtn" class="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        公開
+      </button>
+      <button onclick="exportExcel()" class="flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Excel出力
+      </button>
+      <button onclick="deleteCurrentSchedule()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-red-300 text-red-500 rounded-lg text-sm font-medium hover:bg-red-50 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        削除
+      </button>
+    </div>
+  </div>
+
+  <!-- シフト表が未選択時メッセージ -->
+  <div id="noScheduleMsg" class="bg-white rounded-lg shadow-sm border p-10 text-center text-gray-400">
+    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+    <p class="text-sm">シフト表を選択するか、新規作成してください</p>
+  </div>
+</div>
+
+<!-- ==================== TAB: 希望入力 ==================== -->
+<div id="pane-requests" class="tab-pane hidden">
+  <div class="bg-white rounded-lg shadow-sm border p-5 mb-5">
+    <h2 class="text-lg font-semibold mb-4">希望入力</h2>
+    <div class="grid sm:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">シフト表</label>
+        <select id="reqScheduleSelect" class="w-full border rounded-lg px-3 py-2 text-sm" onchange="onReqScheduleChange()">
+          <option value="">-- シフト表を選択 --</option>
+          {% for s in schedules %}
+          <option value="{{ s.id }}" data-ym="{{ s.year_month }}">{{ s.name }}（{{ s.year_month }}）</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">従業員</label>
+        <select id="reqEmployeeSelect" class="w-full border rounded-lg px-3 py-2 text-sm" onchange="onReqEmployeeChange()">
+          <option value="">-- 従業員を選択 --</option>
+          {% for e in employees %}
+          <option value="{{ e.id }}">{{ e.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- 凡例 -->
+    <div class="flex gap-4 text-xs text-gray-600 mb-4">
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-red-500"></span>休み希望</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-green-500"></span>出勤希望</span>
+      <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-blue-500"></span>シフト希望</span>
+    </div>
+
+    <div id="reqCalendar" class="overflow-x-auto hidden">
+      <div id="reqCalendarInner" class="grid gap-1"></div>
+    </div>
+    <div id="noReqMsg" class="py-8 text-center text-gray-400 text-sm">シフト表と従業員を選択してください</div>
+
+    <div id="reqActions" class="hidden mt-4 flex gap-3">
+      <button onclick="saveRequests()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">一括保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB: 従業員 ==================== -->
+<div id="pane-employees" class="tab-pane hidden">
+  <div class="grid lg:grid-cols-2 gap-5">
+    <!-- 追加フォーム -->
+    <div class="bg-white rounded-lg shadow-sm border p-5">
+      <h2 class="text-lg font-semibold mb-4">従業員を追加</h2>
+      <form id="employeeForm" class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">氏名 <span class="text-red-400">*</span></label>
+          <input type="text" name="name" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: 山田 太郎" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">役職</label>
+          <select name="role" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <option value="full_time">正社員</option>
+            <option value="part_time">パート</option>
+            <option value="arbeit" selected>アルバイト</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">時給（円）</label>
+            <input type="number" name="hourly_wage" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="1050" min="0">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">週最大時間</label>
+            <input type="number" name="max_hours_per_week" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="40" min="0">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">勤務可能曜日</label>
+          <div class="flex gap-2 flex-wrap">
+            {% for val, label in [('mon','月'),('tue','火'),('wed','水'),('thu','木'),('fri','金'),('sat','土'),('sun','日')] %}
+            <label class="flex items-center gap-1 text-sm">
+              <input type="checkbox" name="available_days" value="{{ val }}" checked class="rounded">{{ label }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">勤務開始</label>
+            <input type="time" name="available_start" value="09:00" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">勤務終了</label>
+            <input type="time" name="available_end" value="18:00" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+        <button type="button" onclick="createEmployee()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">追加</button>
+      </form>
+    </div>
+
+    <!-- 一覧 -->
+    <div class="bg-white rounded-lg shadow-sm border p-5">
+      <h2 class="text-lg font-semibold mb-4">従業員一覧 <span class="text-sm font-normal text-gray-400">({{ employees | length }}名)</span></h2>
+      <div id="employeeList" class="space-y-3">
+        {% for e in employees %}
+        <div class="border rounded-lg p-3" id="emp-{{ e.id }}">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="font-semibold text-sm">{{ e.name }}</p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                {% if e.role == 'full_time' %}正社員{% elif e.role == 'part_time' %}パート{% else %}アルバイト{% endif %}
+                | 時給{{ e.hourly_wage }}円 | 週{{ e.max_hours_per_week }}h
+              </p>
+              <p class="text-xs text-gray-400 mt-0.5">{{ e.available_start }}〜{{ e.available_end }} / {{ e.available_days }}</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="openEditEmployee({{ e.id }})" class="text-xs text-indigo-600 hover:underline">編集</button>
+              <button onclick="deleteEmployee({{ e.id }})" class="text-xs text-red-400 hover:text-red-600">削除</button>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-sm text-center py-6">従業員がいません</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB: テンプレート ==================== -->
+<div id="pane-templates" class="tab-pane hidden">
+  <div class="grid lg:grid-cols-2 gap-5">
+    <!-- 追加フォーム -->
+    <div class="bg-white rounded-lg shadow-sm border p-5">
+      <h2 class="text-lg font-semibold mb-4">テンプレートを追加</h2>
+      <form id="templateForm" class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">名称 <span class="text-red-400">*</span></label>
+          <input type="text" name="name" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: 早番" required>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">開始時刻</label>
+            <input type="time" name="start_time" value="09:00" class="w-full border rounded-lg px-3 py-2 text-sm" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">終了時刻</label>
+            <input type="time" name="end_time" value="17:00" class="w-full border rounded-lg px-3 py-2 text-sm" required>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">休憩（分）</label>
+          <input type="number" name="break_minutes" value="60" min="0" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">色</label>
+          <div class="flex items-center gap-3">
+            <input type="color" name="color" value="#6366f1" class="w-10 h-10 border rounded cursor-pointer">
+            <span class="text-xs text-gray-500">カレンダーに表示される色</span>
+          </div>
+        </div>
+        <button type="button" onclick="createTemplate()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">追加</button>
+      </form>
+    </div>
+
+    <!-- 一覧 -->
+    <div class="bg-white rounded-lg shadow-sm border p-5">
+      <h2 class="text-lg font-semibold mb-4">テンプレート一覧 <span class="text-sm font-normal text-gray-400">({{ shift_templates | length }}件)</span></h2>
+      <div id="templateList" class="space-y-3">
+        {% for t in shift_templates %}
+        <div class="border rounded-lg p-3 flex items-center justify-between" id="tmpl-{{ t.id }}">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded flex-shrink-0" style="background-color: {{ t.color }};"></span>
+            <div>
+              <p class="font-semibold text-sm">{{ t.name }}</p>
+              <p class="text-xs text-gray-500">{{ t.start_time }}〜{{ t.end_time }} / 休憩{{ t.break_minutes }}分</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openEditTemplate({{ t.id }})" class="text-xs text-indigo-600 hover:underline">編集</button>
+            <button onclick="deleteTemplate({{ t.id }})" class="text-xs text-red-400 hover:text-red-600">削除</button>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-sm text-center py-6">テンプレートがありません</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- 新規シフト表モーダル -->
+<div id="modalNewSchedule" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" onclick="closeModal('modalNewSchedule')"></div>
+  <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+      <h3 class="text-lg font-semibold mb-4">シフト表を新規作成</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">名称</label>
+          <input type="text" id="newSchedName" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="例: 4月シフト">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">年月</label>
+          <input type="month" id="newSchedYM" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeModal('modalNewSchedule')" class="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">キャンセル</button>
+        <button onclick="createSchedule()" class="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700">作成</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セル割り当てモーダル -->
+<div id="modalAssign" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" onclick="closeModal('modalAssign')"></div>
+  <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+      <h3 class="text-lg font-semibold mb-1" id="assignModalTitle">シフト割り当て</h3>
+      <p class="text-sm text-gray-500 mb-4" id="assignModalSub"></p>
+      <div class="space-y-2 mb-4" id="assignTemplateList"></div>
+      <button onclick="assignTemplate(null)" class="w-full border border-gray-200 text-gray-500 rounded-lg py-2 text-sm hover:bg-gray-50 mb-3">クリア（休み）</button>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">備考</label>
+        <input type="text" id="assignNote" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="任意">
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button onclick="closeModal('modalAssign')" class="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 希望選択モーダル -->
+<div id="modalRequest" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" onclick="closeModal('modalRequest')"></div>
+  <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+      <h3 class="text-lg font-semibold mb-1">希望を入力</h3>
+      <p class="text-sm text-gray-500 mb-4" id="reqModalDate"></p>
+      <div class="space-y-2 mb-4">
+        <button onclick="setRequestType('day_off')" class="w-full flex items-center gap-3 border rounded-lg px-3 py-2.5 text-sm hover:bg-red-50 hover:border-red-300">
+          <span class="w-3 h-3 rounded-full bg-red-500"></span>休み希望
+        </button>
+        <button onclick="setRequestType('work')" class="w-full flex items-center gap-3 border rounded-lg px-3 py-2.5 text-sm hover:bg-green-50 hover:border-green-300">
+          <span class="w-3 h-3 rounded-full bg-green-500"></span>出勤希望
+        </button>
+        <div>
+          <p class="text-sm font-medium text-gray-700 mb-1">特定シフト希望</p>
+          <div class="space-y-1" id="reqTemplateList"></div>
+        </div>
+        <button onclick="setRequestType(null)" class="w-full border border-gray-200 text-gray-500 rounded-lg py-2 text-sm hover:bg-gray-50">クリア</button>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">備考</label>
+        <input type="text" id="reqNote" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="任意">
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button onclick="closeModal('modalRequest')" class="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">閉じる</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 従業員編集モーダル -->
+<div id="modalEditEmployee" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" onclick="closeModal('modalEditEmployee')"></div>
+  <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+      <h3 class="text-lg font-semibold mb-4">従業員を編集</h3>
+      <form id="editEmployeeForm" class="space-y-3">
+        <input type="hidden" id="editEmpId">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">氏名</label>
+          <input type="text" id="editEmpName" class="w-full border rounded-lg px-3 py-2 text-sm" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">役職</label>
+          <select id="editEmpRole" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <option value="full_time">正社員</option>
+            <option value="part_time">パート</option>
+            <option value="arbeit">アルバイト</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">時給（円）</label>
+            <input type="number" id="editEmpWage" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">週最大時間</label>
+            <input type="number" id="editEmpMaxH" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">勤務可能曜日</label>
+          <div id="editEmpDays" class="flex gap-2 flex-wrap">
+            {% for val, label in [('mon','月'),('tue','火'),('wed','水'),('thu','木'),('fri','金'),('sat','土'),('sun','日')] %}
+            <label class="flex items-center gap-1 text-sm">
+              <input type="checkbox" class="edit-day-cb rounded" value="{{ val }}">{{ label }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">勤務開始</label>
+            <input type="time" id="editEmpStart" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">勤務終了</label>
+            <input type="time" id="editEmpEnd" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+      </form>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeModal('modalEditEmployee')" class="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">キャンセル</button>
+        <button onclick="updateEmployee()" class="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- テンプレート編集モーダル -->
+<div id="modalEditTemplate" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" onclick="closeModal('modalEditTemplate')"></div>
+  <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+      <h3 class="text-lg font-semibold mb-4">テンプレートを編集</h3>
+      <div class="space-y-3">
+        <input type="hidden" id="editTmplId">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">名称</label>
+          <input type="text" id="editTmplName" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">開始時刻</label>
+            <input type="time" id="editTmplStart" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">終了時刻</label>
+            <input type="time" id="editTmplEnd" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">休憩（分）</label>
+          <input type="number" id="editTmplBreak" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">色</label>
+          <input type="color" id="editTmplColor" class="w-10 h-10 border rounded cursor-pointer">
+        </div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeModal('modalEditTemplate')" class="flex-1 border rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50">キャンセル</button>
+        <button onclick="updateTemplate()" class="flex-1 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ==================== 初期データ ====================
+const EMPLOYEES = {{ employees | tojson }};
+const SHIFT_TEMPLATES = {{ shift_templates | tojson }};
+const SCHEDULES = {{ schedules | tojson }};
+
+// ==================== 状態管理 ====================
+let currentSchedId = null;
+let currentSchedYM = null;
+let assignments = {};   // key: "empId_date", value: {template_id, note}
+let requests = {};      // key: "date", value: {request_type, template_id, note}
+let currentReqEmpId = null;
+let currentReqSchedId = null;
+
+// モーダル用一時変数
+let assignTarget = null; // {empId, date}
+let reqTarget = null;    // date string
+
+// ==================== タブ切り替え ====================
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('pane-' + name).classList.remove('hidden');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ==================== モーダル ====================
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// ==================== シフト表 ====================
+function openNewScheduleModal() {
+  const now = new Date();
+  const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  document.getElementById('newSchedYM').value = ym;
+  document.getElementById('newSchedName').value = '';
+  openModal('modalNewSchedule');
+}
+
+async function createSchedule() {
+  const name = document.getElementById('newSchedName').value.trim();
+  const ym = document.getElementById('newSchedYM').value;
+  if (!name || !ym) { alert('名称と年月を入力してください'); return; }
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('year_month', ym);
+  const resp = await fetch('/tools/shift/api/schedules/create', { method: 'POST', body: fd });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  closeModal('modalNewSchedule');
+  location.reload();
+}
+
+function onScheduleChange() {
+  const sel = document.getElementById('scheduleSelect');
+  const id = sel.value;
+  if (!id) {
+    document.getElementById('calendarSection').classList.add('hidden');
+    document.getElementById('noScheduleMsg').classList.remove('hidden');
+    currentSchedId = null;
+    return;
+  }
+  const opt = sel.options[sel.selectedIndex];
+  currentSchedId = parseInt(id);
+  currentSchedYM = opt.dataset.ym;
+  const status = opt.dataset.status;
+
+  document.getElementById('calendarSection').classList.remove('hidden');
+  document.getElementById('noScheduleMsg').classList.add('hidden');
+  document.getElementById('calendarTitle').textContent = opt.textContent.trim();
+
+  const badge = document.getElementById('scheduleStatusBadge');
+  if (status === 'published') {
+    badge.innerHTML = '<span class="px-2 py-0.5 text-xs rounded bg-green-100 text-green-700">公開中</span>';
+  } else {
+    badge.innerHTML = '<span class="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-500">下書き</span>';
+  }
+
+  loadCalendar();
+}
+
+async function loadCalendar() {
+  if (!currentSchedId) return;
+  const [year, month] = currentSchedYM.split('-').map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // APIからアサインメント取得
+  const resp = await fetch(`/tools/shift/api/assignments/${currentSchedId}`);
+  const data = await resp.json();
+  assignments = {};
+  (data.assignments || []).forEach(a => {
+    assignments[`${a.employee_id}_${a.work_date}`] = { template_id: a.template_id, note: a.note || '' };
+  });
+
+  // APIからリクエスト取得（全員分）
+  const rResp = await fetch(`/tools/shift/api/requests/${currentSchedId}`);
+  const rData = await rResp.json();
+  // requests_all: keyed by "empId_date"
+  window.requestsAll = {};
+  (rData.requests || []).forEach(r => {
+    window.requestsAll[`${r.employee_id}_${r.work_date}`] = r;
+  });
+
+  renderCalendar(year, month, daysInMonth);
+}
+
+const DAY_NAMES = ['日','月','火','水','木','金','土'];
+const DAY_COLORS = ['text-red-500', 'text-gray-700', 'text-gray-700', 'text-gray-700', 'text-gray-700', 'text-gray-700', 'text-blue-500'];
+
+function renderCalendar(year, month, daysInMonth) {
+  const thead = document.getElementById('calendarHead');
+  const tbody = document.getElementById('calendarBody');
+
+  // ヘッダー行
+  let headHtml = '<tr><th class="sticky left-0 bg-white z-10 border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 min-w-[100px]">従業員</th>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = new Date(year, month - 1, d).getDay();
+    const dayClass = DAY_COLORS[dow];
+    headHtml += `<th class="border border-gray-200 px-1 py-2 text-xs font-medium ${dayClass} calendar-cell text-center">${d}<br><span class="text-[10px]">${DAY_NAMES[dow]}</span></th>`;
+  }
+  headHtml += '</tr>';
+  thead.innerHTML = headHtml;
+
+  // ボディ行
+  let bodyHtml = '';
+  EMPLOYEES.forEach(emp => {
+    bodyHtml += `<tr>
+      <td class="sticky left-0 bg-white z-10 border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 whitespace-nowrap">${escHtml(emp.name)}</td>`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const key = `${emp.id}_${dateStr}`;
+      const assign = assignments[key];
+      const req = (window.requestsAll || {})[key];
+
+      let cellContent = '';
+      let cellStyle = '';
+      if (assign && assign.template_id) {
+        const tmpl = SHIFT_TEMPLATES.find(t => t.id === assign.template_id);
+        if (tmpl) {
+          cellStyle = `background-color: ${tmpl.color}20; border-color: ${tmpl.color}`;
+          cellContent = `<span style="color:${tmpl.color}" class="font-bold text-[11px]">${escHtml(tmpl.name)}</span>`;
+        }
+      }
+
+      // 希望マーク
+      let reqMark = '';
+      if (req) {
+        if (req.request_type === 'day_off') {
+          reqMark = '<span class="inline-block w-1.5 h-1.5 rounded-full bg-red-500 ml-0.5"></span>';
+        } else if (req.request_type === 'work') {
+          reqMark = '<span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 ml-0.5"></span>';
+        } else {
+          reqMark = '<span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 ml-0.5"></span>';
+        }
+      }
+
+      const dow = new Date(year, month - 1, d).getDay();
+      const weekendBg = (dow === 0 || dow === 6) ? 'bg-gray-50' : '';
+
+      bodyHtml += `<td class="border border-gray-200 text-center cursor-pointer hover:bg-indigo-50 transition calendar-cell ${weekendBg}"
+        style="${cellStyle}"
+        onclick="openAssignModal(${emp.id}, '${dateStr}')">
+        <div class="flex items-center justify-center gap-0.5 py-1 px-0.5 min-h-[36px]">
+          ${cellContent}${reqMark}
+        </div>
+      </td>`;
+    }
+    bodyHtml += '</tr>';
+  });
+  tbody.innerHTML = bodyHtml;
+}
+
+function openAssignModal(empId, date) {
+  assignTarget = { empId, date };
+  const emp = EMPLOYEES.find(e => e.id === empId);
+  document.getElementById('assignModalTitle').textContent = `シフト割り当て`;
+  document.getElementById('assignModalSub').textContent = `${emp ? emp.name : ''} / ${date}`;
+
+  const key = `${empId}_${date}`;
+  const current = assignments[key];
+  document.getElementById('assignNote').value = (current && current.note) ? current.note : '';
+
+  const list = document.getElementById('assignTemplateList');
+  list.innerHTML = '';
+  SHIFT_TEMPLATES.forEach(t => {
+    const isActive = current && current.template_id === t.id;
+    const btn = document.createElement('button');
+    btn.className = `w-full flex items-center gap-3 border rounded-lg px-3 py-2.5 text-sm transition hover:opacity-90 ${isActive ? 'ring-2 ring-indigo-400' : ''}`;
+    btn.style.borderColor = t.color;
+    btn.style.backgroundColor = t.color + '15';
+    btn.innerHTML = `<span class="w-4 h-4 rounded flex-shrink-0" style="background:${t.color}"></span>
+      <span class="font-medium">${escHtml(t.name)}</span>
+      <span class="ml-auto text-xs text-gray-500">${t.start_time}〜${t.end_time}</span>`;
+    btn.onclick = () => assignTemplate(t.id);
+    list.appendChild(btn);
+  });
+
+  openModal('modalAssign');
+}
+
+function assignTemplate(tmplId) {
+  if (!assignTarget) return;
+  const key = `${assignTarget.empId}_${assignTarget.date}`;
+  const note = document.getElementById('assignNote').value;
+  if (tmplId === null) {
+    delete assignments[key];
+  } else {
+    assignments[key] = { template_id: tmplId, note };
+  }
+  closeModal('modalAssign');
+  const [year, month] = currentSchedYM.split('-').map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  renderCalendar(year, month, daysInMonth);
+}
+
+async function saveAssignments() {
+  if (!currentSchedId) return;
+  const list = Object.entries(assignments).map(([key, val]) => {
+    const [empId, date] = key.split('_').reduce((acc, part, idx, arr) => {
+      if (idx === 0) return [part, arr.slice(1).join('_')];
+      return acc;
+    }, []);
+    // key format: "empId_YYYY-MM-DD"
+    const parts = key.match(/^(\d+)_(.+)$/);
+    if (!parts) return null;
+    return { employee_id: parseInt(parts[1]), work_date: parts[2], template_id: val.template_id, note: val.note || '' };
+  }).filter(Boolean);
+
+  const resp = await fetch(`/tools/shift/api/assignments/${currentSchedId}/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assignments: list })
+  });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  showToast('シフトを保存しました', 'success');
+}
+
+async function validateSchedule() {
+  if (!currentSchedId) return;
+  const resp = await fetch(`/tools/shift/api/assignments/${currentSchedId}/validate`);
+  const data = await resp.json();
+  const warnings = data.warnings || [];
+  const section = document.getElementById('validationResults');
+  const list = document.getElementById('validationList');
+
+  if (warnings.length === 0) {
+    showToast('バリデーション問題なし', 'success');
+    section.classList.add('hidden');
+    return;
+  }
+  list.innerHTML = warnings.map(w => `<li class="flex items-start gap-2"><span class="text-yellow-500 mt-0.5">▲</span>${escHtml(w)}</li>`).join('');
+  section.classList.remove('hidden');
+}
+
+async function generateAIShift() {
+  if (!currentSchedId) return;
+  if (!confirm('AIでシフトを自動生成します。現在の割り当ては上書きされます。よろしいですか？')) return;
+  const btn = document.getElementById('aiGenBtn');
+  const origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> 生成中...';
+  try {
+    const resp = await fetch(`/tools/shift/api/schedules/${currentSchedId}/generate`, { method: 'POST' });
+    const data = await resp.json();
+    if (data.error) { alert(data.error); return; }
+    showToast(`AI生成完了（${data.count}件の割り当て）`, 'success');
+    if (data.warnings && data.warnings.length > 0) {
+      alert('注意:\n' + data.warnings.join('\n'));
+    }
+    await selectSchedule(currentSchedId);
+  } catch (e) {
+    alert('AI生成に失敗しました: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origText;
+  }
+}
+
+function exportExcel() {
+  if (!currentSchedId) return;
+  window.open(`/tools/shift/api/schedules/${currentSchedId}/export`, '_blank');
+}
+
+async function publishSchedule() {
+  if (!currentSchedId) return;
+  if (!confirm('このシフト表を公開しますか？')) return;
+  const resp = await fetch(`/tools/shift/api/schedules/${currentSchedId}/publish`, { method: 'POST' });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  showToast('シフト表を公開しました', 'success');
+  location.reload();
+}
+
+async function deleteCurrentSchedule() {
+  if (!currentSchedId) return;
+  if (!confirm('このシフト表を削除しますか？この操作は取り消せません。')) return;
+  const resp = await fetch(`/tools/shift/api/schedules/delete/${currentSchedId}`, { method: 'POST' });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  location.reload();
+}
+
+// ==================== 希望入力 ====================
+function onReqScheduleChange() {
+  currentReqSchedId = parseInt(document.getElementById('reqScheduleSelect').value) || null;
+  tryLoadRequests();
+}
+function onReqEmployeeChange() {
+  currentReqEmpId = parseInt(document.getElementById('reqEmployeeSelect').value) || null;
+  tryLoadRequests();
+}
+
+async function tryLoadRequests() {
+  if (!currentReqSchedId || !currentReqEmpId) {
+    document.getElementById('reqCalendar').classList.add('hidden');
+    document.getElementById('noReqMsg').classList.remove('hidden');
+    document.getElementById('reqActions').classList.add('hidden');
+    return;
+  }
+  const sel = document.getElementById('reqScheduleSelect');
+  const opt = sel.options[sel.selectedIndex];
+  const ym = opt.dataset.ym;
+
+  const resp = await fetch(`/tools/shift/api/requests/${currentReqSchedId}`);
+  const data = await resp.json();
+  requests = {};
+  (data.requests || []).filter(r => r.employee_id === currentReqEmpId).forEach(r => {
+    requests[r.work_date] = { request_type: r.request_type, template_id: r.template_id, note: r.note || '' };
+  });
+
+  renderReqCalendar(ym);
+  document.getElementById('reqCalendar').classList.remove('hidden');
+  document.getElementById('noReqMsg').classList.add('hidden');
+  document.getElementById('reqActions').classList.remove('hidden');
+}
+
+function renderReqCalendar(ym) {
+  const [year, month] = ym.split('-').map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const inner = document.getElementById('reqCalendarInner');
+
+  // 曜日ヘッダー
+  let html = '<div class="grid grid-cols-7 gap-1 mb-1">';
+  const headers = ['月','火','水','木','金','土','日'];
+  const hColors = ['text-gray-600','text-gray-600','text-gray-600','text-gray-600','text-gray-600','text-blue-500','text-red-500'];
+  headers.forEach((h, i) => {
+    html += `<div class="text-center text-xs font-medium py-1 ${hColors[i]}">${h}</div>`;
+  });
+  html += '</div>';
+
+  // 第1日の曜日オフセット（月曜始まり）
+  const firstDow = new Date(year, month - 1, 1).getDay(); // 0=日
+  const offset = firstDow === 0 ? 6 : firstDow - 1;
+
+  html += '<div class="grid grid-cols-7 gap-1">';
+  for (let i = 0; i < offset; i++) {
+    html += '<div></div>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const req = requests[dateStr];
+    const dow = new Date(year, month - 1, d).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+
+    let bg = isWeekend ? 'bg-gray-50' : 'bg-white';
+    let mark = '';
+    if (req) {
+      if (req.request_type === 'day_off') { bg = 'bg-red-100'; mark = '<span class="block w-1.5 h-1.5 rounded-full bg-red-500 mx-auto mt-0.5"></span>'; }
+      else if (req.request_type === 'work') { bg = 'bg-green-100'; mark = '<span class="block w-1.5 h-1.5 rounded-full bg-green-500 mx-auto mt-0.5"></span>'; }
+      else { bg = 'bg-blue-100'; mark = '<span class="block w-1.5 h-1.5 rounded-full bg-blue-500 mx-auto mt-0.5"></span>'; }
+    }
+
+    html += `<div class="border rounded ${bg} cursor-pointer hover:opacity-80 p-1 text-center min-h-[44px] transition"
+      onclick="openReqModal('${dateStr}')">
+      <span class="text-xs ${dow === 0 ? 'text-red-500' : dow === 6 ? 'text-blue-500' : 'text-gray-700'}">${d}</span>
+      ${mark}
+    </div>`;
+  }
+  html += '</div>';
+  inner.innerHTML = html;
+}
+
+function openReqModal(date) {
+  reqTarget = date;
+  document.getElementById('reqModalDate').textContent = date;
+  const req = requests[date];
+  document.getElementById('reqNote').value = req ? (req.note || '') : '';
+
+  const list = document.getElementById('reqTemplateList');
+  list.innerHTML = '';
+  SHIFT_TEMPLATES.forEach(t => {
+    const isActive = req && req.request_type === 'specific' && req.template_id === t.id;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `w-full flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:opacity-90 transition ${isActive ? 'ring-2 ring-blue-400' : ''}`;
+    btn.style.borderColor = t.color;
+    btn.style.backgroundColor = t.color + '15';
+    btn.innerHTML = `<span class="w-3 h-3 rounded-full flex-shrink-0" style="background:${t.color}"></span>${escHtml(t.name)}`;
+    btn.onclick = () => setRequestTypeSpecific(t.id);
+    list.appendChild(btn);
+  });
+
+  openModal('modalRequest');
+}
+
+function setRequestType(type) {
+  if (!reqTarget) return;
+  const note = document.getElementById('reqNote').value;
+  if (type === null) {
+    delete requests[reqTarget];
+  } else {
+    requests[reqTarget] = { request_type: type, template_id: null, note };
+  }
+  closeModal('modalRequest');
+  const sel = document.getElementById('reqScheduleSelect');
+  renderReqCalendar(sel.options[sel.selectedIndex].dataset.ym);
+}
+
+function setRequestTypeSpecific(tmplId) {
+  if (!reqTarget) return;
+  const note = document.getElementById('reqNote').value;
+  requests[reqTarget] = { request_type: 'specific', template_id: tmplId, note };
+  closeModal('modalRequest');
+  const sel = document.getElementById('reqScheduleSelect');
+  renderReqCalendar(sel.options[sel.selectedIndex].dataset.ym);
+}
+
+async function saveRequests() {
+  if (!currentReqSchedId || !currentReqEmpId) return;
+  const list = Object.entries(requests).map(([date, val]) => ({
+    employee_id: currentReqEmpId,
+    work_date: date,
+    request_type: val.request_type,
+    template_id: val.template_id || null,
+    note: val.note || ''
+  }));
+  const resp = await fetch(`/tools/shift/api/requests/${currentReqSchedId}/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests: list })
+  });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  showToast('希望を保存しました', 'success');
+}
+
+// ==================== 従業員 ====================
+async function createEmployee() {
+  const form = document.getElementById('employeeForm');
+  const fd = new FormData(form);
+  // available_days を結合
+  const days = [...form.querySelectorAll('[name="available_days"]:checked')].map(cb => cb.value).join(',');
+  fd.set('available_days', days);
+  const resp = await fetch('/tools/shift/api/employees/create', { method: 'POST', body: fd });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  showToast('従業員を追加しました', 'success');
+  location.reload();
+}
+
+function openEditEmployee(id) {
+  const emp = EMPLOYEES.find(e => e.id === id);
+  if (!emp) return;
+  document.getElementById('editEmpId').value = emp.id;
+  document.getElementById('editEmpName').value = emp.name;
+  document.getElementById('editEmpRole').value = emp.role;
+  document.getElementById('editEmpWage').value = emp.hourly_wage;
+  document.getElementById('editEmpMaxH').value = emp.max_hours_per_week;
+  document.getElementById('editEmpStart').value = emp.available_start;
+  document.getElementById('editEmpEnd').value = emp.available_end;
+  const activeDays = (emp.available_days || '').split(',');
+  document.querySelectorAll('.edit-day-cb').forEach(cb => {
+    cb.checked = activeDays.includes(cb.value);
+  });
+  openModal('modalEditEmployee');
+}
+
+async function updateEmployee() {
+  const id = document.getElementById('editEmpId').value;
+  const fd = new FormData();
+  fd.append('name', document.getElementById('editEmpName').value);
+  fd.append('role', document.getElementById('editEmpRole').value);
+  fd.append('hourly_wage', document.getElementById('editEmpWage').value);
+  fd.append('max_hours_per_week', document.getElementById('editEmpMaxH').value);
+  fd.append('available_start', document.getElementById('editEmpStart').value);
+  fd.append('available_end', document.getElementById('editEmpEnd').value);
+  const days = [...document.querySelectorAll('.edit-day-cb:checked')].map(cb => cb.value).join(',');
+  fd.append('available_days', days);
+  const resp = await fetch(`/tools/shift/api/employees/update/${id}`, { method: 'POST', body: fd });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  closeModal('modalEditEmployee');
+  showToast('従業員情報を更新しました', 'success');
+  location.reload();
+}
+
+async function deleteEmployee(id) {
+  if (!confirm('この従業員を削除しますか？')) return;
+  const resp = await fetch(`/tools/shift/api/employees/delete/${id}`, { method: 'POST' });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  showToast('従業員を削除しました', 'success');
+  location.reload();
+}
+
+// ==================== テンプレート ====================
+async function createTemplate() {
+  const form = document.getElementById('templateForm');
+  const fd = new FormData(form);
+  const resp = await fetch('/tools/shift/api/templates/create', { method: 'POST', body: fd });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  showToast('テンプレートを追加しました', 'success');
+  location.reload();
+}
+
+function openEditTemplate(id) {
+  const t = SHIFT_TEMPLATES.find(t => t.id === id);
+  if (!t) return;
+  document.getElementById('editTmplId').value = t.id;
+  document.getElementById('editTmplName').value = t.name;
+  document.getElementById('editTmplStart').value = t.start_time;
+  document.getElementById('editTmplEnd').value = t.end_time;
+  document.getElementById('editTmplBreak').value = t.break_minutes;
+  document.getElementById('editTmplColor').value = t.color;
+  openModal('modalEditTemplate');
+}
+
+async function updateTemplate() {
+  const id = document.getElementById('editTmplId').value;
+  const fd = new FormData();
+  fd.append('name', document.getElementById('editTmplName').value);
+  fd.append('start_time', document.getElementById('editTmplStart').value);
+  fd.append('end_time', document.getElementById('editTmplEnd').value);
+  fd.append('break_minutes', document.getElementById('editTmplBreak').value);
+  fd.append('color', document.getElementById('editTmplColor').value);
+  const resp = await fetch(`/tools/shift/api/templates/update/${id}`, { method: 'POST', body: fd });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  closeModal('modalEditTemplate');
+  showToast('テンプレートを更新しました', 'success');
+  location.reload();
+}
+
+async function deleteTemplate(id) {
+  if (!confirm('このテンプレートを削除しますか？')) return;
+  const resp = await fetch(`/tools/shift/api/templates/delete/${id}`, { method: 'POST' });
+  const data = await resp.json();
+  if (data.error) { alert(data.error); return; }
+  showToast('テンプレートを削除しました', 'success');
+  location.reload();
+}
+
+// ==================== ユーティリティ ====================
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+{% block title %}画像一括加工ツール - YN Tools{% endblock %}
+
+{% block head %}
+<style>
+.checkered-bg {
+    background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+        linear-gradient(-45deg, #ccc 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ccc 75%),
+        linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+}
+</style>
+<script>
+// ===== グローバル変数 =====
+let jobId = null;
+let uploadedThumbnails = [];
+let activeTab = 'resize_preset';
+
+// ===== タブ切り替え =====
+function switchTab(tab) {
+    activeTab = tab;
+    const tabs = ['resize_preset', 'resize_custom', 'format_convert', 'bg_remove', 'crop_center', 'optimize'];
+    tabs.forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        const panel = document.getElementById('panel-' + t);
+        if (btn) {
+            if (t === tab) {
+                btn.classList.add('border-blue-600', 'text-blue-600');
+                btn.classList.remove('border-transparent', 'text-gray-500');
+            } else {
+                btn.classList.remove('border-blue-600', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            }
+        }
+        if (panel) {
+            if (t === tab) panel.classList.remove('hidden');
+            else panel.classList.add('hidden');
+        }
+    });
+}
+
+// ===== ドラッグ&ドロップ =====
+function setupDrop() {
+    const zone = document.getElementById('drop-zone');
+    const input = document.getElementById('file-input');
+    if (!zone || !input) return;
+
+    zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.classList.add('border-blue-500', 'bg-blue-50');
+    });
+    zone.addEventListener('dragleave', () => {
+        zone.classList.remove('border-blue-500', 'bg-blue-50');
+    });
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('border-blue-500', 'bg-blue-50');
+        handleFiles(e.dataTransfer.files);
+    });
+    zone.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+        if (input.files.length > 0) handleFiles(input.files);
+    });
+}
+
+async function handleFiles(files) {
+    const status = document.getElementById('upload-status');
+    const thumbGrid = document.getElementById('thumb-grid');
+    const processBtn = document.getElementById('process-btn');
+
+    if (files.length > 20) {
+        showUploadError('一度にアップロードできるのは最大20枚です。');
+        return;
+    }
+
+    // クライアント側バリデーション
+    const validExts = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif'];
+    const clientErrors = [];
+    const validFiles = [];
+    for (const f of files) {
+        const ext = f.name.split('.').pop().toLowerCase();
+        if (!validExts.includes(ext)) {
+            clientErrors.push(`${escapeHtml(f.name)}: 対応していない形式です`);
+            continue;
+        }
+        if (f.size > 20 * 1024 * 1024) {
+            clientErrors.push(`${escapeHtml(f.name)}: 20MB超のファイルはアップロードできません`);
+            continue;
+        }
+        validFiles.push(f);
+    }
+
+    if (validFiles.length === 0) {
+        showUploadError('有効なファイルがありません。<br>' + clientErrors.join('<br>'));
+        return;
+    }
+
+    if (status) status.innerHTML = '<span class="text-blue-600">アップロード中...</span>';
+    if (processBtn) processBtn.disabled = true;
+
+    const formData = new FormData();
+    validFiles.forEach(f => formData.append('files', f));
+
+    try {
+        const resp = await fetch('/tools/imgbatch/api/upload', { method: 'POST', body: formData });
+        const data = await resp.json();
+
+        if (data.error) {
+            showUploadError(data.error);
+            return;
+        }
+
+        jobId = data.job_id;
+        uploadedThumbnails = data.thumbnails || [];
+
+        // サムネイルグリッド表示
+        if (thumbGrid) {
+            thumbGrid.innerHTML = uploadedThumbnails.map(t => `
+                <div class="flex flex-col items-center gap-1">
+                    <div class="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center">
+                        ${t.thumbnail
+                            ? `<img src="${t.thumbnail}" class="w-full h-full object-cover" alt="${escapeHtml(t.filename)}">`
+                            : '<span class="text-gray-400 text-xs">No preview</span>'
+                        }
+                    </div>
+                    <p class="text-xs text-gray-600 text-center max-w-24 truncate" title="${escapeHtml(t.filename)}">${escapeHtml(t.filename)}</p>
+                    <p class="text-xs text-gray-400">${t.size_kb} KB</p>
+                </div>
+            `).join('');
+            thumbGrid.classList.remove('hidden');
+        }
+
+        if (status) {
+            let msg = `<span class="text-green-700 font-medium">${uploadedThumbnails.length}枚アップロード完了</span>`;
+            if (data.errors && data.errors.length > 0) {
+                msg += `<div class="mt-1 text-xs text-red-600">${data.errors.map(e => escapeHtml(e)).join('<br>')}</div>`;
+            }
+            status.innerHTML = msg;
+        }
+
+        if (processBtn) processBtn.disabled = false;
+
+    } catch(e) {
+        showUploadError('アップロードエラー: ' + e.message);
+    }
+}
+
+function showUploadError(msg) {
+    const status = document.getElementById('upload-status');
+    if (status) status.innerHTML = `<p class="text-red-600 text-sm">${msg}</p>`;
+}
+
+// ===== 処理実行 =====
+async function runProcess() {
+    if (!jobId) {
+        alert('先に画像をアップロードしてください。');
+        return;
+    }
+
+    const processBtn = document.getElementById('process-btn');
+    const progressArea = document.getElementById('progress-area');
+    const resultMsg = document.getElementById('result-msg');
+
+    // モード別パラメータ収集
+    let mode = activeTab;
+    let presets = null;
+    let customW = null;
+    let customH = null;
+    let outputFormat = null;
+
+    if (mode === 'resize_preset') {
+        const checked = document.querySelectorAll('input[name="preset"]:checked');
+        if (checked.length === 0) {
+            alert('プリセットを1つ以上選択してください。');
+            return;
+        }
+        presets = Array.from(checked).map(cb => cb.value);
+    } else if (mode === 'resize_custom') {
+        customW = parseInt(document.getElementById('custom-w').value);
+        customH = parseInt(document.getElementById('custom-h').value);
+        if (!customW || !customH || customW < 1 || customH < 1) {
+            alert('幅と高さを正しく入力してください。');
+            return;
+        }
+    } else if (mode === 'format_convert') {
+        outputFormat = document.getElementById('output-format').value;
+    } else if (mode === 'crop_center') {
+        customW = parseInt(document.getElementById('crop-w').value);
+        customH = parseInt(document.getElementById('crop-h').value);
+        if (!customW || !customH || customW < 1 || customH < 1) {
+            alert('幅と高さを正しく入力してください。');
+            return;
+        }
+    }
+
+    if (processBtn) processBtn.disabled = true;
+    if (progressArea) progressArea.classList.remove('hidden');
+    if (resultMsg) resultMsg.innerHTML = '';
+
+    try {
+        const resp = await fetch(`/tools/imgbatch/api/${jobId}/process`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode, presets, custom_w: customW, custom_h: customH, output_format: outputFormat }),
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            if (resultMsg) resultMsg.innerHTML = `<p class="text-red-600">${escapeHtml(data.error)}</p>`;
+            if (processBtn) processBtn.disabled = false;
+            if (progressArea) progressArea.classList.add('hidden');
+            return;
+        }
+
+        // 結果画面へリダイレクト
+        window.location.href = data.redirect_url;
+
+    } catch(e) {
+        if (resultMsg) resultMsg.innerHTML = `<p class="text-red-600">エラー: ${escapeHtml(e.message)}</p>`;
+        if (processBtn) processBtn.disabled = false;
+        if (progressArea) progressArea.classList.add('hidden');
+    }
+}
+
+// ===== ジョブ削除 =====
+async function deleteJob(jobId) {
+    if (!confirm('このジョブを削除しますか？')) return;
+    try {
+        const resp = await fetch(`/tools/imgbatch/api/${jobId}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (data.ok) window.location.reload();
+        else alert(data.error || '削除に失敗しました。');
+    } catch(e) {
+        alert('削除エラー: ' + e.message);
+    }
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupDrop();
+    switchTab('resize_preset');
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- ページヘッダー -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">画像一括加工ツール</h1>
+            <p class="text-sm text-gray-500 mt-1">複数の画像をSNSサイズ・背景除去・フォーマット変換などで一括処理</p>
+        </div>
+        <div class="flex items-center gap-3">
+            {% if view != 'new' %}
+            <a href="/tools/imgbatch/new" class="btn-primary text-sm px-4 py-2 rounded-lg">
+                + 新規処理
+            </a>
+            {% endif %}
+            {% if view != 'dashboard' %}
+            <a href="/tools/imgbatch/" class="text-sm text-gray-500 hover:text-gray-700">
+                履歴に戻る
+            </a>
+            {% endif %}
+            <a href="/guide#imgbatch" class="flex items-center gap-1.5 px-3 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition self-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                使い方ガイド
+            </a>
+        </div>
+    </div>
+
+    <!-- 利用状況 -->
+    <div class="bg-white rounded-xl border border-gray-200 px-4 py-3 mb-6 flex items-center gap-4">
+        <span class="text-sm text-gray-500">今月の利用回数:</span>
+        <span class="text-sm font-semibold text-gray-900">{{ monthly_used }} / {{ monthly_limit }} 回</span>
+        <div class="flex-1 bg-gray-200 rounded-full h-1.5 max-w-32">
+            <div class="bg-blue-600 h-1.5 rounded-full" style="width: {{ [monthly_used / (monthly_limit or 1) * 100, 100] | min }}%"></div>
+        </div>
+    </div>
+
+    {# ===== ダッシュボード ===== #}
+    {% if view == 'dashboard' %}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="text-base font-semibold text-gray-800">処理履歴</h2>
+        </div>
+        {% if jobs %}
+        <div class="divide-y divide-gray-100">
+            {% for job in jobs %}
+            <div class="px-6 py-4 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-4 min-w-0">
+                    <!-- ステータスアイコン -->
+                    {% if job.status == 'done' %}
+                    <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    {% elif job.status == 'error' %}
+                    <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </div>
+                    {% else %}
+                    <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                    <!-- 情報 -->
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-900">
+                            {% if job.mode == 'resize_preset' %}SNSプリセットリサイズ
+                            {% elif job.mode == 'resize_custom' %}カスタムリサイズ ({{ job.custom_width }}x{{ job.custom_height }})
+                            {% elif job.mode == 'format_convert' %}フォーマット変換 → {{ job.output_format | upper }}
+                            {% elif job.mode == 'bg_remove' %}背景除去
+                            {% elif job.mode == 'crop_center' %}中央クロップ ({{ job.custom_width }}x{{ job.custom_height }})
+                            {% elif job.mode == 'optimize' %}ファイル最適化
+                            {% else %}{{ job.mode }}
+                            {% endif %}
+                        </p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            入力 {{ job.input_file_count }}枚
+                            {% if job.status == 'done' %} → 出力 {{ job.output_file_count }}枚{% endif %}
+                            &nbsp;|&nbsp; {{ job.created_at.strftime('%Y/%m/%d %H:%M') }}
+                        </p>
+                        {% if job.status == 'error' and job.error_message %}
+                        <p class="text-xs text-red-500 mt-0.5 truncate max-w-md">{{ job.error_message }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- アクション -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    {% if job.status == 'done' %}
+                    <a href="/tools/imgbatch/{{ job.id }}/result" class="text-xs text-blue-600 hover:text-blue-800 font-medium">結果を見る</a>
+                    <a href="/tools/imgbatch/api/{{ job.id }}/download" class="text-xs text-green-600 hover:text-green-800 font-medium">ZIP</a>
+                    {% endif %}
+                    <button onclick="deleteJob({{ job.id }})" class="text-xs text-gray-400 hover:text-red-500">削除</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="px-6 py-16 text-center">
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <p class="text-gray-400 text-sm mb-4">処理履歴がありません</p>
+            <a href="/tools/imgbatch/new" class="btn-primary text-sm px-5 py-2 rounded-lg">最初の画像を加工する</a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+
+    {# ===== 処理設定画面 ===== #}
+    {% if view == 'new' %}
+    <div class="space-y-6">
+
+        <!-- Step 1: 画像アップロード -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="text-base font-semibold text-gray-800 mb-4">Step 1: 画像をアップロード</h2>
+
+            <!-- ドロップゾーン -->
+            <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p class="text-gray-600 font-medium">ここに画像をドロップ or クリックして選択</p>
+                <p class="text-xs text-gray-400 mt-1">JPG / PNG / WebP / AVIF / GIF &nbsp;|&nbsp; 最大20枚 &nbsp;|&nbsp; 1枚20MBまで</p>
+                <input type="file" id="file-input" class="hidden" accept=".jpg,.jpeg,.png,.webp,.avif,.gif" multiple>
+            </div>
+
+            <!-- アップロード状態 -->
+            <div id="upload-status" class="mt-3 text-sm"></div>
+
+            <!-- サムネイルグリッド -->
+            <div id="thumb-grid" class="hidden mt-4 grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3"></div>
+        </div>
+
+        <!-- Step 2: 処理設定 -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="text-base font-semibold text-gray-800 mb-4">Step 2: 処理モードを選択</h2>
+
+            <!-- タブ -->
+            <div class="border-b border-gray-200 mb-5">
+                <nav class="-mb-px flex gap-1 overflow-x-auto">
+                    <button id="tab-resize_preset" onclick="switchTab('resize_preset')" class="px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap">SNSリサイズ</button>
+                    <button id="tab-resize_custom" onclick="switchTab('resize_custom')" class="px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap">カスタムリサイズ</button>
+                    <button id="tab-format_convert" onclick="switchTab('format_convert')" class="px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap">フォーマット変換</button>
+                    <button id="tab-bg_remove" onclick="switchTab('bg_remove')" class="px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap">背景除去</button>
+                    <button id="tab-crop_center" onclick="switchTab('crop_center')" class="px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap">中央クロップ</button>
+                    <button id="tab-optimize" onclick="switchTab('optimize')" class="px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap">最適化</button>
+                </nav>
+            </div>
+
+            <!-- パネル: SNSプリセット -->
+            <div id="panel-resize_preset" class="hidden">
+                <p class="text-sm text-gray-500 mb-3">リサイズするSNSプリセットを選択（複数可）</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {% for key, label in sns_presets.items() %}
+                    <label class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="checkbox" name="preset" value="{{ key }}" class="mt-0.5 text-blue-600">
+                        <span class="text-sm text-gray-700">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- パネル: カスタムリサイズ -->
+            <div id="panel-resize_custom" class="hidden">
+                <p class="text-sm text-gray-500 mb-3">リサイズ後のサイズを指定（ピクセル単位）</p>
+                <div class="flex items-center gap-3">
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">幅 (px)</label>
+                        <input type="number" id="custom-w" min="1" max="10000" placeholder="1920" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-28">
+                    </div>
+                    <span class="text-gray-400 mt-5">×</span>
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">高さ (px)</label>
+                        <input type="number" id="custom-h" min="1" max="10000" placeholder="1080" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-28">
+                    </div>
+                </div>
+            </div>
+
+            <!-- パネル: フォーマット変換 -->
+            <div id="panel-format_convert" class="hidden">
+                <p class="text-sm text-gray-500 mb-3">変換先のフォーマットを選択</p>
+                <div class="flex gap-3">
+                    {% for fmt in ['jpg', 'png', 'webp', 'avif'] %}
+                    <label class="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="radio" name="output-format-radio" value="{{ fmt }}" class="text-blue-600"
+                            onclick="document.getElementById('output-format').value='{{ fmt }}'"
+                            {% if fmt == 'jpg' %}checked{% endif %}>
+                        <span class="text-sm font-medium uppercase text-gray-700">{{ fmt }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <input type="hidden" id="output-format" value="jpg">
+            </div>
+
+            <!-- パネル: 背景除去 -->
+            <div id="panel-bg_remove" class="hidden">
+                <div class="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div class="text-sm text-amber-800">
+                        <p class="font-medium">rembg（AI背景除去）を使用します</p>
+                        <p class="mt-1 text-xs text-amber-600">初回実行時にモデルファイル（約170MB）をダウンロードします。出力は透過PNG形式です。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- パネル: 中央クロップ -->
+            <div id="panel-crop_center" class="hidden">
+                <p class="text-sm text-gray-500 mb-3">クロップ後のサイズを指定（ピクセル単位）</p>
+                <div class="flex items-center gap-3">
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">幅 (px)</label>
+                        <input type="number" id="crop-w" min="1" max="10000" placeholder="1080" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-28">
+                    </div>
+                    <span class="text-gray-400 mt-5">×</span>
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">高さ (px)</label>
+                        <input type="number" id="crop-h" min="1" max="10000" placeholder="1080" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-28">
+                    </div>
+                </div>
+            </div>
+
+            <!-- パネル: 最適化 -->
+            <div id="panel-optimize" class="hidden">
+                <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+                    <p class="font-medium text-gray-800 mb-1">ファイルサイズ最適化</p>
+                    <p>品質を保ちながらファイルサイズを削減します。JPG/WebPは品質75%で再エンコード、PNGは可逆圧縮を適用します。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: 処理実行 -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <button id="process-btn" onclick="runProcess()" disabled
+                class="w-full btn-primary py-3 rounded-xl text-base font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+                画像を一括処理する
+            </button>
+
+            <!-- プログレス表示 -->
+            <div id="progress-area" class="hidden mt-4">
+                <div class="flex items-center gap-3 text-sm text-blue-600">
+                    <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span>処理中です。しばらくお待ちください...</span>
+                </div>
+            </div>
+
+            <div id="result-msg" class="mt-3"></div>
+        </div>
+    </div>
+    {% endif %}
+
+
+    {# ===== 結果画面 ===== #}
+    {% if view == 'result' %}
+    <div class="space-y-6">
+
+        <!-- ジョブ概要 -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        {% if job.status == 'done' %}
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            完了
+                        </span>
+                        {% elif job.status == 'error' %}
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded-full">エラー</span>
+                        {% endif %}
+                        <h2 class="text-base font-semibold text-gray-800">処理結果</h2>
+                    </div>
+                    <p class="text-sm text-gray-500">
+                        モード:
+                        {% if job.mode == 'resize_preset' %}SNSプリセットリサイズ
+                            {% if job.preset_list %} ({{ job.preset_list | join(', ') }}){% endif %}
+                        {% elif job.mode == 'resize_custom' %}カスタムリサイズ ({{ job.custom_width }}x{{ job.custom_height }})
+                        {% elif job.mode == 'format_convert' %}フォーマット変換 → {{ job.output_format | upper }}
+                        {% elif job.mode == 'bg_remove' %}背景除去
+                        {% elif job.mode == 'crop_center' %}中央クロップ ({{ job.custom_width }}x{{ job.custom_height }})
+                        {% elif job.mode == 'optimize' %}ファイル最適化
+                        {% else %}{{ job.mode }}
+                        {% endif %}
+                        &nbsp;|&nbsp; 入力 {{ job.input_file_count }}枚 → 出力 {{ job.output_file_count }}枚
+                    </p>
+                    {% if job.status == 'error' and job.error_message %}
+                    <p class="text-sm text-red-600 mt-2">{{ job.error_message }}</p>
+                    {% endif %}
+                </div>
+
+                {% if job.status == 'done' %}
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <a href="/tools/imgbatch/api/{{ job.id }}/download"
+                        class="btn-primary text-sm px-4 py-2 rounded-lg flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        ZIPダウンロード
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- サムネイルグリッド -->
+        {% if thumbnails %}
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-4">出力ファイル ({{ thumbnails | length }}枚)</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {% for thumb in thumbnails %}
+                <div class="flex flex-col gap-1.5">
+                    <div class="aspect-square rounded-lg overflow-hidden border border-gray-200
+                        {% if job.mode == 'bg_remove' %}checkered-bg{% else %}bg-gray-100{% endif %}
+                        flex items-center justify-center">
+                        {% if thumb.thumbnail %}
+                        <img src="{{ thumb.thumbnail }}" class="w-full h-full object-contain" alt="{{ thumb.filename }}">
+                        {% else %}
+                        <span class="text-gray-400 text-xs">No preview</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-xs text-gray-600 truncate" title="{{ thumb.filename }}">{{ thumb.filename }}</p>
+                    <p class="text-xs text-gray-400">{{ thumb.size_kb }} KB</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- アクション -->
+        <div class="flex items-center gap-3">
+            <a href="/tools/imgbatch/new" class="text-sm text-blue-600 hover:text-blue-800">+ 別の画像を処理する</a>
+            <span class="text-gray-300">|</span>
+            <button onclick="deleteJob({{ job.id }})" class="text-sm text-gray-400 hover:text-red-500">このジョブを削除</button>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

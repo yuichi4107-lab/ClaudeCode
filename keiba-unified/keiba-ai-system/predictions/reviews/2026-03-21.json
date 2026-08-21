@@ -1,0 +1,151 @@
+{
+  "date": "2026-03-21",
+  "strategies": {
+    "◎本命": {
+      "bets": 12,
+      "hits": 2,
+      "hit_rate": 0.16666666666666666,
+      "investment": 1200,
+      "payout": 980,
+      "return_rate": 0.8166666666666667,
+      "profit": -220
+    },
+    "◎○上位2頭": {
+      "bets": 24,
+      "hits": 4,
+      "hit_rate": 0.16666666666666666,
+      "investment": 2400,
+      "payout": 1520,
+      "return_rate": 0.6333333333333333,
+      "profit": -880
+    },
+    "★期待値>1.0": {
+      "bets": 40,
+      "hits": 2,
+      "hit_rate": 0.05,
+      "investment": 4000,
+      "payout": 980,
+      "return_rate": 0.245,
+      "profit": -3020
+    },
+    "◎○▲上位3頭": {
+      "bets": 36,
+      "hits": 6,
+      "hit_rate": 0.16666666666666666,
+      "investment": 3600,
+      "payout": 2390,
+      "return_rate": 0.6638888888888889,
+      "profit": -1210
+    }
+  },
+  "race_details": [
+    {
+      "race_no": "1",
+      "pred_name": "アトム",
+      "pred_num": 2,
+      "pred_rank_result": 3,
+      "winner_name": "ツガルタカラフジ",
+      "winner_num": 4,
+      "hit": false
+    },
+    {
+      "race_no": "2",
+      "pred_name": "ジェイノアオイ",
+      "pred_num": 8,
+      "pred_rank_result": 3,
+      "winner_name": "サカノテイオー",
+      "winner_num": 3,
+      "hit": false
+    },
+    {
+      "race_no": "3",
+      "pred_name": "コーチャンファスト",
+      "pred_num": 7,
+      "pred_rank_result": 5,
+      "winner_name": "不明",
+      "winner_num": 0,
+      "hit": false
+    },
+    {
+      "race_no": "4",
+      "pred_name": "アカオビ",
+      "pred_num": 4,
+      "pred_rank_result": 2,
+      "winner_name": "ホクセイシンザン",
+      "winner_num": 7,
+      "hit": false
+    },
+    {
+      "race_no": "5",
+      "pred_name": "ライズビクトリー",
+      "pred_num": 3,
+      "pred_rank_result": 7,
+      "winner_name": "ミヤビハヤブサ",
+      "winner_num": 7,
+      "hit": false
+    },
+    {
+      "race_no": "6",
+      "pred_name": "ホクセイソウダネー",
+      "pred_num": 3,
+      "pred_rank_result": 4,
+      "winner_name": "ホクセイソウリ",
+      "winner_num": 6,
+      "hit": false
+    },
+    {
+      "race_no": "7",
+      "pred_name": "アルイテイコウ",
+      "pred_num": 2,
+      "pred_rank_result": 4,
+      "winner_name": "サクラダイヤモンド",
+      "winner_num": 5,
+      "hit": false
+    },
+    {
+      "race_no": "8",
+      "pred_name": "イノスケ",
+      "pred_num": 6,
+      "pred_rank_result": 1,
+      "winner_name": "イノスケ",
+      "winner_num": 6,
+      "hit": true
+    },
+    {
+      "race_no": "9",
+      "pred_name": "プラチナガール",
+      "pred_num": 3,
+      "pred_rank_result": 4,
+      "winner_name": "不明",
+      "winner_num": 0,
+      "hit": false
+    },
+    {
+      "race_no": "10",
+      "pred_name": "タカラウンカイ",
+      "pred_num": 7,
+      "pred_rank_result": 7,
+      "winner_name": "コーワホープ",
+      "winner_num": 6,
+      "hit": false
+    },
+    {
+      "race_no": "11",
+      "pred_name": "スターイチバン",
+      "pred_num": 6,
+      "pred_rank_result": 1,
+      "winner_name": "スターイチバン",
+      "winner_num": 6,
+      "hit": true
+    },
+    {
+      "race_no": "12",
+      "pred_name": "スターフェニックス",
+      "pred_num": 4,
+      "pred_rank_result": 8,
+      "winner_name": "ジェイファイター",
+      "winner_num": 3,
+      "hit": false
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}企業検索 - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">企業検索・追加</h1>
+    <p class="text-gray-500 mt-1">Google Places API で企業を検索し、リストに追加します</p>
+</div>
+
+<div class="bg-white rounded-lg shadow-sm border p-6 max-w-2xl">
+    <form method="post" action="{{ P }}/companies/search">
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">検索キーワード</label>
+                <input type="text" name="query" required placeholder="例: 美容室、整骨院、Web制作会社"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">地域</label>
+                <input type="text" name="region" placeholder="例: 東京都渋谷区、大阪市、名古屋"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">最大件数</label>
+                <select name="max_results" class="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="10">10件</option>
+                    <option value="20" selected>20件</option>
+                    <option value="50">50件</option>
+                </select>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-indigo-700">検索して追加</button>
+                <a href="{{ P }}/companies" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">戻る</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

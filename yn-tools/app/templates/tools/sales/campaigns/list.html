@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}メール送信 - 営業自動化 - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">メールメール送信</h1>
+        <p class="text-gray-500 mt-1">未営業企業: {{ unsent_count }} 件</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{{ P }}/campaigns/new" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">新規メール送信</a>
+        <a href="{{ P }}/" class="text-sm text-gray-600 hover:text-gray-900 px-3 py-2">ダッシュボード</a>
+    </div>
+</div>
+
+{% if campaigns %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for c in campaigns %}
+    <a href="{{ P }}/campaigns/{{ c.id }}" class="bg-white rounded-lg shadow-sm border p-5 hover:shadow-md transition block">
+        <div class="flex items-start justify-between mb-2">
+            <h3 class="font-semibold text-gray-900">{{ c.name }}</h3>
+            <span class="px-2 py-0.5 rounded-full text-xs
+                {% if c.status == 'active' %}bg-green-100 text-green-800
+                {% elif c.status == 'paused' %}bg-amber-100 text-amber-800
+                {% else %}bg-gray-100 text-gray-600{% endif %}">{{ c.status or 'draft' }}</span>
+        </div>
+        <p class="text-sm text-gray-500 mb-1">件名: {{ c.subject_template[:50] }}{% if c.subject_template|length > 50 %}...{% endif %}</p>
+        <div class="flex items-center justify-between mt-3 text-xs text-gray-400">
+            <span>送信済み: {{ campaign_stats.get(c.id, 0) }} 件</span>
+            <span>{{ c.created_at.strftime('%Y-%m-%d') if c.created_at else '' }}</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-lg shadow-sm border p-8 text-center">
+    <p class="text-gray-400 mb-4">メール送信がありません</p>
+    <a href="{{ P }}/campaigns/new" class="text-indigo-600 hover:underline text-sm">最初のメール送信を作成する</a>
+</div>
+{% endif %}
+{% endblock %}

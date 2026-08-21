@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="YN Tools - AI業務自動化プラットフォーム。営業自動化、メール送信、AIプロンプトライブラリ。">
+    <title>{% block title %}YN Tools{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    {% if user %}
+    <!-- Desktop & Mobile Header -->
+    <nav class="sticky-header shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-14">
+                <!-- Left: Logo & Nav -->
+                <div class="flex items-center">
+                    <a href="/dashboard" class="text-xl font-bold text-gradient mr-8">{% if demo_mode %}Claude Code 開発デモ｜YN Factory{% else %}YN Tools{% endif %}</a>
+                    <!-- Desktop Nav -->
+                    <div class="hidden md:flex items-center space-x-1">
+                        <a href="/dashboard" class="px-3 py-2 rounded-lg text-sm {% if page == 'dashboard' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-50{% endif %} transition">
+                            ダッシュボード
+                        </a>
+                        <div class="relative group">
+                            <button class="px-3 py-2 rounded-lg text-sm {% if page in ('sales','mailer','gems','docai','contentgen','webresearch','imagegen','chatbot','qrcode','fileconv','taskmanager','formbuilder','invoice','translate','writing','contract','sns','minutes','lpbuilder','booking','expense','salesboard','seocheck','estimate','passgen','dailyreport','cardreader','voiceminutes','clipboard','shift','jobposting','dataclean','imgbatch','stepmail','legalgen','mdviewer','epubcheck') %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-50{% endif %} transition flex items-center gap-1">
+                                ツール <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div class="absolute left-0 top-full pt-1 hidden group-hover:block z-20">
+                                <div class="bg-white rounded-lg shadow-lg border animate-slide-down grid grid-cols-5 gap-0 p-3 min-w-[820px] lg:min-w-[860px]">
+                                    <!-- 列1: 営業・マーケ -->
+                                    <div>
+                                        <p class="px-3 pt-1 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">営業・マーケ</p>
+                                        <a href="/tools/sales/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">営業自動化</a>
+                                        <a href="/tools/mailer/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">メール送信</a>
+                                        <a href="/tools/stepmail/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">ステップメール</a>
+                                        <a href="/tools/sns/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">SNS投稿</a>
+                                        <a href="/tools/contentgen/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">コンテンツ作成</a>
+                                        <a href="/tools/lpbuilder/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">LPビルダー</a>
+                                        <a href="/tools/webresearch/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">Webリサーチャー</a>
+                                    </div>
+                                    <!-- 列2: AI・文書 -->
+                                    <div>
+                                        <p class="px-3 pt-1 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">AI・文書</p>
+                                        <a href="/tools/gems/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">GEMS/GPTライブラリ</a>
+                                        <a href="/tools/docai/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">文書処理</a>
+                                        <a href="/tools/writing/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">ライティング</a>
+                                        <a href="/tools/chatbot/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">チャットボット</a>
+                                        <a href="/tools/minutes/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">議事録</a>
+                                        <a href="/tools/voiceminutes/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">議事メモ（音声）</a>
+                                        <a href="/tools/translate/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">翻訳</a>
+                                    </div>
+                                    <!-- 列3: 画像・ファイル -->
+                                    <div>
+                                        <p class="px-3 pt-1 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">画像・ファイル</p>
+                                        <a href="/tools/imagegen/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">画像生成</a>
+                                        <a href="/tools/imgbatch/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">画像一括加工</a>
+                                        <a href="/tools/fileconv/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">ファイル変換</a>
+                                        <a href="/tools/qrcode/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">QRコード</a>
+                                        <a href="/tools/mdviewer/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">Markdownビューアー</a>
+                                        <a href="/tools/cardreader/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">名刺リーダー</a>
+                                        <a href="/tools/epubcheck/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">EPUBバリデーター</a>
+                                    </div>
+                                    <!-- 列4: 業務管理 -->
+                                    <div>
+                                        <p class="px-3 pt-1 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">業務管理</p>
+                                        <a href="/tools/taskmanager/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">タスク管理</a>
+                                        <a href="/tools/shift/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">シフト作成</a>
+                                        <a href="/tools/dailyreport/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">日報・週報</a>
+                                        <a href="/tools/formbuilder/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">フォームビルダー</a>
+                                        <a href="/tools/booking/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">予約管理</a>
+                                        <a href="/tools/clipboard/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">クリップボード共有</a>
+                                        <a href="/tools/passgen/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">パスワード生成</a>
+                                        <a href="/tools/seocheck/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">SEO分析</a>
+                                    </div>
+                                    <!-- 列5: 会計・法務 -->
+                                    <div>
+                                        <p class="px-3 pt-1 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">会計・法務</p>
+                                        <a href="/tools/invoice/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">請求書</a>
+                                        <a href="/tools/estimate/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">見積書作成</a>
+                                        <a href="/tools/expense/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">経費トラッカー</a>
+                                        <a href="/tools/salesboard/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">売上ダッシュボード</a>
+                                        <a href="/tools/jobposting/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">求人票ジェネレーター</a>
+                                        <a href="/tools/dataclean/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">データクリーニング</a>
+                                        <a href="/tools/contract/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">契約書チェッカー</a>
+                                        <a href="/tools/legalgen/" class="block px-3 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 rounded">契約書・規約作成</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="/guide" class="px-3 py-2 rounded-lg text-sm {% if page == 'guide' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-50{% endif %} transition">
+                            使い方ガイド
+                        </a>
+                        <a href="/community/reviews" class="px-3 py-2 rounded-lg text-sm {% if page == 'community' %}bg-indigo-50 text-indigo-700 font-medium{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-50{% endif %} transition">
+                            コミュニティ
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right: User & Actions -->
+                <div class="flex items-center space-x-3">
+                    {% if not user.has_active_plan and not demo_mode %}
+                    <a href="/billing/upgrade" class="hidden sm:inline-flex bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-indigo-700 transition animate-pulse-border">
+                        アップグレード
+                    </a>
+                    {% endif %}
+                    <div class="relative group hidden md:block">
+                        <button class="flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition">
+                            {% if user.avatar_url %}
+                            <img src="{{ user.avatar_url }}" alt="" class="w-7 h-7 rounded-full">
+                            {% endif %}
+                            <span class="text-gray-600 text-sm">{{ user.name }}</span>
+                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-20">
+                            <div class="bg-white rounded-lg shadow-lg border py-1 w-44 animate-slide-down">
+                                {% if user and user.is_admin %}
+                                <a href="/admin" class="flex items-center gap-2 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 hover:text-purple-900">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
+                                    管理者ダッシュボード
+                                </a>
+                                <div class="border-t my-1"></div>
+                                {% endif %}
+                                <a href="/account" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    アカウント設定
+                                </a>
+                                <div class="border-t my-1"></div>
+                                <a href="/auth/logout" class="flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                    ログアウト
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Hamburger -->
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100" aria-label="メニュー">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobileOverlay" class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+    <div id="mobilePanel" class="mobile-menu-panel">
+        <div class="p-4 border-b flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                {% if user.avatar_url %}
+                <img src="{{ user.avatar_url }}" alt="" class="w-9 h-9 rounded-full">
+                {% endif %}
+                <div>
+                    <p class="font-medium text-sm">{{ user.name }}</p>
+                    <p class="text-xs text-gray-400">{{ user.email }}</p>
+                </div>
+            </div>
+            <button onclick="toggleMobileMenu()" class="p-1 rounded text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <nav class="p-3 space-y-1">
+            <a href="/dashboard" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">ダッシュボード</a>
+            <p class="px-3 pt-3 pb-1 text-xs font-medium text-gray-400 uppercase">営業・マーケ</p>
+            <a href="/tools/sales/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">営業自動化</a>
+            <a href="/tools/mailer/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">メール送信</a>
+            <a href="/tools/stepmail/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">ステップメール</a>
+            <a href="/tools/sns/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">SNS投稿</a>
+            <a href="/tools/contentgen/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">コンテンツ作成</a>
+            <a href="/tools/lpbuilder/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">LPビルダー</a>
+            <a href="/tools/webresearch/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">Webリサーチャー</a>
+            <p class="px-3 pt-3 pb-1 text-xs font-medium text-gray-400 uppercase">AI・文書</p>
+            <a href="/tools/gems/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">GEMS/GPTライブラリ</a>
+            <a href="/tools/docai/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">文書処理</a>
+            <a href="/tools/writing/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">ライティング</a>
+            <a href="/tools/chatbot/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">チャットボット</a>
+            <a href="/tools/minutes/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">議事録</a>
+            <a href="/tools/voiceminutes/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">議事メモ（音声）</a>
+            <a href="/tools/translate/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">翻訳</a>
+            <p class="px-3 pt-3 pb-1 text-xs font-medium text-gray-400 uppercase">画像・ファイル</p>
+            <a href="/tools/imagegen/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">画像生成</a>
+            <a href="/tools/imgbatch/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">画像一括加工</a>
+            <a href="/tools/fileconv/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">ファイル変換</a>
+            <a href="/tools/qrcode/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">QRコード</a>
+            <a href="/tools/mdviewer/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">Markdownビューアー</a>
+            <a href="/tools/cardreader/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">名刺リーダー</a>
+            <a href="/tools/epubcheck/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">EPUBバリデーター</a>
+            <p class="px-3 pt-3 pb-1 text-xs font-medium text-gray-400 uppercase">業務管理</p>
+            <a href="/tools/taskmanager/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">タスク管理</a>
+            <a href="/tools/shift/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">シフト作成</a>
+            <a href="/tools/dailyreport/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">日報・週報</a>
+            <a href="/tools/formbuilder/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">フォームビルダー</a>
+            <a href="/tools/booking/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">予約管理</a>
+            <a href="/tools/clipboard/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">クリップボード共有</a>
+            <a href="/tools/passgen/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">パスワード生成</a>
+            <a href="/tools/seocheck/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">SEO分析</a>
+            <p class="px-3 pt-3 pb-1 text-xs font-medium text-gray-400 uppercase">会計・法務</p>
+            <a href="/tools/invoice/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">請求書</a>
+            <a href="/tools/estimate/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">見積書作成</a>
+            <a href="/tools/expense/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">経費トラッカー</a>
+            <a href="/tools/salesboard/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">売上ダッシュボード</a>
+            <a href="/tools/jobposting/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">求人票ジェネレーター</a>
+            <a href="/tools/dataclean/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">データクリーニング</a>
+            <a href="/tools/contract/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">契約書チェッカー</a>
+            <a href="/tools/legalgen/" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">契約書・規約作成</a>
+            <a href="/guide" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">使い方ガイド</a>
+            <p class="px-3 pt-3 pb-1 text-xs font-medium text-gray-400 uppercase">コミュニティ</p>
+            <a href="/community/reviews" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">アプリ評価</a>
+            <a href="/community/feedback" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">フィードバック</a>
+            <a href="/community/requests" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">アプリリクエスト</a>
+            <div class="border-t my-2"></div>
+            {% if user and user.is_admin %}
+            <a href="/admin" class="block px-3 py-2.5 rounded-lg text-sm text-purple-700 hover:bg-purple-50">管理者ダッシュボード</a>
+            {% endif %}
+            <a href="/account" class="block px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50">アカウント設定</a>
+            {% if not user.has_active_plan and not demo_mode %}
+            <a href="/billing/upgrade" class="block px-3 py-2.5 rounded-lg text-sm text-indigo-600 font-medium hover:bg-indigo-50">アップグレード</a>
+            {% endif %}
+            <a href="/auth/logout" class="block px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-50">ログアウト</a>
+        </nav>
+    </div>
+    {% endif %}
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t bg-white mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p class="text-gray-400 text-xs">&copy; 2026 YN Tools. All rights reserved.</p>
+                <div class="flex items-center gap-4 text-xs text-gray-400">
+                    {% if not user and not demo_mode %}
+                    <a href="#pricing" class="hover:text-gray-600">料金</a>
+                    {% endif %}
+                    <a href="/community/feedback" class="hover:text-gray-600">フィードバック</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // Mobile menu toggle
+    function toggleMobileMenu() {
+        document.getElementById('mobileOverlay').classList.toggle('active');
+        document.getElementById('mobilePanel').classList.toggle('active');
+    }
+
+    // Toast notification system
+    function showToast(message, type = 'info', duration = 4000) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('toast-hide');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
+    // Close mobile menu on resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) {
+            document.getElementById('mobileOverlay')?.classList.remove('active');
+            document.getElementById('mobilePanel')?.classList.remove('active');
+        }
+    });
+    </script>
+
+{% if demo_mode %}
+<div class="demo-badge" style="position:fixed;bottom:1rem;right:1rem;background:#1f1f1f;color:#fff;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:9999;">
+  🤖 このサイトは全て <strong>Claude Code</strong> で開発されました
+</div>
+{% endif %}
+</body>
+</html>

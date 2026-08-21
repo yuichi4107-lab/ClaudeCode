@@ -1,0 +1,41 @@
+{% extends "tools/mailer/base_mailer.html" %}
+{% block title %}送信履歴 - YN Tools{% endblock %}
+
+{% block mailer_content %}
+<h1 class="text-xl font-bold mb-6">送信履歴（{{ history | length }}件）</h1>
+
+<div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b">
+            <tr>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">日時</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">宛先</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">件名</th>
+                <th class="px-4 py-3 text-left font-medium text-gray-500">結果</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y">
+            {% for h in history %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ h.sent_at.strftime('%m/%d %H:%M') if h.sent_at else '-' }}</td>
+                <td class="px-4 py-3">
+                    {{ h.recipient_email }}
+                    {% if h.recipient_name %}<span class="text-gray-400 text-xs ml-1">({{ h.recipient_name }})</span>{% endif %}
+                </td>
+                <td class="px-4 py-3 truncate max-w-xs">{{ h.subject }}</td>
+                <td class="px-4 py-3">
+                    {% if h.status == 'success' %}
+                    <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">成功</span>
+                    {% else %}
+                    <span class="bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs" title="{{ h.status }}">失敗</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not history %}
+            <tr><td colspan="4" class="px-4 py-8 text-center text-gray-400">送信履歴がありません</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

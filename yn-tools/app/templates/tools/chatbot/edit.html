@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ '編集' if mode == 'edit' else '新規作成' }} - チャットボット - YN Tools{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="mb-6">
+        <a href="/tools/chatbot/{% if bot %}{{ bot.bot_id }}{% endif %}" class="text-sm text-gray-500 hover:text-gray-700">&larr; 戻る</a>
+        <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ 'ボットを編集' if mode == 'edit' else '新しいボットを作成' }}</h1>
+    </div>
+
+    <form method="post" action="/tools/chatbot/{% if mode == 'edit' %}{{ bot.bot_id }}/edit{% else %}new{% endif %}" class="bg-white rounded-lg shadow-sm border p-6 space-y-5">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ボット名 <span class="text-red-500">*</span></label>
+                <input type="text" name="name" value="{{ bot.name if bot else '' }}" placeholder="例: カスタマーサポートBot" required
+                       class="w-full rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">テーマカラー</label>
+                <div class="flex items-center gap-3">
+                    <input type="color" name="theme_color" value="{{ bot.theme_color if bot else '#4F46E5' }}"
+                           class="w-10 h-10 rounded border cursor-pointer">
+                    <span class="text-sm text-gray-400">ウィジェットの色を選択</span>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">説明</label>
+            <input type="text" name="description" value="{{ bot.description if bot else '' }}" placeholder="このボットの用途を簡潔に"
+                   class="w-full rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">システムプロンプト（ボットの性格・役割） <span class="text-red-500">*</span></label>
+            <textarea name="system_prompt" rows="5" required placeholder="例: あなたは〇〇株式会社のカスタマーサポート担当です。丁寧な敬語で、お客様の質問に回答してください。回答は簡潔に、200文字以内でお願いします。"
+                      class="w-full rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ bot.system_prompt if bot else '' }}</textarea>
+            <p class="text-xs text-gray-400 mt-1">ボットの役割、口調、制約事項を指定してください。</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ナレッジベース</label>
+            <textarea name="knowledge" rows="8" placeholder="ここにFAQ、製品情報、価格表、営業時間などのテキストを貼り付けてください。ボットはこの情報を参照して回答します。"
+                      class="w-full rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ bot.knowledge if bot else '' }}</textarea>
+            <p class="text-xs text-gray-400 mt-1">ボットが参照する情報。FAQ、製品情報、価格表などを貼り付けてください。</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ウェルカムメッセージ</label>
+            <input type="text" name="welcome_message" value="{{ bot.welcome_message if bot else 'こんにちは！何かお手伝いできることはありますか？' }}"
+                   class="w-full rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        {% if mode == 'edit' %}
+        <div class="flex items-center gap-2">
+            <input type="checkbox" name="is_active" id="is_active" value="true" {% if bot.is_active %}checked{% endif %}
+                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            <label for="is_active" class="text-sm text-gray-700">ボットを有効にする</label>
+        </div>
+        {% endif %}
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                {{ '更新する' if mode == 'edit' else '作成する' }}
+            </button>
+            <a href="/tools/chatbot/" class="text-sm text-gray-500 hover:text-gray-700">キャンセル</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

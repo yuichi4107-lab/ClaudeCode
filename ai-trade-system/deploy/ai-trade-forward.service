@@ -1,0 +1,16 @@
+[Unit]
+Description=AI Trade System - FX Forward Test
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/ai-trade-system
+ExecStart=/usr/bin/python3 -m src.forward.forward_runner --exchange saxo_sim --dry-run
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

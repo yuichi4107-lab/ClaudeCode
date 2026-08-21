@@ -1,0 +1,11 @@
+ccxt>=4.0.0
+python-dotenv>=1.0.0
+google-generativeai>=0.5.0
+pandas>=2.0.0
+Pillow>=10.0.0
+requests>=2.31.0
+httpx>=0.25.0
+# 工程3: FX戦略実装用（2026-04-12追加）
+pandas_ta
+numpy>=1.24.0
+scipy>=1.11.0

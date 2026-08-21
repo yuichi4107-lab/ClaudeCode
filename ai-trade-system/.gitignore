@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+data/ohlcv/
+data/charts/
+results/
+# NOTE: results/downtrend_filter/baseline.json and baseline_summary.txt are
+# force-tracked (git add -f) as canonical baseline for cross-session handoff.
+# Other results/ remain ignored.
+.venv/

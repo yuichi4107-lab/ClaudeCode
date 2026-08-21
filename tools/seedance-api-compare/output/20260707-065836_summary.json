@@ -1,0 +1,15 @@
+{
+  "prompt": "A young Japanese woman in a cozy kitchen enthusiastically presenting a bowl of steaming ramen to the camera, speaking excitedly, warm lighting, vertical short-form video style, realistic",
+  "duration": 5,
+  "resolution": "720p",
+  "mode": "std",
+  "results": {
+    "atlas": {
+      "status": "ok",
+      "elapsed_sec": 217,
+      "file": "20260707-065836_atlas_720p_5s.mp4",
+      "size_mb": 2.6,
+      "video_url": "https://atlas-media.oss-us-west-1.aliyuncs.com/videos/cgt-20260707055837-k5k2h-0.mp4"
+    }
+  }
+}
