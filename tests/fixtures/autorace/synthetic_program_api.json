@@ -1,0 +1,16 @@
+{
+  "result": "Success",
+  "errors": [],
+  "body": {
+    "twicePlayerExist": 0,
+    "playerList": [
+      {"carNo": 5, "playerCode": "3110", "playerName": "テスト　一郎", "bikeClass": 1, "graduationCode": "31", "rank": "S-10", "age": 35, "rate2": "45.0", "rate3": "60.0", "handicap": 10, "absent": null},
+      {"carNo": 1, "playerCode": "2001", "playerName": "テスト　二郎", "bikeClass": 1, "graduationCode": "20", "rank": "A-50", "age": 52, "rate2": "20.0", "rate3": "35.0", "handicap": 0, "absent": null},
+      {"carNo": 2, "playerCode": "2002", "playerName": "テスト　三郎", "bikeClass": 1, "graduationCode": "20", "rank": "B-80", "age": 51, "rate2": "10.0", "rate3": "22.5", "handicap": 0, "absent": null},
+      {"carNo": 6, "playerCode": "2003", "playerName": "テスト　四郎", "bikeClass": 1, "graduationCode": "25", "rank": "A-100", "age": 44, "rate2": "30.0", "rate3": "40.0", "handicap": 20, "absent": null},
+      {"carNo": 3, "playerCode": "2004", "playerName": "テスト　五郎", "bikeClass": 2, "graduationCode": "38", "rank": "B-140", "age": 22, "rate2": "5.0", "rate3": "15.0", "handicap": 10, "absent": null},
+      {"carNo": 4, "playerCode": "2005", "playerName": "テスト　六郎", "bikeClass": 2, "graduationCode": "38", "rank": "B-150", "age": 20, "rate2": null, "rate3": null, "handicap": 10, "absent": "K"},
+      {"carNo": 7, "playerCode": "2006", "playerName": "テスト　七郎", "bikeClass": 1, "graduationCode": "30", "rank": "A-77", "age": 38, "rate2": "25.0", "rate3": "37.5", "handicap": 20, "absent": null}
+    ]
+  }
+}

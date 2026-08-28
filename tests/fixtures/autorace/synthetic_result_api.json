@@ -1,0 +1,29 @@
+{
+  "result": "Success",
+  "errors": [],
+  "body": {
+    "twicePlayerExist": 0,
+    "raceResult": [
+      {"order": 1, "accidentCode": null, "accidentName": null, "carNo": 5, "playerCode": "3110", "retireFlag": 0, "playerName": "テスト　一郎", "playerNameEn": "ICHIRO TEST", "motorcycleName": "マシンA", "handicap": 10, "traialRetryCode": null, "traialTime": "3.31", "raceTime": "3.365", "st": "0.05", "foulCode": null, "anotherRaceNo": null, "anotherRaceNo2": null},
+      {"order": 2, "accidentCode": null, "accidentName": null, "carNo": 1, "playerCode": "2001", "retireFlag": 0, "playerName": "テスト　二郎", "playerNameEn": "JIRO TEST", "motorcycleName": "マシンB", "handicap": 0, "traialRetryCode": 1, "traialTime": "3.40", "raceTime": "3.401", "st": "0.12", "foulCode": null, "anotherRaceNo": null, "anotherRaceNo2": null},
+      {"order": 3, "accidentCode": null, "accidentName": null, "carNo": 2, "playerCode": "2002", "retireFlag": 0, "playerName": "テスト　三郎", "playerNameEn": "SABURO TEST", "motorcycleName": "マシンC", "handicap": 0, "traialRetryCode": null, "traialTime": "3.38", "raceTime": "3.412", "st": "0.30", "foulCode": "L", "anotherRaceNo": null, "anotherRaceNo2": null},
+      {"order": 4, "accidentCode": "完", "accidentName": "故障完走", "carNo": 6, "playerCode": "2003", "retireFlag": 0, "playerName": "テスト　四郎", "playerNameEn": "SHIRO TEST", "motorcycleName": "マシンD", "handicap": 20, "traialRetryCode": null, "traialTime": "3.35", "raceTime": "3.520", "st": "0.15", "foulCode": null, "anotherRaceNo": null, "anotherRaceNo2": null},
+      {"order": null, "accidentCode": "落", "accidentName": "落車", "carNo": 3, "playerCode": "2004", "retireFlag": 0, "playerName": "テスト　五郎", "playerNameEn": "GORO TEST", "motorcycleName": "マシンE", "handicap": 10, "traialRetryCode": null, "traialTime": "3.34", "raceTime": null, "st": "0.09", "foulCode": null, "anotherRaceNo": null, "anotherRaceNo2": null},
+      {"order": null, "accidentCode": "欠", "accidentName": "欠車", "carNo": 4, "playerCode": "2005", "retireFlag": 1, "playerName": "テスト　六郎", "playerNameEn": "ROKURO TEST", "motorcycleName": "マシンF", "handicap": 10, "traialRetryCode": null, "traialTime": null, "raceTime": null, "st": null, "foulCode": null, "anotherRaceNo": null, "anotherRaceNo2": null},
+      {"order": 9, "accidentCode": "反", "accidentName": "反則妨害", "carNo": 7, "playerCode": "2006", "retireFlag": 0, "playerName": "テスト　七郎", "playerNameEn": "SHICHIRO TEST", "motorcycleName": "マシンG", "handicap": 20, "traialRetryCode": null, "traialTime": "3.33", "raceTime": "3.400", "st": "0.02", "foulCode": "F", "anotherRaceNo": null, "anotherRaceNo2": null}
+    ],
+    "warningPlayerList": [],
+    "trialWarningPlayerList": [],
+    "grandNoteList": [],
+    "refundInfo": {
+      "rtw": {"typeCode": 0, "typeName": "通常", "list": [{"1thCarNo": 5, "2thCarNo": 1, "refund": 1520, "pop": 3, "refundVotes": "100"}]},
+      "rfw": {"typeCode": 0, "typeName": "通常", "list": [{"1thCarNo": 1, "2thCarNo": 5, "refund": 800, "pop": 2, "refundVotes": "80"}]},
+      "rt3": {"typeCode": 0, "typeName": "通常", "list": [{"1thCarNo": 5, "2thCarNo": 1, "3thCarNo": 2, "refund": 5480, "pop": 12, "refundVotes": "10"}]},
+      "rf3": {"typeCode": 4, "typeName": "無投票", "list": []},
+      "wid": {"typeCode": 0, "typeName": "通常", "list": [{"1thCarNo": 5, "2thCarNo": 1, "refund": 340, "pop": 1, "refundVotes": "50"}, {"1thCarNo": 5, "2thCarNo": 2, "refund": 410, "pop": 2, "refundVotes": "40"}]},
+      "tns": {"typeCode": 0, "typeName": "通常", "list": [{"1thCarNo": 5, "refund": 210, "pop": 1, "refundVotes": "300"}]},
+      "fns": {"typeCode": 3, "typeName": "全返還", "list": [{"1thCarNo": 5, "refund": 0, "pop": null, "refundVotes": "0"}]},
+      "absent": {"list": [{"carNo": 4}]}
+    }
+  }
+}

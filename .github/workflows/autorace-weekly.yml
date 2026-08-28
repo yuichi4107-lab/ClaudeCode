@@ -1,0 +1,72 @@
+# オートレース週次更新: 差分収集 → 評価 → ランキングCSVをコミット。
+#
+# - DB(SQLite)は orphan branch `autorace-data` に autorace.db.gz 1ファイル・
+#   単一コミットとして保存する(毎回 force-push するので履歴が太らない)。
+#   初回はローカルのDBを同じ手順で一度 push して種蒔きしておくこと。
+# - LLM・外部シークレットは不要(GITHUB_TOKEN のみ)。
+# - 途中失敗時: DB push は最終ステップなので、再実行(workflow_dispatch)すれば
+#   前回DBから scrape_log の差分だけ取り直して整合する。
+name: autorace-weekly
+
+on:
+  schedule:
+    - cron: "0 21 * * 0"   # UTC日曜21:00 = JST月曜06:00(ミッドナイト開催終了後)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: autorace-weekly
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore DB from autorace-data branch
+        run: |
+          git fetch origin autorace-data
+          mkdir -p data
+          git show FETCH_HEAD:autorace.db.gz | gunzip > data/autorace.db
+          python -c "import sqlite3; c = sqlite3.connect('data/autorace.db'); print('races:', c.execute('SELECT COUNT(*) FROM races').fetchone()[0])"
+
+      - name: Run weekly update (scrape + evaluate)
+        run: python scripts/autorace_weekly_update.py
+
+      - name: Commit reports to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/reports/autorace_eval_latest.csv
+          [ -f data/reports/autorace_rookie_latest.csv ] && git add data/reports/autorace_rookie_latest.csv || true
+          [ -d data/reports/archive ] && git add data/reports/archive || true
+          if git diff --cached --quiet; then
+            echo "レポートに変化なし"
+          else
+            git commit -m "autorace: weekly report update ($(date -u +%F))"
+            git pull --rebase origin main
+            git push origin main
+          fi
+
+      - name: Push DB snapshot to autorace-data branch
+        run: |
+          gzip -9 -c data/autorace.db > /tmp/autorace.db.gz
+          BLOB=$(git hash-object -w /tmp/autorace.db.gz)
+          TREE=$(printf '100644 blob %s\tautorace.db.gz\n' "$BLOB" | git mktree)
+          COMMIT=$(git commit-tree "$TREE" -m "db snapshot $(date -u +%F)")
+          git push -f origin "$COMMIT:refs/heads/autorace-data"

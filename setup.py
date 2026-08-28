@@ -19,6 +19,7 @@ setup(
     entry_points={
         "console_scripts": [
             "nankan=nankan_predictor.cli.main:main",
+            "autorace=autorace_evaluator.cli.main:main",
         ],
     },
     python_requires=">=3.10",
