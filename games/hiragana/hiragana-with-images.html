@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffd54f">
+  <title>ひらがな で あそぼう！</title>
+  <!--
+    ひらがな で あそぼう！（画像ドロップイン版）
+    このHTMLと同じフォルダに「images」フォルダを作り、その中に
+    shoubousha.png / inu.png などの画像（WORDLIST のファイル名）を入れると、
+    その絵が自動で表示されます。画像が無い語は絵文字のまま表示されます。
+    ダブルクリックで起動。ネット接続もインストールも不要。
+    音が出ないときは Chrome / Edge で開き、最初に画面を一度クリックしてください。
+  -->
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: "Hiragino Maru Gothic ProN", "Hiragino Maru Gothic Pro",
+        "Yu Gothic", "Meiryo", "M PLUS Rounded 1c", sans-serif;
+      background: linear-gradient(160deg, #fff6d6 0%, #ffe0ef 50%, #d9f3ff 100%);
+      color: #444;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #app { min-height: 100%; display: flex; flex-direction: column; }
+    .screen { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 16px; }
+    .hidden { display: none !important; }
+
+    /* スタート画面 */
+    .title {
+      font-size: clamp(28px, 8vw, 48px);
+      color: #ff7043;
+      text-shadow: 2px 2px 0 #fff, 4px 4px 0 rgba(255, 112, 67, 0.2);
+      margin: 24px 0 8px; text-align: center;
+    }
+    .subtitle { font-size: clamp(16px, 4.5vw, 22px); color: #777; margin: 0 0 28px; text-align: center; }
+    .category-buttons { display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 420px; }
+    .cat-btn {
+      display: flex; align-items: center; gap: 18px; padding: 20px 24px;
+      border: none; border-radius: 24px; background: #fff;
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12); cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    .cat-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12); }
+    .cat-emoji { font-size: clamp(40px, 11vw, 60px); line-height: 1; }
+    .cat-label { font-size: clamp(22px, 6vw, 30px); font-weight: bold; color: #555; }
+
+    /* ゲーム画面 */
+    #game-screen { justify-content: flex-start; }
+    .game-header { width: 100%; max-width: 560px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .icon-btn {
+      font-size: 32px; background: #fff; border: none; border-radius: 50%;
+      width: 56px; height: 56px; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12); cursor: pointer;
+    }
+    .icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12); }
+    .score {
+      font-size: clamp(24px, 6vw, 32px); font-weight: bold; color: #f9a825;
+      background: #fff; padding: 8px 20px; border-radius: 30px; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08);
+    }
+    .prompt { font-size: clamp(16px, 4.5vw, 22px); color: #666; text-align: center; margin: 12px 0; line-height: 1.5; }
+
+    .picture {
+      border: none; background: #fff; border-radius: 32px;
+      width: min(78vw, 320px); height: min(78vw, 320px);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 0 rgba(0, 0, 0, 0.1); cursor: pointer; margin: 8px 0 20px; overflow: hidden;
+    }
+    .picture:active { transform: scale(0.97); }
+    .picture-emoji { font-size: min(46vw, 190px); line-height: 1; }
+    .picture-img { width: 100%; height: 100%; object-fit: contain; }
+
+    .choices { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 560px; }
+    .choice-btn {
+      font-family: inherit; font-size: clamp(40px, 13vw, 72px); font-weight: bold; color: #4e342e;
+      background: #ffe082; border: none; border-radius: 24px;
+      width: clamp(90px, 26vw, 130px); height: clamp(90px, 26vw, 130px);
+      box-shadow: 0 6px 0 #e0a800; cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.2s ease;
+    }
+    .choice-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #e0a800; }
+    .choice-btn.correct { background: #aed581; box-shadow: 0 6px 0 #689f38; animation: pop 0.5s ease; }
+    .choice-btn.wrong { background: #ffab91; box-shadow: 0 6px 0 #d84315; animation: shake 0.4s ease; opacity: 0.7; }
+
+    @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+
+    .feedback { margin-top: 22px; font-size: clamp(28px, 8vw, 44px); font-weight: bold; text-align: center; min-height: 1.2em; }
+    .feedback.ok { color: #43a047; }
+    .feedback.ng { color: #fb8c00; }
+    .feedback.show { animation: bounceIn 0.5s ease; }
+    @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+  </style>
+</head>
+<body>
+  <div id="app">
+
+    <!-- スタート画面：カテゴリ選択 -->
+    <section id="start-screen" class="screen">
+      <h1 class="title">ひらがな で あそぼう！</h1>
+      <p class="subtitle">えに あう もじを えらんでね</p>
+      <div class="category-buttons">
+        <button class="cat-btn" data-category="vehicle">
+          <span class="cat-emoji">🚛</span>
+          <span class="cat-label">はたらく くるま</span>
+        </button>
+        <button class="cat-btn" data-category="animal">
+          <span class="cat-emoji">🦁</span>
+          <span class="cat-label">どうぶつ</span>
+        </button>
+        <button class="cat-btn" data-category="all">
+          <span class="cat-emoji">🌈</span>
+          <span class="cat-label">ぜんぶ</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ゲーム画面 -->
+    <section id="game-screen" class="screen hidden">
+      <header class="game-header">
+        <button id="home-btn" class="icon-btn" aria-label="さいしょにもどる">🏠</button>
+        <div id="score" class="score">⭐ <span id="score-num">0</span></div>
+      </header>
+
+      <p class="prompt">この えは なにかな？<br>さいしょの もじを えらんでね</p>
+
+      <button id="picture" class="picture" aria-label="えを もういちど きく">
+        <span id="picture-content"></span>
+      </button>
+
+      <div id="choices" class="choices"></div>
+
+      <div id="feedback" class="feedback hidden"></div>
+    </section>
+
+  </div>
+
+  <script>
+    // ===== 出題データ =====
+    // word: 読み上げ・表示する単語（ひらがな） / answer: さいしょのひらがな
+    // emoji: 表示する絵 / category: 'vehicle'（はたらくくるま） or 'animal'（どうぶつ）
+    const ITEMS = [
+      // --- はたらく くるま ---
+      { word: 'しょうぼうしゃ', answer: 'し', emoji: '🚒', category: 'vehicle' },
+      { word: 'とれーらー',     answer: 'と', emoji: '🚛', category: 'vehicle' },
+      { word: 'しょべるかー',   answer: 'し', emoji: '🏗️', category: 'vehicle', say: 'ショベルカー' },
+      { word: 'だんぷかー',     answer: 'だ', emoji: '🚜', category: 'vehicle' },
+      { word: 'くるま',         answer: 'く', emoji: '🚗', category: 'vehicle' },
+      { word: 'でんしゃ',       answer: 'で', emoji: '🚃', category: 'vehicle' },
+      { word: 'ばす',           answer: 'ば', emoji: '🚌', category: 'vehicle' },
+      { word: 'ひこうき',       answer: 'ひ', emoji: '✈️', category: 'vehicle' },
+      { word: 'ふね',           answer: 'ふ', emoji: '🚢', category: 'vehicle' },
+      { word: 'たくしー',       answer: 'た', emoji: '🚕', category: 'vehicle', say: 'タクシー' },
+      { word: 'ぱとかー',       answer: 'ぱ', emoji: '🚓', category: 'vehicle', say: 'パトカー' },
+      { word: 'ろけっと',       answer: 'ろ', emoji: '🚀', category: 'vehicle' },
+      // --- どうぶつ ---
+      { word: 'いぬ',           answer: 'い', emoji: '🐶', category: 'animal' },
+      { word: 'ねこ',           answer: 'ね', emoji: '🐱', category: 'animal' },
+      { word: 'きりん',         answer: 'き', emoji: '🦒', category: 'animal' },
+      { word: 'らいおん',       answer: 'ら', emoji: '🦁', category: 'animal' },
+      { word: 'うさぎ',         answer: 'う', emoji: '🐰', category: 'animal' },
+      { word: 'ぞう',           answer: 'ぞ', emoji: '🐘', category: 'animal' },
+      { word: 'さる',           answer: 'さ', emoji: '🐵', category: 'animal' },
+      { word: 'ぱんだ',         answer: 'ぱ', emoji: '🐼', category: 'animal' },
+      { word: 'うま',           answer: 'う', emoji: '🐴', category: 'animal' },
+      { word: 'ぶた',           answer: 'ぶ', emoji: '🐷', category: 'animal' },
+      { word: 'かめ',           answer: 'か', emoji: '🐢', category: 'animal' },
+      { word: 'とり',           answer: 'と', emoji: '🐦', category: 'animal', say: '鳥' },
+      { word: 'くま',           answer: 'く', emoji: '🐻', category: 'animal' },
+      { word: 'ぺんぎん',       answer: 'ぺ', emoji: '🐧', category: 'animal' },
+    ];
+
+    // ===== 画像ファイル名マップ（word → images/<name>.png）=====
+    // 同じフォルダの images/ に、この名前の画像（例: shoubousha.png）を置くと自動で表示されます。
+    // 画像が無い語は絵文字のまま表示されます（自動フォールバック）。
+    const FILES = {
+      'しょうぼうしゃ': 'shoubousha', 'とれーらー': 'trailer', 'しょべるかー': 'shovelcar',
+      'だんぷかー': 'dumpcar', 'くるま': 'kuruma', 'でんしゃ': 'densha', 'ばす': 'bus',
+      'ひこうき': 'hikouki', 'ふね': 'fune', 'たくしー': 'taxi', 'ぱとかー': 'patocar', 'ろけっと': 'rocket',
+      'いぬ': 'inu', 'ねこ': 'neko', 'きりん': 'kirin', 'らいおん': 'lion', 'うさぎ': 'usagi',
+      'ぞう': 'zou', 'さる': 'saru', 'ぱんだ': 'panda', 'うま': 'uma', 'ぶた': 'buta',
+      'かめ': 'kame', 'とり': 'tori', 'くま': 'kuma', 'ぺんぎん': 'penguin'
+    };
+
+    // ===== ゲームロジック =====
+    (function () {
+      'use strict';
+      const startScreen = document.getElementById('start-screen');
+      const gameScreen = document.getElementById('game-screen');
+      const pictureBtn = document.getElementById('picture');
+      const pictureContent = document.getElementById('picture-content');
+      const choicesEl = document.getElementById('choices');
+      const feedbackEl = document.getElementById('feedback');
+      const scoreNumEl = document.getElementById('score-num');
+      const homeBtn = document.getElementById('home-btn');
+
+      let pool = [];
+      let current = null;
+      let score = 0;
+      let locked = false;
+      let speechReady = false;
+      const CHOICE_COUNT = 3;
+
+      // できるだけ自然な日本語ボイスを選ぶ（端末にある音声から優先順で選択）
+      let jaVoice = null;
+      function pickVoice() {
+        if (!('speechSynthesis' in window)) return;
+        const vs = window.speechSynthesis.getVoices();
+        if (!vs || !vs.length) return;
+        const ja = vs.filter((v) => /ja[-_]?JP/i.test(v.lang) || v.lang === 'ja');
+        const prefer = ['Google 日本語', 'Microsoft Nanami', 'Microsoft Ayumi', 'Microsoft Haruka', 'Kyoko', 'O-ren', 'Otoya', 'Hattori'];
+        for (const n of prefer) {
+          const m = ja.find((v) => v.name.indexOf(n) !== -1);
+          if (m) { jaVoice = m; return; }
+        }
+        if (ja.length) jaVoice = ja[0];
+      }
+      if ('speechSynthesis' in window) {
+        pickVoice();
+        window.speechSynthesis.onvoiceschanged = pickVoice; // 音声リストは非同期で届くため
+      }
+
+      function speak(text, onEnd) {
+        if (!speechReady || !('speechSynthesis' in window)) {
+          if (onEnd) setTimeout(onEnd, 0); // 音声非対応でも進行できるようフォールバック
+          return;
+        }
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = 'ja-JP';
+          if (jaVoice) u.voice = jaVoice; // 自然な日本語ボイスを使う
+          u.rate = 0.95;
+          u.pitch = 1.05;
+          if (onEnd) {
+            let done = false;
+            const fire = () => { if (!done) { done = true; onEnd(); } };
+            u.onend = fire;
+            u.onerror = fire;
+          }
+          window.speechSynthesis.speak(u);
+        } catch (e) { if (onEnd) onEnd(); /* 音声が使えない端末でも続行 */ }
+      }
+
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+      function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+      const ALL_ANSWERS = Array.from(new Set(ITEMS.map((it) => it.answer)));
+
+      function renderPicture(item) {
+        pictureContent.innerHTML = '';
+        const showEmoji = () => {
+          pictureContent.innerHTML = '';
+          const span = document.createElement('span');
+          span.className = 'picture-emoji';
+          span.textContent = item.emoji;
+          pictureContent.appendChild(span);
+        };
+        // images/<name>.png があれば画像、無ければ絵文字に自動フォールバック
+        const file = item.image ? null : FILES[item.word];
+        if (item.image || file) {
+          const img = document.createElement('img');
+          img.className = 'picture-img';
+          img.alt = item.word;
+          img.onerror = showEmoji; // 画像が見つからなければ絵文字を表示
+          img.src = item.image || ('images/' + file + '.png');
+          pictureContent.appendChild(img);
+        } else {
+          showEmoji();
+        }
+      }
+
+      function buildChoices(item) {
+        const choices = [item.answer];
+        const others = shuffle(ALL_ANSWERS.filter((c) => c !== item.answer));
+        for (const c of others) {
+          if (choices.length >= CHOICE_COUNT) break;
+          choices.push(c);
+        }
+        return shuffle(choices);
+      }
+
+      function nextQuestion() {
+        locked = false;
+        hideFeedback();
+        current = pickRandom(pool);
+        renderPicture(current);
+        choicesEl.innerHTML = '';
+        const choices = buildChoices(current);
+        for (const ch of choices) {
+          const btn = document.createElement('button');
+          btn.className = 'choice-btn';
+          btn.textContent = ch;
+          btn.addEventListener('click', () => onChoice(btn, ch));
+          choicesEl.appendChild(btn);
+        }
+        // say があればそれを優先（カタカナ表記でアクセントを自然にするため）
+        setTimeout(() => speak(current.say || current.word), 350);
+      }
+
+      function onChoice(btn, value) {
+        if (locked) return;
+        if (value === current.answer) {
+          locked = true;
+          btn.classList.add('correct');
+          score += 1;
+          scoreNumEl.textContent = String(score);
+          showFeedback('せいかい！ 🎉', 'ok');
+          // 「せいかい！」を読み上げ、それが終わってから少し間を置いて次の問題へ
+          speak('せいかい！', () => setTimeout(nextQuestion, 900));
+        } else {
+          btn.classList.add('wrong');
+          btn.disabled = true;
+          showFeedback('もういちど 😊', 'ng');
+          speak('もういちど');
+        }
+      }
+
+      function showFeedback(text, type) {
+        feedbackEl.textContent = text;
+        feedbackEl.className = 'feedback ' + type;
+        void feedbackEl.offsetWidth;
+        feedbackEl.classList.add('show');
+      }
+      function hideFeedback() { feedbackEl.className = 'feedback hidden'; }
+
+      function startGame(category) {
+        pool = category === 'all' ? ITEMS.slice() : ITEMS.filter((it) => it.category === category);
+        if (pool.length === 0) pool = ITEMS.slice();
+        score = 0;
+        scoreNumEl.textContent = '0';
+        startScreen.classList.add('hidden');
+        gameScreen.classList.remove('hidden');
+        nextQuestion();
+      }
+
+      function goHome() {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        gameScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+      }
+
+      document.querySelectorAll('.cat-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          speechReady = true;
+          startGame(btn.dataset.category);
+        });
+      });
+      homeBtn.addEventListener('click', goHome);
+      pictureBtn.addEventListener('click', () => { if (current) speak(current.say || current.word); });
+    })();
+  </script>
+</body>
+</html>
