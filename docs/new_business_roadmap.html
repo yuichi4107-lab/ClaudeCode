@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI×漫画×リアル営業 新規ビジネスロードマップ</title>
+<style>
+  :root {
+    --navy: #0d2149;
+    --navy-light: #1a3a6e;
+    --red: #d32f2f;
+    --red-soft: #fdecea;
+    --blue-soft: #e8f0fb;
+    --gold: #b8860b;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --border: #e2e8f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", Meiryo, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+  /* ===== Hero ===== */
+  header {
+    background: linear-gradient(135deg, #0a1a3a 0%, #0d2149 55%, #3a1020 100%);
+    color: #fff;
+    padding: 56px 0 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 85% 15%, rgba(211,47,47,.35), transparent 55%),
+                radial-gradient(ellipse at 10% 90%, rgba(60,120,255,.25), transparent 50%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-block;
+    background: var(--red);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    padding: 4px 14px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    font-size: clamp(1.5rem, 4vw, 2.3rem);
+    font-weight: 800;
+    line-height: 1.4;
+    margin-bottom: 14px;
+  }
+  header h1 .accent { color: #ff6b5e; }
+  header p.lead {
+    font-size: 1rem;
+    color: #c9d4e8;
+    max-width: 760px;
+  }
+  .hero-formula {
+    margin-top: 28px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    padding: 18px 24px;
+    display: inline-block;
+    backdrop-filter: blur(4px);
+  }
+  .hero-formula .label { font-size: .78rem; color: #9fb3d4; letter-spacing: .1em; margin-bottom: 4px; }
+  .hero-formula .formula { font-size: clamp(.95rem, 2.5vw, 1.25rem); font-weight: 700; }
+  .hero-formula .op { color: #ff6b5e; margin: 0 .35em; }
+
+  /* ===== Sections ===== */
+  section { padding: 52px 0 8px; }
+  .sec-head { margin-bottom: 28px; }
+  .sec-head .num {
+    display: inline-block;
+    background: var(--navy);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    padding: 3px 12px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .sec-head h2 {
+    font-size: clamp(1.25rem, 3vw, 1.6rem);
+    font-weight: 800;
+    color: var(--navy);
+    border-bottom: 3px solid var(--red);
+    display: inline-block;
+    padding-bottom: 6px;
+    line-height: 1.5;
+  }
+  .sec-head p.note { color: var(--muted); font-size: .92rem; margin-top: 10px; max-width: 820px; }
+
+  /* ===== Cards ===== */
+  .grid { display: grid; gap: 18px; }
+  .grid.c3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .grid.c2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 1px 3px rgba(13,33,73,.06);
+  }
+  .card h3 {
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h3 .badge {
+    flex: none;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    font-size: .85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card p, .card li { font-size: .92rem; }
+  .card ul { padding-left: 1.2em; }
+  .card li { margin-bottom: 4px; }
+
+  /* ===== Cycle model ===== */
+  .cycle {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    counter-reset: step;
+  }
+  .cycle .step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--navy);
+    border-radius: 10px;
+    padding: 18px;
+    position: relative;
+  }
+  .cycle .step.hot { border-top-color: var(--red); }
+  .cycle .step::before {
+    counter-increment: step;
+    content: "STEP " counter(step);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--red);
+  }
+  .cycle .step h4 { font-size: .98rem; color: var(--navy); margin: 4px 0 6px; }
+  .cycle .step p { font-size: .85rem; color: var(--muted); }
+
+  /* ===== Timeline ===== */
+  .timeline { position: relative; padding-left: 34px; }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 10px; top: 6px; bottom: 6px;
+    width: 4px;
+    background: linear-gradient(180deg, var(--navy) 0%, var(--red) 100%);
+    border-radius: 2px;
+  }
+  .phase {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 26px;
+    box-shadow: 0 1px 4px rgba(13,33,73,.07);
+  }
+  .phase::before {
+    content: "";
+    position: absolute;
+    left: -31px; top: 28px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 5px solid var(--navy);
+  }
+  .phase.hot::before { border-color: var(--red); }
+  .phase .ph-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 14px; margin-bottom: 6px; }
+  .phase .ph-label {
+    background: var(--navy);
+    color: #fff;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding: 3px 12px;
+    border-radius: 999px;
+  }
+  .phase.hot .ph-label { background: var(--red); }
+  .phase .ph-period { font-size: .82rem; font-weight: 700; color: var(--red); }
+  .phase h3 { font-size: 1.15rem; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .phase .goal {
+    background: var(--blue-soft);
+    border-left: 4px solid var(--navy);
+    padding: 8px 14px;
+    font-size: .88rem;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 14px;
+  }
+  .phase .goal strong { color: var(--navy); }
+  .phase ul.actions { list-style: none; margin-bottom: 8px; }
+  .phase ul.actions li {
+    position: relative;
+    padding-left: 26px;
+    margin-bottom: 8px;
+    font-size: .93rem;
+  }
+  .phase ul.actions li::before {
+    content: "✓";
+    position: absolute; left: 0; top: 0;
+    width: 18px; height: 18px;
+    background: var(--navy);
+    color: #fff;
+    font-size: .7rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 5px;
+  }
+  .phase.hot ul.actions li::before { background: var(--red); }
+  .kpi {
+    display: inline-block;
+    background: var(--red-soft);
+    color: var(--red);
+    border: 1px solid #f3c1bd;
+    font-size: .8rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 6px;
+    margin: 4px 6px 0 0;
+  }
+  .money { color: var(--red); font-weight: 700; }
+
+  /* ===== Table ===== */
+  .tbl-scroll { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: .9rem;
+    min-width: 640px;
+  }
+  th {
+    background: var(--navy);
+    color: #fff;
+    font-weight: 700;
+    padding: 12px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  td { padding: 12px 14px; border-top: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfd; }
+  td .price { color: var(--red); font-weight: 700; white-space: nowrap; }
+
+  /* ===== Case studies ===== */
+  .case {
+    border-left: 4px solid var(--gold);
+  }
+  .case .result {
+    background: #fdf6e3;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: .85rem;
+    margin-top: 10px;
+  }
+  .case .result strong { color: var(--gold); }
+
+  /* ===== Do / Don't ===== */
+  .dd-do { border-top: 4px solid #2e7d32; }
+  .dd-dont { border-top: 4px solid var(--red); }
+  .dd-do h3 { color: #2e7d32; }
+  .dd-dont h3 { color: var(--red); }
+
+  /* ===== Footer ===== */
+  .closing {
+    background: linear-gradient(135deg, #0a1a3a, #3a1020);
+    color: #fff;
+    border-radius: 14px;
+    padding: 36px 32px;
+    margin: 48px 0 20px;
+    text-align: center;
+  }
+  .closing h2 { font-size: 1.3rem; margin-bottom: 12px; }
+  .closing p { color: #c9d4e8; font-size: .95rem; max-width: 720px; margin: 0 auto 8px; }
+  .closing .big { font-size: 1.05rem; color: #fff; font-weight: 700; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .78rem;
+    padding: 20px 0 40px;
+  }
+  @media (max-width: 640px) {
+    .timeline { padding-left: 26px; }
+    .phase { padding: 20px 18px; }
+    .phase::before { left: -25px; width: 14px; height: 14px; border-width: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap" style="position:relative; z-index:1;">
+    <span class="hero-tag">NEW BUSINESS ROADMAP</span>
+    <h1>AI<span class="accent">×</span>漫画<span class="accent">×</span>リアル営業で築く<br>次世代の事業構築ロードマップ</h1>
+    <p class="lead">AIで価値提供のコストを下げ、リアルな人間関係の中で信頼を作り、無料のギブから高単価・継続型のサービスへ発展させる。講義資料（スライド全4章）と約1万字要約をもとに、立ち上げから拡大までを6フェーズに整理した実行計画です。</p>
+    <div class="hero-formula">
+      <div class="label">事業の根幹 ─ 売上の方程式</div>
+      <div class="formula">売上 <span class="op">=</span> 見込み客数 <span class="op">×</span> 商品単価 <span class="op">×</span> 成約率 <span class="op">×</span> 継続率</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== 1. 事業モデル ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="num">01 BUSINESS MODEL</span>
+      <h2>事業モデルの全体像 ── 循環型の価値提供モデル</h2>
+      <p class="note">単発で漫画を売るモデルではなく、「無料の価値提供を入口に、顧客課題を発見し、高単価サービス・継続課金・紹介・共同事業へ拡張する」循環型モデル。AIは制作だけでなく、診断・提案資料・見積もり・補助金検索・業務システムなど売上方程式の各部分を強化するために使う。</p>
+    </div>
+    <div class="cycle">
+      <div class="step"><h4>無料で与える（ギブ）</h4><p>漫画10ページ・プロフィール漫画・AI導入体験など、小さくても明確な成果物を無料提供</p></div>
+      <div class="step"><h4>信頼を構築</h4><p>実力・丁寧さ・速さを体感してもらい「頼みたい」「紹介したい」を生む</p></div>
+      <div class="step"><h4>課題を抽出</h4><p>困りごと・時間を取られている業務・固定費・売上機会の損失をヒアリング</p></div>
+      <div class="step hot"><h4>高単価で提案</h4><p>課題を金額・時間に換算し、支払額以上のリターンを示して契約へ</p></div>
+      <div class="step hot"><h4>JVで最大化・再投資</h4><p>営業×開発の共同受注、利益を集客・人材・資産へ再投資し循環を拡大</p></div>
+    </div>
+  </section>
+
+  <!-- ===== 2. ロードマップ ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="num">02 ROADMAP</span>
+      <h2>フェーズ別ロードマップ</h2>
+      <p class="note">成功の差は情報量ではなく「行動の速さ」。完璧な準備を待たず、実行しながら改善する。初期投資が小さいモデルのため、失敗しても致命傷にならない ── 数を打って改善する姿勢で進める。</p>
+    </div>
+
+    <div class="timeline">
+
+      <div class="phase hot">
+        <div class="ph-head">
+          <span class="ph-label">PHASE 0</span>
+          <span class="ph-period">今日（講義を聞いた当日）</span>
+        </div>
+        <h3>最初の一歩 ── 今日やるべき3つのこと</h3>
+        <div class="goal"><strong>ゴール：</strong>完成度が低くてもよいので着手する。「やりかけの仕事を終わらせたい」心理を利用して行動を加速させる。</div>
+        <ul class="actions">
+          <li>名刺の文章（キャッチコピー・提供価値）を作り始める</li>
+          <li>参加費3,000円〜1万円のビジネス交流会・経営者イベントを1つ予約する</li>
+          <li>SNSへ実績・制作物を1つ投稿する</li>
+        </ul>
+        <span class="kpi">着手＝当日中</span>
+      </div>
+
+      <div class="phase">
+        <div class="ph-head">
+          <span class="ph-label">PHASE 1</span>
+          <span class="ph-period">〜1週間</span>
+        </div>
+        <h3>信用設計 ── 「3つの証拠」と無料オファーの準備</h3>
+        <div class="goal"><strong>ゴール：</strong>初対面でも最低限信頼される状態を作る。信用ピラミッド（信頼→理解→価値）を名刺・SNS・書籍で可視化する。</div>
+        <ul class="actions">
+          <li><strong>名刺</strong>：①信頼（顔写真・肩書・出版/制作実績）②概要（漫画制作・AI導入支援・業務自動化）③メリット（売上向上・採用強化・時間削減）の3要素＋問い合わせ/LINE/作品一覧へのQRコード導線</li>
+          <li><strong>SNS</strong>（Facebook推奨、X/Instagram/YouTubeでも可）：顔が分かる・継続的な活動・作品掲載で「検索されたときの信用証明」にする</li>
+          <li><strong>書籍</strong>：Amazonに書籍・漫画を出版（企画→編集・制作→出版公開）。AI活用でも自分が企画・編集・完成させた作品なら実績になる</li>
+          <li><strong>無料オファーの言語化</strong>：「あなたのオリジナル漫画を一冊無料で作ります」── ブログや資料を受け取り、AIで漫画・書籍へ変換する3ステップを説明できる状態に</li>
+        </ul>
+        <span class="kpi">名刺完成</span><span class="kpi">SNS開設・投稿開始</span><span class="kpi">Amazon出版1冊</span>
+      </div>
+
+      <div class="phase">
+        <div class="ph-head">
+          <span class="ph-label">PHASE 2</span>
+          <span class="ph-period">2週間〜1か月</span>
+        </div>
+        <h3>リアル集客 ── 有料交流会を戦場にする</h3>
+        <div class="goal"><strong>ゴール：</strong>経営者・決裁権者との接点を作り、無料オファーを届ける。目的はその場で売ることではなく、信頼と価値のネットワーク構築。</div>
+        <ul class="actions">
+          <li>参加費<span class="money">3,000円〜1万円</span>の有料交流会・経営者会・業界イベントに継続参加（無料会は本気度・支払い能力が低い人が集まりやすい）</li>
+          <li>売り込まず、相手の事業と課題を聞き「10ページのプロフィール漫画を無料で作ります」「AIで1つ業務を自動化する体験を提供します」と明確な無料オファーを伝える</li>
+          <li>自分が解決できない課題は広告・採用・システム・士業など適切な専門家を紹介 ──「つなぐ人」がやがて「選ばれる人」になる</li>
+          <li>参加費は損失ではなく投資。計画→実行→検証→改善のPDCAを回し、話し方・オファー・対象者を毎回修正する</li>
+        </ul>
+        <span class="kpi">交流会 月2〜4回</span><span class="kpi">無料オファー提示数</span><span class="kpi">紹介ハブ化</span>
+      </div>
+
+      <div class="phase">
+        <div class="ph-head">
+          <span class="ph-label">PHASE 3</span>
+          <span class="ph-period">1〜3か月</span>
+        </div>
+        <h3>無料ギブの実行 ── 信頼を資産に変える</h3>
+        <div class="goal"><strong>ゴール：</strong>「相手の人生や事業に役立つ人」として認識される。短期回収を焦らず、価値提供の母数を増やす。</div>
+        <ul class="actions">
+          <li>漫画10ページ制作／プロフィール漫画／AIツール導入・簡単な業務自動化の体験を無料で提供し、実力・丁寧さ・速さを体感してもらう</li>
+          <li><strong>相手は選ぶ</strong>：信頼できる人・事業をしている人・将来相互協力できる人・良い人脈を持つ人にリソースを集中（自分だけ得しようとする相手は避ける）</li>
+          <li>提供後に感想・課題・今後必要なものをヒアリングし、業務時間・固定費・売上機会の損失を把握する</li>
+          <li>反応が弱ければ切り口を変える：「漫画」が刺さらない相手には「AI導入」「業務効率化」「コスト削減」「アプリ開発」で提案（藤原氏の事例：「AIに5分話しかけてアプリを作る」で強い興味→Zoom相談・紹介へ）</li>
+        </ul>
+        <span class="kpi">無料ギブ実績の蓄積</span><span class="kpi">数か月後の依頼・紹介の種まき</span>
+      </div>
+
+      <div class="phase hot">
+        <div class="ph-head">
+          <span class="ph-label">PHASE 4</span>
+          <span class="ph-period">3〜6か月</span>
+        </div>
+        <h3>収益化 ── 高単価・継続型サービスへの移行</h3>
+        <div class="goal"><strong>ゴール：</strong>顧客が得る経済的価値から逆算した価格で提案し、成約する。価格ではなく「支払額以上のリターン」を言葉・数字・事例・ストーリーで示す。</div>
+        <ul class="actions">
+          <li><strong>経済的価値の可視化</strong>：現在の業務・従業員数・時給・作業時間をヒアリングし削減額を算出（例：年600時間×時給2,000円＝<span class="money">年間120万円削減</span>→60万円の導入費は合理的な投資になる）</li>
+          <li><strong>ビフォーアフター提示</strong>：導入前（手作業・ミス・残業）→導入後（自動化・品質向上・利益向上）を顧客の未来のストーリーとして語る</li>
+          <li><strong>価格設定</strong>：書籍・漫画制作（150ページ程度）は最初から最低<span class="money">30万円〜</span>で提案（最初に安く出すと後から上げられない）。AI導入は無料体験→開発・導入費<span class="money">30〜50万円</span>＋継続サポート<span class="money">月額5〜10万円</span></li>
+          <li>AI導入＋見積もり・経費削減診断＋補助金提案をセットにして顧客の負担感を下げ、成約率を高める</li>
+          <li>契約後は二冊目の漫画・長編書籍・社内マニュアル・採用漫画・営業資料・アプリ開発・月額サポートなど関連商品を提案し継続率を上げる</li>
+        </ul>
+        <span class="kpi">初回受注 30万円〜</span><span class="kpi">月額契約の獲得</span><span class="kpi">成約率の改善</span>
+      </div>
+
+      <div class="phase hot">
+        <div class="ph-head">
+          <span class="ph-label">PHASE 5</span>
+          <span class="ph-period">6〜12か月</span>
+        </div>
+        <h3>スケール ── JV・再投資・資産化</h3>
+        <div class="goal"><strong>ゴール：</strong>一人完結の限界をJV（共同事業）で突破し、利益を次の売上と資産を生むものへ再投資する。</div>
+        <ul class="actions">
+          <li><strong>JVの組成</strong>：営業が得意な人×制作・開発が得意な人の補完関係で受注（事例：理美容業界向けSNS支援ツールを<span class="money">200万円</span>で受注→美容院向け予約システムのSaaS開発へ展開）</li>
+          <li>営業担当者を業務委託で採用し、自分は商品開発・仕組み改善に集中（辻氏：月200万円→300万円へ拡大の段階で採用）</li>
+          <li><strong>再投資サイクル</strong>：利益を ①交流会・セミナー参加 ②広告費 ③人材採用 ④ツール・システム開発 ⑤不動産など資産形成 の順に投下し、売上構造を強化</li>
+          <li>自らセミナーを主催する側へ（辻氏：10人規模セミナー＋「棚卸し内容を10ページ漫画にする」特典→10人全員が個別相談へ）</li>
+          <li>売上だけでなくバランスシート上の資産が増える会社への発展を見据える</li>
+        </ul>
+        <span class="kpi">JV案件 100万円超</span><span class="kpi">月商 100〜300万円</span><span class="kpi">再投資の実行</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== 3. 商品ラダー ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="num">03 PRODUCT LADDER</span>
+      <h2>商品ラダーと価格戦略</h2>
+      <p class="note">業界相場ではなく「顧客が得る経済的価値」から逆算して価格を決める。無料の入口から継続型パートナーシップまで段階的に引き上げる。</p>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr><th>段階</th><th>商品・サービス</th><th>価格帯</th><th>役割</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>入口（無料ギブ）</strong></td>
+            <td>プロフィール漫画・漫画10ページ／AI導入・業務自動化の体験／業務診断</td>
+            <td><span class="price">無料</span></td>
+            <td>実力の証明・信頼構築・課題ヒアリングの機会獲得</td>
+          </tr>
+          <tr>
+            <td><strong>スポット提案</strong></td>
+            <td>長編漫画・書籍制作（150ページ程度）／採用漫画・営業資料・社内マニュアル</td>
+            <td><span class="price">30万円〜</span></td>
+            <td>最初の売上。低価格から始めない（後から上げにくい）</td>
+          </tr>
+          <tr>
+            <td><strong>高単価サービス</strong></td>
+            <td>AIシステム開発・導入／業務自動化（＋経費削減診断・補助金提案をセット）</td>
+            <td><span class="price">30〜50万円</span></td>
+            <td>年間削減額（例：120万円）を可視化し投資判断を後押し</td>
+          </tr>
+          <tr>
+            <td><strong>継続型パートナーシップ</strong></td>
+            <td>月額サポート・運用保守・追加開発</td>
+            <td><span class="price">月額5〜10万円</span></td>
+            <td>継続率を上げ、安定収益の柱にする</td>
+          </tr>
+          <tr>
+            <td><strong>JV・共同事業</strong></td>
+            <td>業界特化ツール開発・SaaS展開（営業×開発の分業）</td>
+            <td><span class="price">100〜200万円超</span></td>
+            <td>一人完結の限界を突破し、事業を非連続に拡大</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 4. KPI ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="num">04 KPI</span>
+      <h2>売上の方程式に沿ったKPI管理</h2>
+      <p class="note">問題を感情論で処理せず、数字と構造で捉える。毎日「どの変数を改善できるか」を分解して考える ── 見込み客が足りないのか、オファーが弱いのか、伝え方が悪いのか、単価が低いのか、継続商品がないのか。</p>
+    </div>
+    <div class="grid c2">
+      <div class="card">
+        <h3><span class="badge">客</span>見込み客数（集客）</h3>
+        <ul>
+          <li>有料交流会・イベント参加数（月2〜4回）</li>
+          <li>名刺交換数・無料オファー提示数</li>
+          <li>紹介による新規接点数</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge">単</span>商品単価（価値づくり）</h3>
+        <ul>
+          <li>スポット案件の平均単価（目標30万円〜）</li>
+          <li>高単価サービス比率（AI導入30〜50万円）</li>
+          <li>削減額・リターンの提示精度</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge">約</span>成約率（提案力）</h3>
+        <ul>
+          <li>無料ギブ→有料化の転換率</li>
+          <li>個別相談への移行率（事例：セミナー10人→10人）</li>
+          <li>ビフォーアフター・ストーリー提案の実施率</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge">継</span>継続率（リピート・関連商品）</h3>
+        <ul>
+          <li>月額サポート契約数（5〜10万円/月）</li>
+          <li>関連商品（二冊目・マニュアル・追加開発）の提案数</li>
+          <li>既存顧客からの紹介発生数</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 5. 成功事例 ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="num">05 CASE STUDY</span>
+      <h2>先行者の成功事例 ── 再現すべき行動パターン</h2>
+    </div>
+    <div class="grid c3">
+      <div class="card case">
+        <h3>辻氏 ── セミナー主催型</h3>
+        <p>3,000〜5,000円の交流会に参加し業種を絞った場にも足を運ぶ。自ら10人規模のセミナーを開催し、人生・事業の棚卸しワーク＋「内容を10ページ漫画にする」特典を提示。</p>
+        <div class="result"><strong>成果：</strong>参加者10人全員が個別相談へ。売上は月200万円→300万円へ拡大見込み。営業担当を業務委託で採用する段階に。講義当日に名刺作成へ着手した行動の速さが鍵。</div>
+      </div>
+      <div class="card case">
+        <h3>藤原氏 ── 切り口転換型</h3>
+        <p>「漫画を無料で作ります」が刺さらない相手に対し、「AIに5分話しかけてアプリを作っている」と切り口を変えたところ強い興味を獲得。</p>
+        <div class="result"><strong>成果：</strong>Zoom相談・紹介・オフラインセミナー・士業向けシステム改善・協業へ発展。相手の反応を見て切り口を変える柔軟性が武器に。</div>
+      </div>
+      <div class="card case">
+        <h3>大津氏 ── JV型</h3>
+        <p>懇親会で知り合った営業が得意な参加者とJVを組み、自身は開発に集中。業界団体との接点も獲得。</p>
+        <div class="result"><strong>成果：</strong>理美容業界向けSNS支援ツールを<strong>200万円</strong>で受注。その後、美容院向け予約システムのSaaS開発へ展開。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6. ターゲットと注意点 ===== -->
+  <section>
+    <div class="sec-head">
+      <span class="num">06 TARGET &amp; PITFALLS</span>
+      <h2>狙うべき顧客と避けるべき誤り</h2>
+    </div>
+    <div class="grid c2">
+      <div class="card dd-do">
+        <h3>◎ 狙うべきターゲット</h3>
+        <ul>
+          <li>事業を行っている人・経営者・<strong>決裁権者</strong></li>
+          <li>固定費や人件費を削減したい企業（士業・飲食店・サロンなど）</li>
+          <li>採用や営業に課題がある会社</li>
+          <li>導入効果を金額に変えやすい層（経済効果を説明しやすい相手）</li>
+          <li>無料ギブの対象：信頼できる人・将来相互協力できる人・良い人脈を持つ人</li>
+        </ul>
+      </div>
+      <div class="card dd-dont">
+        <h3>× 避けるべき誤り</h3>
+        <ul>
+          <li>支払い能力のない層への高額提案（書道家・文学/学術系など経済効果に直結しにくい層は対象を変える）</li>
+          <li>「リアル営業は苦手」「名刺は不要」「SNSはやりたくない」── 十分試す前の自己判断で市場の反応より自分の感想を優先すること</li>
+          <li>数千円の交流会費すら惜しむ消費者マインド（事業主は売上につながる支出を投資と捉える）</li>
+          <li>最初に低価格を提示すること（後から上げるのが難しい）</li>
+          <li>ツールを入手しただけで止まり、「誰に・どんな価値を・どう売上に変えるか」を設計しないこと</li>
+          <li>1回の失敗で「交流会は意味がない」と決めつけること（準備・対象・伝え方・フォローを検証して次へ）</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Closing ===== -->
+  <div class="closing">
+    <h2>「情報を集める人」から「価値を提供して売上構造を改善する人」へ</h2>
+    <p>AI時代は、誰でも短時間で漫画・書籍・アプリ・診断ツールを作れる。しかし、それを顧客の利益へ結びつけ、信頼関係の中で継続的な事業へ変えられる人はまだ少数 ── だからこそ今は大きな機会。</p>
+    <p class="big">準備よりも実践、完璧さよりも最初の一歩。今日、名刺の文章を作り、交流会を予約し、実績を1つ投稿する。</p>
+  </div>
+
+  <footer>
+    出典：講義スライド「AI×漫画×リアル営業で築く次世代の事業構築法」（全4章）／プラチナZoom「AI時代の事業構築」約1万文字要約 ── 2026年7月作成
+  </footer>
+
+</div>
+</body>
+</html>
