@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>思い出アルバム事業 全世代戦略</title>
+<style>
+  :root{
+    --paper:#FAF9F5;
+    --surface:#FFFFFF;
+    --ink:#23282F;
+    --ink-soft:#5A6170;
+    --accent:#2E4E9E;
+    --accent-soft:#EAEEF8;
+    --amber:#B97B1F;
+    --amber-soft:#F7EEDD;
+    --line:#E3E0D8;
+    --good:#2E7D4F;
+    --warn:#A4541B;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#14171E;
+      --surface:#1C212B;
+      --ink:#E8E6E0;
+      --ink-soft:#9AA1AE;
+      --accent:#8AA5E8;
+      --accent-soft:#232C42;
+      --amber:#D9A54F;
+      --amber-soft:#33291A;
+      --line:#2E3440;
+      --good:#6CBF8E;
+      --warn:#D98D53;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14171E; --surface:#1C212B; --ink:#E8E6E0; --ink-soft:#9AA1AE;
+    --accent:#8AA5E8; --accent-soft:#232C42; --amber:#D9A54F; --amber-soft:#33291A;
+    --line:#2E3440; --good:#6CBF8E; --warn:#D98D53;
+  }
+  :root[data-theme="light"]{
+    --paper:#FAF9F5; --surface:#FFFFFF; --ink:#23282F; --ink-soft:#5A6170;
+    --accent:#2E4E9E; --accent-soft:#EAEEF8; --amber:#B97B1F; --amber-soft:#F7EEDD;
+    --line:#E3E0D8; --good:#2E7D4F; --warn:#A4541B;
+  }
+  html{background:var(--paper);}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Noto Sans JP",Meiryo,sans-serif;
+    color:var(--ink); background:var(--paper);
+    line-height:1.85; margin:0; font-size:15.5px;
+    font-feature-settings:"palt";
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:0 24px 96px;}
+  h1,h2,h3{
+    font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+    font-weight:600; text-wrap:balance; line-height:1.4;
+  }
+  /* hero */
+  header{padding:72px 0 40px; border-bottom:1px solid var(--line);}
+  .eyebrow{
+    font-size:12px; letter-spacing:.18em; color:var(--accent);
+    font-weight:700; margin-bottom:14px;
+  }
+  h1{font-size:34px; margin:0 0 18px;}
+  .lede{font-size:17px; color:var(--ink-soft); max-width:38em; margin:0;}
+  .hero-stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:32px;}
+  .stat{
+    background:var(--surface); border:1px solid var(--line); border-radius:6px;
+    padding:14px 18px; min-width:150px; flex:1;
+  }
+  .stat b{display:block; font-size:22px; font-variant-numeric:tabular-nums; color:var(--accent);}
+  .stat span{font-size:12.5px; color:var(--ink-soft);}
+  /* sections */
+  section{margin-top:64px;}
+  .sec-label{
+    font-size:12px; letter-spacing:.18em; color:var(--amber); font-weight:700;
+    margin-bottom:8px;
+  }
+  h2{font-size:24px; margin:0 0 8px; padding-bottom:12px; border-bottom:1px solid var(--line);}
+  .sec-note{color:var(--ink-soft); font-size:14px; margin:10px 0 24px; max-width:42em;}
+  h3{font-size:17px; margin:0 0 6px;}
+  p{margin:0 0 14px;}
+  /* thesis */
+  .thesis{
+    background:var(--accent-soft); border-left:4px solid var(--accent);
+    padding:20px 24px; border-radius:0 8px 8px 0; margin:24px 0 0;
+  }
+  .thesis p{margin:0; font-size:16px;}
+  .thesis strong{color:var(--accent);}
+  /* cards */
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px;}
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:8px;
+    padding:20px 22px;
+  }
+  .card .tag{
+    display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.08em;
+    padding:2px 10px; border-radius:99px; margin-bottom:10px;
+  }
+  .tag.main{background:var(--amber-soft); color:var(--amber);}
+  .tag.sub{background:var(--accent-soft); color:var(--accent);}
+  .card p{font-size:13.5px; color:var(--ink-soft); margin:0;}
+  .card .hook{font-size:13.5px; color:var(--ink); margin-top:10px;}
+  .card .hook b{color:var(--amber);}
+  /* tables */
+  .tbl{overflow-x:auto; border:1px solid var(--line); border-radius:8px; background:var(--surface);}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:560px;}
+  th{
+    text-align:left; font-size:12px; letter-spacing:.06em; color:var(--ink-soft);
+    background:color-mix(in srgb, var(--line) 35%, var(--surface));
+    padding:10px 16px; border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  td{padding:11px 16px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  td b{font-variant-numeric:tabular-nums;}
+  .pos{color:var(--good); font-weight:700;}
+  .neg{color:var(--warn); font-weight:700;}
+  /* pillars */
+  .pillar{display:flex; gap:18px; padding:18px 0; border-bottom:1px dashed var(--line);}
+  .pillar:last-child{border-bottom:none;}
+  .pillar .no{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-size:26px; color:var(--amber); line-height:1.2; min-width:1.4em;
+  }
+  .pillar p{font-size:14px; color:var(--ink-soft); margin:4px 0 0;}
+  /* phases */
+  .phase{
+    display:grid; grid-template-columns:110px 1fr; gap:18px;
+    padding:20px 0; border-bottom:1px solid var(--line);
+  }
+  .phase:last-child{border-bottom:none;}
+  .phase .when{
+    font-size:12.5px; font-weight:700; color:var(--accent); letter-spacing:.04em;
+    padding-top:3px;
+  }
+  .phase ul{margin:8px 0 0; padding-left:1.2em; font-size:14px; color:var(--ink-soft);}
+  .phase li{margin-bottom:4px;}
+  .phase .kpi{
+    display:inline-block; margin-top:10px; font-size:12.5px;
+    background:var(--amber-soft); color:var(--amber); border-radius:4px; padding:3px 10px;
+  }
+  /* risk */
+  .risk dt{font-weight:700; font-size:14.5px; margin-top:16px;}
+  .risk dt:first-child{margin-top:0;}
+  .risk dd{margin:2px 0 0; font-size:14px; color:var(--ink-soft);}
+  footer{
+    margin-top:72px; padding-top:20px; border-top:1px solid var(--line);
+    font-size:12.5px; color:var(--ink-soft);
+  }
+  @media (max-width:600px){
+    h1{font-size:27px;}
+    .phase{grid-template-columns:1fr; gap:4px;}
+  }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">事業戦略サマリ ｜ 2026.07</div>
+  <h1>アプリを入れない、思い出のアルバム。<br>LINEに送るだけ、ぜんぶの世代へ。</h1>
+  <p class="lede">アルバム(日記)作成アシスタント事業の全体戦略。競合「みてね」の調査・ユーザー層コホート分析・法規制の確認を踏まえ、ターゲットを子育て世帯に限定せず<b>全世代の「思い出インフラ」</b>として設計する。</p>
+  <div class="hero-stats">
+    <div class="stat"><b>65%+</b><span>みてねの新生児親カバー率（0歳市場は飽和）</span></div>
+    <div class="stat"><b>約33%</b><span>今の5歳児の親の出産時みてね浸透率</span></div>
+    <div class="stat"><b>200万+世帯</b><span>3〜7歳の「乗り遅れ」空白コホート（概算）</span></div>
+    <div class="stat"><b>0本</b><span>LINE完結型アルバムの大手競合</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="sec-label">基本方針</div>
+  <h2>コア体験は全世代共通、攻め方はライフステージ別</h2>
+  <p class="sec-note">「全世代がターゲット」は「誰にでも売る」ではなく、<b>ひとつのコア体験を世代ごとの入口で売り分ける</b>こと。コア体験は3つに絞る。</p>
+  <div class="grid">
+    <div class="card"><h3>① 送るだけ</h3><p>いつものLINEに写真・動画を送るだけで、日付ごとに整理されたアルバムが自動で育つ。アプリのインストールも使い方の習得も不要。閲覧はブラウザで誰でも。</p></div>
+    <div class="card"><h3>② 静かな共有</h3><p>共有は月1回のまとめアルバムが基本。コメント返信や投稿催促に追われない。「みてね疲れ」の逆を行く、干渉のない思い出置き場。</p></div>
+    <div class="card"><h3>③ 一生もの保証</h3><p>全データいつでも書き出し可能。サービス終了時は6ヶ月前告知と全データ返却を明文化。「消えるかも」という不安を信頼で切り返す。</p></div>
+  </div>
+  <div class="thesis">
+    <p><strong>勝ち筋の核心：</strong>みてねは「出産した瞬間に始めるアプリ」。こちらは「<strong>いつからでも、誰とでも始められるLINE</strong>」。土俵を年齢でもアプリでも区切らないことが、そのまま差別化になる。</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-label">ターゲット</div>
+  <h2>全世代マップ — 6つの入口と優先度</h2>
+  <p class="sec-note">同じサービスに世代別の入口（LP・特典・提携）を用意する。優先度は「みてねの空白の大きさ × 単価 × 到達しやすさ」で決めた。</p>
+  <div class="grid">
+    <div class="card">
+      <span class="tag main">最優先・主戦場</span>
+      <h3>3〜7歳の子の家庭</h3>
+      <p>出産時のみてね浸透率が約33%だった空白コホート。毎年1学年ずつ縮む時限市場。</p>
+      <div class="hook">入口：<b>5年分の過去写真を一括救出</b>＋七五三・入園入学特典</div>
+    </div>
+    <div class="card">
+      <span class="tag main">優先</span>
+      <h3>小・中・高生の家庭</h3>
+      <p>みてねの主用途（乳幼児共有）を過ぎて更新が止まった層。部活・行事・受験の記録需要は残る。</p>
+      <div class="hook">入口：<b>卒業アルバム自動生成</b>＋成人式タイムカプセル</div>
+    </div>
+    <div class="card">
+      <span class="tag main">優先</span>
+      <h3>シニア・祖父母</h3>
+      <p>紙焼き写真が押し入れに眠る世代。全世代化の要。孫世代との接点にもなる。</p>
+      <div class="hook">入口：<b>昔の写真の撮影送信→デジタル化</b>・家族史アルバム</div>
+    </div>
+    <div class="card">
+      <span class="tag sub">育成</span>
+      <h3>恋人・夫婦ふたり</h3>
+      <p>みてねが設計上取れないセグメント。記念日・旅行の記録。子供が生まれたら家族プランへ自然移行。</p>
+      <div class="hook">入口：<b>ふたりアルバム</b>・記念日リマインド</div>
+    </div>
+    <div class="card">
+      <span class="tag sub">育成</span>
+      <h3>0〜2歳の子の家庭</h3>
+      <p>みてね飽和市場。正面から奪わず、不満を持つ層だけ受け止める。</p>
+      <div class="hook">入口：<b>両家別々アルバム</b>（みてねでは細かい公開設定が有料）・静かな共有</div>
+    </div>
+    <div class="card">
+      <span class="tag sub">拡張</span>
+      <h3>ペット・趣味・グループ</h3>
+      <p>ペットの成長記録、サークル・チームの活動記録。LINEグループ単位でそのまま使える。</p>
+      <div class="hook">入口：<b>グループLINEにBotを招待するだけ</b></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-label">競合環境</div>
+  <h2>ポジショニング — みてねと同じ土俵に乗らない</h2>
+  <div class="tbl">
+    <table>
+      <tr><th></th><th>みてね（MIXI）</th><th>本サービス</th></tr>
+      <tr><td><b>始め方</b></td><td>アプリを入れて家族を招待</td><td class="pos">LINE友だち追加のみ・閲覧はブラウザ</td></tr>
+      <tr><td><b>始める時期</b></td><td>出産がトリガー（後からは入りにくい）</td><td class="pos">いつからでも。過去写真の救出が入口</td></tr>
+      <tr><td><b>対象</b></td><td>子供中心の家族設計</td><td class="pos">全世代（子供・学生・夫婦・シニア・ペット）</td></tr>
+      <tr><td><b>共有の空気</b></td><td>コメント・催促が活発（疲れの声も）</td><td class="pos">月1まとめの静かな共有が基本</td></tr>
+      <tr><td><b>リアル特典</b></td><td>大手ブランド広告型（2026年開始直後）</td><td class="pos">地域の写真館・呉服店との送客提携</td></tr>
+      <tr><td><b>規模・資本</b></td><td class="neg">世界累計3,000万人・新生児親の65%+</td><td>ゼロから。飽和市場との正面衝突は避ける</td></tr>
+      <tr><td><b>データの行き先</b></td><td class="neg">終了時の扱いに不安の声</td><td class="pos">全量エクスポート＋返却保証を明文化</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-label">戦略</div>
+  <h2>勝ち筋・5本の柱</h2>
+  <div>
+    <div class="pillar"><div class="no">一</div><div><h3>土俵をずらす — アプリではなくLINE</h3><p>導入障壁ゼロが最大の武器。みてねがこの体験に寄せるには自社アプリ経済圏を壊す必要があり、追随しにくい。</p></div></div>
+    <div class="pillar"><div class="no">二</div><div><h3>時間をずらす — 「今から」ではなく「これまで」も</h3><p>出生時スタート前提のみてねに対し、過去写真・紙焼き写真の救出を入口にする。これが3歳以上とシニアという全世代市場を開く鍵。</p></div></div>
+    <div class="pillar"><div class="no">三</div><div><h3>リアル特典 × 地域提携の先行</h3><p>バースデーカード送付、七五三・お宮参りの着物レンタル割引、入園入学祝い。行事は必ず「地元」で起きる。地域の写真館・呉服店との送客網は大手が最も取りにくい資産。</p></div></div>
+    <div class="pillar"><div class="no">四</div><div><h3>20年タイムカプセルで情緒的ロックイン</h3><p>毎年の「今年の抱負」と写真を封印し、成人式・還暦・金婚式に開封して手渡す。解約＝積み上げた手紙を失う構造が、全世代共通の継続動機になる。</p></div></div>
+    <div class="pillar"><div class="no">五</div><div><h3>データ主権の透明性で信頼を取る</h3><p>いつでも全量書き出し・終了時6ヶ月前告知＋全データ返却を掲げる。競合への最大の不安を、こちらの看板に変える。</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-label">収益</div>
+  <h2>収益モデル — サブスク＋行事収益の二層</h2>
+  <div class="tbl">
+    <table>
+      <tr><th>レイヤー</th><th>内容</th><th>価格の目安</th></tr>
+      <tr><td><b>無料</b></td><td>月30枚まで・閲覧90日。まず生活動線に入る</td><td>¥0</td></tr>
+      <tr><td><b>スタンダード</b></td><td>枚数無制限・動画対応・月1まとめアルバム・一括ダウンロード</td><td>月¥480（みてねプレミアム¥590より安く）</td></tr>
+      <tr><td><b>ファミリー</b></td><td>両家別々アルバム・年1冊フォトブック・バースデーカード・特典クーポン</td><td>月¥880〜980</td></tr>
+      <tr><td><b>行事収益</b></td><td>写真館・着物レンタル等への送客手数料（七五三の記念撮影は1回3〜4万円規模）・フォトブック等の印刷物販売・タイムカプセル商品</td><td>送客の10〜20%＋物販</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-label">実行計画</div>
+  <h2>ロードマップ — 簡単なものから順に、3フェーズ</h2>
+  <div>
+    <div class="phase">
+      <div class="when">Phase 1<br>0〜3ヶ月</div>
+      <div>
+        <h3>LINE完結MVP（すぐ作れる範囲で市場検証）</h3>
+        <ul>
+          <li>LINE公式アカウント＋Messaging APIで写真・動画を受信→自社クラウドへ即時保存</li>
+          <li>日付ごとの自動整理と月別Webアルバム（閲覧リンク共有・アプリ不要）</li>
+          <li>過去写真のまとめ送信（アルバム転送・一括アップロード）対応</li>
+          <li>サブスク課金・特商法表記・プライバシーポリシー（未成年データの親権者同意含む）</li>
+        </ul>
+        <span class="kpi">検証KPI：友だち追加→初回送信率／週1送信の継続率／無料→有料転換率</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="when">Phase 2<br>4〜8ヶ月</div>
+      <div>
+        <h3>差別化機能とリアル特典（難しめの機能を段階投入）</h3>
+        <ul>
+          <li>アルバム自動生成（顔検出でベストショット選定・ブレ/重複除去）</li>
+          <li>印刷OEM連携：年1冊フォトブック・バースデーカードの印刷/発送</li>
+          <li>地元1エリアで写真館・呉服店2〜3店と提携し、七五三・入学特典を実証</li>
+          <li>両家別々アルバム・静かな共有モード（みてね不満点の解消機能）</li>
+        </ul>
+        <span class="kpi">検証KPI：特典クーポン利用率／提携店からの送客手数料単価</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="when">Phase 3<br>9ヶ月〜</div>
+      <div>
+        <h3>全世代展開と高度な分析</h3>
+        <ul>
+          <li>紙焼き写真のデジタル化導線（シニア向け）・家族史アルバム</li>
+          <li>AIダイジェスト動画・成長/活動の自動タグ付け・卒業アルバム自動生成</li>
+          <li>タイムカプセル商品（成人式・還暦・金婚式）を長期保存設計で商品化</li>
+          <li>ふたりアルバム（カップル）・グループ/ペット展開、写真館・こども園向けB2B2C</li>
+        </ul>
+        <span class="kpi">検証KPI：世代別MAU構成比／タイムカプセル契約数／年間解約率</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-label">リスク</div>
+  <h2>主要リスクと備え</h2>
+  <dl class="risk">
+    <dt>LINE依存（規約変更・従量課金）</dt>
+    <dd>受信画像はLINEサーバーに一定期間しか残らないため即時退避を徹底。データ資産は常に自社側に置き、メール/Web経路を常備。プッシュ配信コストは価格に織り込む。</dd>
+    <dt>子供の個人情報（個人情報保護法）</dt>
+    <dd>未成年者データの第三者提供は親権者同意が原則。提携先へ渡す情報は明示同意の範囲に限定し、顔検出などのAI処理も利用目的に明記する。</dd>
+    <dt>特典の景品表示法</dt>
+    <dd>バースデーカードや割引は「会員向けアフターサービス／値引き」として設計すれば原則規制外。無料会員への高額特典は総付景品規制に注意し、実施前に消費者庁ガイドラインを確認。</dd>
+    <dt>みてねの追随（ファミリーパートナー拡大）</dt>
+    <dd>大手ブランド広告型とはレイヤーが違う「地域送客網」を先に固める。四半期ごとに動向をウォッチし、提携スピードで先行する。</dd>
+    <dt>空白コホートの時限性</dt>
+    <dd>3〜7歳市場は毎年1学年ずつ縮む。Phase 1の検証を最短で回し、過去写真救出の入口を早期に確立する。</dd>
+  </dl>
+</section>
+
+<footer>
+  出典・詳細分析は docs/album_service_business_plan.md（PR #5）を参照。数値は MIXI公式発表・報道（2026年5月時点：世界累計3,000万人、新生児親カバー率65%以上）および公開インタビューに基づく概算を含む。
+</footer>
+
+</div>
+</body>
+</html>
